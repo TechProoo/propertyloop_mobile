@@ -7,7 +7,7 @@ import '../global.css';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: 'welcome',
 };
 
 export default function RootLayout() {
@@ -15,7 +15,12 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+      <Stack initialRouteName="welcome">
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
+        <Stack.Screen name="intro" options={{ headerShown: false }} />
+        <Stack.Screen name="role-select" options={{ headerShown: false }} />
+        <Stack.Screen name="buyer-preferences" options={{ headerShown: false }} />
+        <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
