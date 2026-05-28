@@ -84,7 +84,7 @@ export default function AgentPlanScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#f5f0eb]">
+    <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         {/* Top bar */}
@@ -94,13 +94,13 @@ export default function AgentPlanScreen() {
             hitSlop={12}
             className="w-9 h-9 rounded-full bg-white/70 items-center justify-center"
           >
-            <Text className="text-slate-700 text-xl">‹</Text>
+            <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
           <View className="items-center">
-            <Text className="text-slate-900 font-semibold text-sm">
+            <Text className="text-ink font-sans-semibold text-sm">
               Pick your plan
             </Text>
-            <Text className="text-slate-500 text-xs mt-0.5">Step 3 of 4</Text>
+            <Text className="text-ink-3 text-xs mt-0.5">Step 3 of 4</Text>
           </View>
           <View style={{ width: 36 }} />
         </View>
@@ -110,29 +110,29 @@ export default function AgentPlanScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Heading */}
-          <Text className="text-slate-900 font-serif text-3xl mt-6 leading-[36px]">
-            Pick the plan that <Text className="italic">fits</Text>
+          <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
+            Pick the plan that <Text className="font-serif-italic">fits</Text>
           </Text>
-          <Text className="text-slate-500 text-sm mt-2 leading-5">
+          <Text className="text-ink-3 text-sm mt-2 leading-5">
             Change tiers any time. We'll automatically prorate.
           </Text>
 
           {/* Founding eligibility banner — only if waitlisted */}
           {foundingEligible && (
             <View className="bg-slate-900 rounded-2xl px-4 py-3 flex-row items-center gap-3 mt-5">
-              <View className="w-8 h-8 rounded-full bg-emerald-700 items-center justify-center">
+              <View className="w-8 h-8 rounded-full bg-primary items-center justify-center">
                 <Ionicons name="star" size={16} color="#ffffff" />
               </View>
               <View className="flex-1">
-                <Text className="text-white font-semibold text-sm">
+                <Text className="text-white font-sans-semibold text-sm">
                   You're on the Founding list
                 </Text>
-                <Text className="text-slate-400 text-xs mt-0.5">
+                <Text className="text-ink-3 text-xs mt-0.5">
                   Free forever · {foundingSpotsLeft} of {foundingCap} spots left
                 </Text>
               </View>
               <View className="bg-white/15 px-2.5 py-1 rounded-full">
-                <Text className="text-white text-[10px] font-bold tracking-wider">
+                <Text className="text-white text-[10px] font-sans-bold tracking-wider">
                   ELIGIBLE
                 </Text>
               </View>
@@ -158,12 +158,12 @@ export default function AgentPlanScreen() {
         </ScrollView>
 
         {/* Sticky CTA */}
-        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-[#f5f0eb]">
+        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
           <Pressable
             onPress={handleContinue}
-            className="bg-emerald-700 rounded-full py-4 items-center active:opacity-80"
+            className="bg-primary rounded-full py-4 items-center active:opacity-80"
           >
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-white font-sans-semibold text-base">
               Continue with {current.name}
             </Text>
           </Pressable>
@@ -190,21 +190,21 @@ function PlanCard({
       disabled={locked}
       className={`rounded-3xl p-5 border-2 active:opacity-90 ${
         selected
-          ? "bg-emerald-50 border-emerald-600"
+          ? "bg-primary-soft border-primary"
           : locked
-            ? "bg-white border-slate-200 opacity-50"
-            : "bg-white border-slate-200"
+            ? "bg-white border-line opacity-50"
+            : "bg-white border-line"
       }`}
     >
       {/* Top row */}
       <View className="flex-row items-start justify-between">
         <View className="flex-row items-center gap-2">
-          <Text className="text-slate-900 font-bold text-base">
+          <Text className="text-ink font-sans-bold text-base">
             {plan.name}
           </Text>
           {plan.badge && (
-            <View className="bg-emerald-700 px-2 py-0.5 rounded-full">
-              <Text className="text-white text-[10px] font-bold tracking-wider">
+            <View className="bg-primary px-2 py-0.5 rounded-full">
+              <Text className="text-white text-[10px] font-sans-bold tracking-wider">
                 {plan.badge}
               </Text>
             </View>
@@ -213,29 +213,29 @@ function PlanCard({
         <View
           className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
             selected
-              ? "bg-emerald-600 border-emerald-600"
-              : "bg-white border-slate-300"
+              ? "bg-primary border-primary"
+              : "bg-white border-line"
           }`}
         >
-          {selected && <Text className="text-white text-xs font-bold">✓</Text>}
+          {selected && <Text className="text-white text-xs font-sans-bold">✓</Text>}
         </View>
       </View>
 
       {/* Price */}
       <View className="flex-row items-baseline gap-1.5 mt-3">
-        <Text className="text-slate-900 font-serif text-3xl">{plan.price}</Text>
-        <Text className="text-slate-500 text-sm">{plan.period}</Text>
+        <Text className="text-ink font-serif text-3xl">{plan.price}</Text>
+        <Text className="text-ink-3 text-sm">{plan.period}</Text>
       </View>
       {plan.hint && (
-        <Text className="text-slate-500 text-xs mt-0.5">{plan.hint}</Text>
+        <Text className="text-ink-3 text-xs mt-0.5">{plan.hint}</Text>
       )}
 
       {/* Feature list */}
       <View className="mt-4 gap-2">
         {plan.features.map((f) => (
           <View key={f} className="flex-row items-center gap-2">
-            <Ionicons name="checkmark" size={16} color="#059669" />
-            <Text className="text-slate-700 text-sm">{f}</Text>
+            <Ionicons name="checkmark" size={16} color="#1f6f43" />
+            <Text className="text-ink-2 text-sm">{f}</Text>
           </View>
         ))}
       </View>

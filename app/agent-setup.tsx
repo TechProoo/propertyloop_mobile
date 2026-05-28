@@ -76,7 +76,7 @@ export default function AgentSetupScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#f5f0eb]">
+    <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         <KeyboardAvoidingView
@@ -90,12 +90,12 @@ export default function AgentSetupScreen() {
               hitSlop={12}
               className="w-9 h-9 rounded-full bg-white/70 items-center justify-center"
             >
-              <Text className="text-slate-700 text-xl">‹</Text>
+              <Text className="text-ink-2 text-xl">‹</Text>
             </Pressable>
-            <Text className="text-slate-900 font-semibold text-sm">
+            <Text className="text-ink font-sans-semibold text-sm">
               Agent setup
             </Text>
-            <Text className="text-slate-500 text-xs font-medium w-12 text-right">
+            <Text className="text-ink-3 text-xs font-sans-medium w-12 text-right">
               Step 1 of 4
             </Text>
           </View>
@@ -106,10 +106,10 @@ export default function AgentSetupScreen() {
             showsVerticalScrollIndicator={false}
           >
             {/* Heading */}
-            <Text className="text-slate-900 font-serif text-3xl mt-6 leading-[36px]">
-              Tell us about <Text className="italic">your practice</Text>
+            <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
+              Tell us about <Text className="font-serif-italic">your practice</Text>
             </Text>
-            <Text className="text-slate-500 text-sm mt-2 leading-5">
+            <Text className="text-ink-3 text-sm mt-2 leading-5">
               This information appears on your public agent profile. Buyers and
               renters see it before they reach out.
             </Text>
@@ -117,15 +117,15 @@ export default function AgentSetupScreen() {
             {/* Profile photo */}
             <View className="flex-row items-center gap-3 mt-7">
               <Pressable className="w-16 h-16 rounded-full bg-amber-100 items-center justify-center border-2 border-amber-200 active:opacity-80">
-                <Text className="text-amber-700 font-bold text-lg">
+                <Text className="text-amber-700 font-sans-bold text-lg">
                   {initials}
                 </Text>
               </Pressable>
               <View className="flex-1">
-                <Text className="text-slate-900 font-semibold text-sm">
+                <Text className="text-ink font-sans-semibold text-sm">
                   Profile photo
                 </Text>
-                <Text className="text-slate-500 text-xs mt-0.5">
+                <Text className="text-ink-3 text-xs mt-0.5">
                   Use a clear, friendly headshot
                 </Text>
               </View>
@@ -145,11 +145,11 @@ export default function AgentSetupScreen() {
             {/* License — with verification pill */}
             <View className="mt-4">
               <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-slate-700 text-xs font-semibold">
+                <Text className="text-ink-2 text-xs font-sans-semibold">
                   Licence number · NIESV
                 </Text>
                 <View className="bg-amber-100 px-2 py-0.5 rounded-full">
-                  <Text className="text-amber-700 text-[10px] font-bold">
+                  <Text className="text-amber-700 text-[10px] font-sans-bold">
                     Will be verified
                   </Text>
                 </View>
@@ -158,9 +158,9 @@ export default function AgentSetupScreen() {
                 value={licenseNumber}
                 onChangeText={setLicenseNumber}
                 placeholder="e.g. NIESV/L/3492-A"
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor="#7f857f"
                 autoCapitalize="characters"
-                className="bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+                className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-base"
               />
             </View>
 
@@ -199,7 +199,7 @@ export default function AgentSetupScreen() {
 
             {/* Specialty chips */}
             <View className="mt-5">
-              <Text className="text-slate-700 text-xs font-semibold mb-2">
+              <Text className="text-ink-2 text-xs font-sans-semibold mb-2">
                 Speciality · pick up to {MAX_SPECIALTIES}
               </Text>
               <View className="flex-row flex-wrap gap-2">
@@ -216,13 +216,13 @@ export default function AgentSetupScreen() {
                         selected
                           ? "bg-slate-900 border-slate-900"
                           : disabled
-                            ? "bg-white border-slate-200 opacity-40"
-                            : "bg-white border-slate-200"
+                            ? "bg-white border-line opacity-40"
+                            : "bg-white border-line"
                       } active:opacity-80`}
                     >
                       <Text
-                        className={`text-sm font-medium ${
-                          selected ? "text-white" : "text-slate-700"
+                        className={`text-sm font-sans-medium ${
+                          selected ? "text-white" : "text-ink-2"
                         }`}
                       >
                         {s}
@@ -235,35 +235,35 @@ export default function AgentSetupScreen() {
 
             {/* Short bio */}
             <View className="mt-5">
-              <Text className="text-slate-700 text-xs font-semibold mb-1.5">
+              <Text className="text-ink-2 text-xs font-sans-semibold mb-1.5">
                 Short bio
               </Text>
               <TextInput
                 value={bio}
                 onChangeText={setBio}
                 placeholder="A line or two on your focus areas, deals you've closed, why buyers like working with you."
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor="#7f857f"
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-                className="bg-white border border-slate-200 rounded-2xl px-4 py-3 text-slate-900 text-base min-h-[110px]"
+                className="bg-white border border-line rounded-2xl px-4 py-3 text-ink text-base min-h-[110px]"
               />
             </View>
 
-            <Text className="text-slate-500 text-[11px] text-center mt-4 leading-4">
+            <Text className="text-ink-3 text-[11px] text-center mt-4 leading-4">
               Listed agents must not act as buyer — we verify both ends to keep
               negotiations honest.
             </Text>
           </ScrollView>
 
           {/* Sticky CTA */}
-          <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-[#f5f0eb]">
+          <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
             <Pressable
               onPress={handleContinue}
               disabled={!canContinue}
-              className="bg-emerald-700 rounded-full py-4 items-center active:opacity-80 disabled:opacity-50"
+              className="bg-primary rounded-full py-4 items-center active:opacity-80 disabled:opacity-50"
             >
-              <Text className="text-white font-semibold text-base">
+              <Text className="text-white font-sans-semibold text-base">
                 Continue to verification
               </Text>
             </Pressable>
@@ -279,13 +279,13 @@ type FieldProps = React.ComponentProps<typeof TextInput> & { label: string };
 function Field({ label, ...inputProps }: FieldProps) {
   return (
     <View>
-      <Text className="text-slate-700 text-xs font-semibold mb-1.5">
+      <Text className="text-ink-2 text-xs font-sans-semibold mb-1.5">
         {label}
       </Text>
       <TextInput
         {...inputProps}
-        placeholderTextColor="#94a3b8"
-        className="bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+        placeholderTextColor="#7f857f"
+        className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-base"
       />
     </View>
   );

@@ -19,7 +19,7 @@ export default function WelcomeScreen() {
 
         {/* Content block */}
         <View className="px-6 pb-6">
-          <Text className="text-emerald-400 text-xs font-semibold tracking-[2px] mb-4">
+          <Text className="text-emerald-400 text-xs font-sans-semibold tracking-[2px] mb-4">
             GET STARTED TODAY
           </Text>
 
@@ -38,7 +38,7 @@ export default function WelcomeScreen() {
             onPress={() => router.push("/intro" as Href)}
             className="mt-8 bg-white rounded-full py-4 items-center active:opacity-80"
           >
-            <Text className="text-slate-950 font-semibold text-base">
+            <Text className="text-slate-950 font-sans-semibold text-base">
               Get started
             </Text>
           </Pressable>
@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
             onPress={() => router.push("/(tabs)" as Href)}
             className="mt-3 bg-slate-900 border border-slate-700 rounded-full py-4 items-center active:opacity-80"
           >
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-white font-sans-semibold text-base">
               I already have an account
             </Text>
           </Pressable>
