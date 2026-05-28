@@ -1,48 +1,25 @@
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import listingsService from "@/api/services/listings";
-import type { Listing } from "@/api/types";
+import { MOCK_LISTINGS, findMockListingById } from "@/mocks/listings";
 
 export default function PropertyDetailScreen() {
+  // Demo data only — backend wiring is intentionally disabled. Swap
+  // `findMockListingById(id)` for `listingsService.getById(id)` when ready.
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const listing = (id && findMockListingById(id)) || MOCK_LISTINGS[0];
 
-  useEffect(() => {
-    if (!id) return;
-    listingsService
-      .getById(id)
-      .then(setListing)
-      .catch((e) => setError(e?.message ?? "Failed to load"));
-  }, [id]);
-
-  if (error) {
+  if (!listing) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-white p-8">
-        <Text className="text-red-500 text-center">{error}</Text>
+        <Text className="text-slate-500 text-center">Listing not found.</Text>
         <Pressable
           onPress={() => router.back()}
           className="mt-4 px-6 py-3 bg-slate-900 rounded-full"
         >
           <Text className="text-white font-semibold">Go back</Text>
         </Pressable>
-      </SafeAreaView>
-    );
-  }
-
-  if (!listing) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#1f6f43" />
       </SafeAreaView>
     );
   }

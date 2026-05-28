@@ -17,7 +17,10 @@ import {
   type Href,
 } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import authService, { type SignupPayload } from "@/api/services/auth";
+// Backend wiring intentionally disabled. The signup submit below fakes a
+// short delay and navigates. Restore by importing authService and calling
+// authService.signup(payload) inside handleSignup.
+// import authService, { type SignupPayload } from "@/api/services/auth";
 
 type Role = "BUYER" | "AGENT" | "VENDOR";
 
@@ -107,34 +110,14 @@ export default function SignupScreen() {
     setError(null);
     setSubmitting(true);
 
-    const payload: SignupPayload = {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      password,
-      phone: phone.trim() || undefined,
-      role,
-      ...(role === "BUYER" &&
-        preferredLocations && {
-          buyer: { preferredLocations },
-        }),
-      ...(role === "AGENT" && {
-        agent: {
-          agencyName: agencyName.trim(),
-          licenseNumber: licenseNumber.trim(),
-          businessAddress: businessAddress.trim(),
-        },
-      }),
-      ...(role === "VENDOR" && {
-        vendor: {
-          serviceCategory: serviceCategory.trim(),
-          yearsExperience: yearsExperience.trim(),
-          serviceArea: serviceArea.trim(),
-        },
-      }),
-    };
+    // Demo mode: skip the real signup call and pretend it succeeded after
+    // a brief delay so the "Creating account…" state still surfaces. When
+    // re-wiring, build the payload from the local state above + call
+    // authService.signup(payload) — see the bottom of this file for the
+    // shape that's expected.
 
     try {
-      await authService.signup(payload);
+      await new Promise((r) => setTimeout(r, 600));
       // Agents finish onboarding via plan + payment; everyone else lands
       // straight in the app.
       if (role === "AGENT") {
