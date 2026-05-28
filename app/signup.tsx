@@ -135,7 +135,13 @@ export default function SignupScreen() {
 
     try {
       await authService.signup(payload);
-      router.replace("/(tabs)" as Href);
+      // Agents finish onboarding via plan + payment; everyone else lands
+      // straight in the app.
+      if (role === "AGENT") {
+        router.replace("/agent-plan" as Href);
+      } else {
+        router.replace("/(tabs)" as Href);
+      }
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? "Signup failed. Please try again.";
       setError(Array.isArray(msg) ? msg.join(", ") : msg);
