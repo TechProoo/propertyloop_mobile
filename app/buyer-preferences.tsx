@@ -3,17 +3,33 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 type Intent = "RENTING" | "BUYING" | "BROWSING";
 
-const INTENTS: { id: Intent; title: string; desc: string; glyph: string }[] = [
-  { id: "RENTING", title: "Renting", desc: "Yearly or short-term", glyph: "🔑" },
-  { id: "BUYING", title: "Buying", desc: "Find a forever home", glyph: "🏠" },
+const INTENTS: {
+  id: Intent;
+  title: string;
+  desc: string;
+  iconName: keyof typeof Ionicons.glyphMap;
+}[] = [
+  {
+    id: "RENTING",
+    title: "Renting",
+    desc: "Yearly or short-term",
+    iconName: "key-outline",
+  },
+  {
+    id: "BUYING",
+    title: "Buying",
+    desc: "Find a forever home",
+    iconName: "home-outline",
+  },
   {
     id: "BROWSING",
     title: "Just looking",
     desc: "Browsing the market",
-    glyph: "👀",
+    iconName: "eye-outline",
   },
 ];
 
@@ -118,7 +134,11 @@ export default function BuyerPreferencesScreen() {
                       selected ? "bg-emerald-600" : "bg-emerald-50"
                     }`}
                   >
-                    <Text className="text-xl">{opt.glyph}</Text>
+                    <Ionicons
+                      name={opt.iconName}
+                      size={22}
+                      color={selected ? "#ffffff" : "#047857"}
+                    />
                   </View>
                   <View className="flex-1">
                     <Text className="text-slate-900 font-bold text-base">
