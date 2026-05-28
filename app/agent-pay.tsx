@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 type Tier = "FOUNDING" | "STANDARD" | "PRO";
 type PayMethod = "CARD" | "TRANSFER" | "USSD";
@@ -168,7 +169,7 @@ export default function AgentPayScreen() {
           {!isFree && (
             <View className="bg-slate-100 rounded-2xl px-4 py-3 mt-5 flex-row items-center gap-3">
               <View className="w-9 h-9 rounded-full bg-white items-center justify-center">
-                <Text className="text-slate-700 text-base">↻</Text>
+                <Ionicons name="refresh" size={18} color="#334155" />
               </View>
               <View className="flex-1">
                 <Text className="text-slate-900 font-semibold text-sm">

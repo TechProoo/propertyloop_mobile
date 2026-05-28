@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 type Role = "BUYER" | "AGENT" | "VENDOR";
 
@@ -10,7 +11,8 @@ type RoleCard = {
   badge: string;
   badgeTone: "emerald" | "slate" | "amber";
   iconBg: string;
-  glyph: string;
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
   title: string;
   desc: string;
   chips: string[];
@@ -26,7 +28,8 @@ const CARDS: RoleCard[] = [
     badge: "BUYER · RENTER",
     badgeTone: "emerald",
     iconBg: "bg-emerald-100",
-    glyph: "🔑",
+    iconName: "key-outline",
+    iconColor: "#047857", // emerald-700
     title: "I'm looking for a home",
     desc: "Search verified listings, save favourites, make offers, and book viewings.",
     chips: ["Search & save", "Mortgage tools", "Make offers"],
@@ -37,7 +40,8 @@ const CARDS: RoleCard[] = [
     badge: "AGENT",
     badgeTone: "slate",
     iconBg: "bg-slate-100",
-    glyph: "🏢",
+    iconName: "business-outline",
+    iconColor: "#334155", // slate-700
     title: "I'm an estate agent",
     desc: "List properties, manage viewings, handle offers, and earn commissions.",
     chips: ["Listings dashboard", "Lead inbox", "Earnings"],
@@ -49,7 +53,8 @@ const CARDS: RoleCard[] = [
     badge: "SERVICE LOOP",
     badgeTone: "amber",
     iconBg: "bg-amber-100",
-    glyph: "🛠️",
+    iconName: "construct-outline",
+    iconColor: "#b45309", // amber-700
     title: "I provide property services",
     desc: "Plumbers, cleaners, inspectors, movers — find verified work near you.",
     chips: ["Job board", "Quotes", "Reviews"],
@@ -177,7 +182,7 @@ function RoleCardView({
         <View
           className={`w-12 h-12 rounded-2xl ${card.iconBg} items-center justify-center`}
         >
-          <Text className="text-2xl">{card.glyph}</Text>
+          <Ionicons name={card.iconName} size={24} color={card.iconColor} />
         </View>
         <Text className="text-slate-900 font-bold text-lg flex-1">
           {card.title}

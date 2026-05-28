@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 type Tier = "FOUNDING" | "STANDARD" | "PRO";
 
@@ -120,7 +121,7 @@ export default function AgentPlanScreen() {
           {foundingEligible && (
             <View className="bg-slate-900 rounded-2xl px-4 py-3 flex-row items-center gap-3 mt-5">
               <View className="w-8 h-8 rounded-full bg-emerald-700 items-center justify-center">
-                <Text className="text-white text-base">★</Text>
+                <Ionicons name="star" size={16} color="#ffffff" />
               </View>
               <View className="flex-1">
                 <Text className="text-white font-semibold text-sm">
@@ -233,7 +234,7 @@ function PlanCard({
       <View className="mt-4 gap-2">
         {plan.features.map((f) => (
           <View key={f} className="flex-row items-center gap-2">
-            <Text className="text-emerald-600 text-sm">✓</Text>
+            <Ionicons name="checkmark" size={16} color="#059669" />
             <Text className="text-slate-700 text-sm">{f}</Text>
           </View>
         ))}
