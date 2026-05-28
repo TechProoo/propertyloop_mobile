@@ -76,7 +76,7 @@ export default function AgentPayScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#f5f0eb]">
+    <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         {/* Top bar */}
@@ -86,13 +86,13 @@ export default function AgentPayScreen() {
             hitSlop={12}
             className="w-9 h-9 rounded-full bg-white/70 items-center justify-center"
           >
-            <Text className="text-slate-700 text-xl">‹</Text>
+            <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
           <View className="items-center">
-            <Text className="text-slate-900 font-semibold text-sm">
+            <Text className="text-ink font-sans-semibold text-sm">
               Confirm & pay
             </Text>
-            <Text className="text-slate-500 text-xs mt-0.5">Step 4 of 4</Text>
+            <Text className="text-ink-3 text-xs mt-0.5">Step 4 of 4</Text>
           </View>
           <View style={{ width: 36 }} />
         </View>
@@ -102,21 +102,21 @@ export default function AgentPayScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Plan summary */}
-          <View className="bg-white rounded-3xl px-5 py-4 mt-6 border border-slate-200">
+          <View className="bg-white rounded-3xl px-5 py-4 mt-6 border border-line">
             <View className="flex-row items-center justify-between">
-              <Text className="text-emerald-700 text-xs font-bold tracking-wider">
+              <Text className="text-primary text-xs font-sans-bold tracking-wider">
                 {TIER_LABEL[tier].toUpperCase()}
               </Text>
-              <Text className="text-slate-500 text-xs font-semibold tracking-wider">
+              <Text className="text-ink-3 text-xs font-sans-semibold tracking-wider">
                 MONTHLY
               </Text>
             </View>
 
             <View className="flex-row items-baseline gap-2 mt-2">
-              <Text className="text-slate-900 font-serif text-3xl">
+              <Text className="text-ink font-serif text-3xl">
                 ₦{planAmount.toLocaleString("en-NG")}
               </Text>
-              <Text className="text-slate-500 text-sm">/ month</Text>
+              <Text className="text-ink-3 text-sm">/ month</Text>
             </View>
 
             <View className="mt-4 gap-2">
@@ -127,13 +127,13 @@ export default function AgentPayScreen() {
               <Row label="VAT (7.5%)" value={naira(vat)} />
             </View>
 
-            <View className="h-px bg-slate-200 my-3" />
+            <View className="h-px bg-cream-2 my-3" />
 
             <Row label="Charged today" value={naira(total)} bold />
           </View>
 
           {/* Pay with */}
-          <Text className="text-slate-500 text-[11px] font-bold tracking-[1.5px] mt-7 mb-3">
+          <Text className="text-ink-3 text-[11px] font-sans-bold tracking-[1.5px] mt-7 mb-3">
             PAY WITH
           </Text>
 
@@ -157,7 +157,7 @@ export default function AgentPayScreen() {
             <PaymentRow
               brand="*770#"
               brandBg="bg-white"
-              brandTextColor="text-slate-700"
+              brandTextColor="text-ink-2"
               title="USSD code"
               subtitle="Pay from any Nigerian bank"
               selected={method === "USSD"}
@@ -167,15 +167,15 @@ export default function AgentPayScreen() {
 
           {/* Auto-renew */}
           {!isFree && (
-            <View className="bg-slate-100 rounded-2xl px-4 py-3 mt-5 flex-row items-center gap-3">
+            <View className="bg-cream-2 rounded-2xl px-4 py-3 mt-5 flex-row items-center gap-3">
               <View className="w-9 h-9 rounded-full bg-white items-center justify-center">
                 <Ionicons name="refresh" size={18} color="#334155" />
               </View>
               <View className="flex-1">
-                <Text className="text-slate-900 font-semibold text-sm">
+                <Text className="text-ink font-sans-semibold text-sm">
                   Auto-renew monthly
                 </Text>
-                <Text className="text-slate-500 text-xs mt-0.5">
+                <Text className="text-ink-3 text-xs mt-0.5">
                   Next charge {renewalDate} · cancel any time
                 </Text>
               </View>
@@ -188,19 +188,19 @@ export default function AgentPayScreen() {
             </View>
           )}
 
-          <Text className="text-slate-500 text-[11px] text-center mt-4">
+          <Text className="text-ink-3 text-[11px] text-center mt-4">
             ○ Secure checkout powered by{" "}
-            <Text className="font-bold">Paystack</Text>
+            <Text className="font-sans-bold">Paystack</Text>
           </Text>
         </ScrollView>
 
         {/* Sticky CTA */}
-        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-[#f5f0eb]">
+        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
           <Pressable
             onPress={handlePay}
-            className="bg-emerald-700 rounded-full py-4 items-center active:opacity-80"
+            className="bg-primary rounded-full py-4 items-center active:opacity-80"
           >
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-white font-sans-semibold text-base">
               {isFree ? "Activate Founding tier" : `Pay ${naira(total)} & activate`}
             </Text>
           </Pressable>
@@ -223,14 +223,14 @@ function Row({
     <View className="flex-row items-center justify-between">
       <Text
         className={`text-sm ${
-          bold ? "text-slate-900 font-bold" : "text-slate-600"
+          bold ? "text-ink font-sans-bold" : "text-ink-2"
         }`}
       >
         {label}
       </Text>
       <Text
         className={`text-sm ${
-          bold ? "text-slate-900 font-bold" : "text-slate-900 font-medium"
+          bold ? "text-ink font-sans-bold" : "text-ink font-sans-medium"
         }`}
       >
         {value}
@@ -260,27 +260,27 @@ function PaymentRow({
     <Pressable
       onPress={onPress}
       className={`bg-white rounded-2xl px-4 py-3 flex-row items-center gap-3 border-2 ${
-        selected ? "border-emerald-600" : "border-slate-200"
+        selected ? "border-primary" : "border-line"
       } active:opacity-80`}
     >
       <View
         className={`w-12 h-7 ${brandBg} rounded items-center justify-center border ${
-          brandBg === "bg-white" ? "border-slate-300" : "border-transparent"
+          brandBg === "bg-white" ? "border-line" : "border-transparent"
         }`}
       >
-        <Text className={`${brandTextColor} text-[10px] font-bold`}>
+        <Text className={`${brandTextColor} text-[10px] font-sans-bold`}>
           {brand}
         </Text>
       </View>
       <View className="flex-1">
-        <Text className="text-slate-900 font-semibold text-sm">{title}</Text>
-        <Text className="text-slate-500 text-xs mt-0.5">{subtitle}</Text>
+        <Text className="text-ink font-sans-semibold text-sm">{title}</Text>
+        <Text className="text-ink-3 text-xs mt-0.5">{subtitle}</Text>
       </View>
       <View
         className={`w-5 h-5 rounded-full border-2 items-center justify-center ${
           selected
-            ? "bg-emerald-600 border-emerald-600"
-            : "bg-white border-slate-300"
+            ? "bg-primary border-primary"
+            : "bg-white border-line"
         }`}
       >
         {selected && <View className="w-2 h-2 rounded-full bg-white" />}

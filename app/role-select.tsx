@@ -27,9 +27,9 @@ const CARDS: RoleCard[] = [
     id: "BUYER",
     badge: "BUYER · RENTER",
     badgeTone: "emerald",
-    iconBg: "bg-emerald-100",
+    iconBg: "bg-primary-soft",
     iconName: "key-outline",
-    iconColor: "#047857", // emerald-700
+    iconColor: "#1f6f43", // emerald-700
     title: "I'm looking for a home",
     desc: "Search verified listings, save favourites, make offers, and book viewings.",
     chips: ["Search & save", "Mortgage tools", "Make offers"],
@@ -39,7 +39,7 @@ const CARDS: RoleCard[] = [
     id: "AGENT",
     badge: "AGENT",
     badgeTone: "slate",
-    iconBg: "bg-slate-100",
+    iconBg: "bg-cream-2",
     iconName: "business-outline",
     iconColor: "#334155", // slate-700
     title: "I'm an estate agent",
@@ -64,7 +64,7 @@ const CARDS: RoleCard[] = [
 ];
 
 const badgeClasses: Record<RoleCard["badgeTone"], string> = {
-  emerald: "bg-emerald-700",
+  emerald: "bg-primary",
   slate: "bg-slate-900",
   amber: "bg-amber-500",
 };
@@ -84,7 +84,7 @@ export default function RoleSelectScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#f5f0eb]">
+    <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         {/* Top bar — back left, step counter right */}
@@ -94,9 +94,9 @@ export default function RoleSelectScreen() {
             hitSlop={12}
             className="w-9 h-9 rounded-full bg-white/70 items-center justify-center"
           >
-            <Text className="text-slate-700 text-xl">‹</Text>
+            <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
-          <Text className="text-slate-500 text-sm font-medium">Step 1 of 3</Text>
+          <Text className="text-ink-3 text-sm font-sans-medium">Step 1 of 3</Text>
         </View>
 
         <ScrollView
@@ -104,11 +104,11 @@ export default function RoleSelectScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Heading */}
-          <Text className="text-slate-900 font-serif text-3xl mt-6 leading-[36px]">
+          <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
             How will you use{"\n"}
-            <Text className="italic">propertyloop</Text>?
+            <Text className="font-serif-italic">propertyloop</Text>?
           </Text>
-          <Text className="text-slate-500 text-sm mt-2 leading-5">
+          <Text className="text-ink-3 text-sm mt-2 leading-5">
             Pick one to start — you can add other roles later from settings.
           </Text>
 
@@ -126,12 +126,12 @@ export default function RoleSelectScreen() {
         </ScrollView>
 
         {/* Sticky CTA */}
-        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-[#f5f0eb]">
+        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
           <Pressable
             onPress={handleContinue}
-            className="bg-emerald-700 rounded-full py-4 items-center active:opacity-80"
+            className="bg-primary rounded-full py-4 items-center active:opacity-80"
           >
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-white font-sans-semibold text-base">
               {current.ctaLabel}
             </Text>
           </Pressable>
@@ -155,25 +155,25 @@ function RoleCardView({
       onPress={onPress}
       className={`rounded-3xl p-5 border-2 active:opacity-90 ${
         selected
-          ? "bg-emerald-50 border-emerald-600"
-          : "bg-white border-slate-200"
+          ? "bg-primary-soft border-primary"
+          : "bg-white border-line"
       }`}
     >
       {/* Top row: badge pill (left) + check circle (right) */}
       <View className="flex-row items-start justify-between">
         <View className={`${badgeClasses[card.badgeTone]} px-3 py-1 rounded-full`}>
-          <Text className="text-white text-[10px] font-bold tracking-wider">
+          <Text className="text-white text-[10px] font-sans-bold tracking-wider">
             {card.badge}
           </Text>
         </View>
         <View
           className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
             selected
-              ? "bg-emerald-600 border-emerald-600"
-              : "bg-white border-slate-300"
+              ? "bg-primary border-primary"
+              : "bg-white border-line"
           }`}
         >
-          {selected && <Text className="text-white text-xs font-bold">✓</Text>}
+          {selected && <Text className="text-white text-xs font-sans-bold">✓</Text>}
         </View>
       </View>
 
@@ -184,22 +184,22 @@ function RoleCardView({
         >
           <Ionicons name={card.iconName} size={24} color={card.iconColor} />
         </View>
-        <Text className="text-slate-900 font-bold text-lg flex-1">
+        <Text className="text-ink font-sans-bold text-lg flex-1">
           {card.title}
         </Text>
       </View>
 
       {/* Description */}
-      <Text className="text-slate-600 text-sm leading-5 mt-3">{card.desc}</Text>
+      <Text className="text-ink-2 text-sm leading-5 mt-3">{card.desc}</Text>
 
       {/* Feature chips */}
       <View className="flex-row flex-wrap gap-2 mt-3">
         {card.chips.map((chip) => (
           <View
             key={chip}
-            className="px-3 py-1.5 bg-slate-100 rounded-full"
+            className="px-3 py-1.5 bg-cream-2 rounded-full"
           >
-            <Text className="text-slate-700 text-xs font-medium">{chip}</Text>
+            <Text className="text-ink-2 text-xs font-sans-medium">{chip}</Text>
           </View>
         ))}
       </View>
@@ -207,8 +207,8 @@ function RoleCardView({
       {/* Footnote — verification requirement */}
       {card.footnote && (
         <View className="flex-row items-center gap-1.5 mt-3">
-          <Text className="text-slate-400 text-base">○</Text>
-          <Text className="text-slate-500 text-xs">{card.footnote}</Text>
+          <Text className="text-ink-3 text-base">○</Text>
+          <Text className="text-ink-3 text-xs">{card.footnote}</Text>
         </View>
       )}
     </Pressable>

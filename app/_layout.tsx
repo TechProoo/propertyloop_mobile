@@ -3,8 +3,27 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
+import { useEffect } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+// v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
+// bundle the weights you actually use (instead of all 18 variants).
+import { useFonts } from '@expo-google-fonts/inter/useFonts';
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display/400Regular';
+import { PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display/400Regular_Italic';
+import { PlayfairDisplay_600SemiBold } from '@expo-google-fonts/playfair-display/600SemiBold';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+
+// Keep the splash visible until fonts have loaded — flashing a system
+// font for one frame and then re-rendering in Inter/Playfair is jarring
+// enough to undermine the whole design system.
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* already hidden — fine */
+});
 
 export const unstable_settings = {
   anchor: 'welcome',
@@ -12,6 +31,28 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    PlayfairDisplay_400Regular,
+    PlayfairDisplay_400Regular_Italic,
+    PlayfairDisplay_600SemiBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError]);
+
+  // Hold render until fonts resolve (or error out). With expo-splash-screen
+  // up, the user sees the splash, not a blank white screen.
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

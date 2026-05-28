@@ -82,7 +82,7 @@ export default function IntroScreen() {
   const handleSkip = () => router.push("/(tabs)" as Href);
 
   return (
-    <View className="flex-1 bg-[#f5f0eb]">
+    <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         {/* Top bar — logo left, Skip right */}
@@ -93,7 +93,7 @@ export default function IntroScreen() {
             contentFit="contain"
           />
           <Pressable onPress={handleSkip} hitSlop={12}>
-            <Text className="text-slate-600 text-sm font-medium">Skip</Text>
+            <Text className="text-ink-2 text-sm font-sans-medium">Skip</Text>
           </Pressable>
         </View>
 
@@ -110,42 +110,42 @@ export default function IntroScreen() {
 
           {/* Floating inspector card — sits below the image, overlapping */}
           <View className="absolute left-8 right-8 bottom-4 bg-white rounded-2xl px-3 py-2.5 flex-row items-center gap-2.5 shadow-md">
-            <View className="w-9 h-9 rounded-full bg-emerald-100 items-center justify-center">
-              <Text className="text-emerald-700 font-bold text-xs">
+            <View className="w-9 h-9 rounded-full bg-primary-soft items-center justify-center">
+              <Text className="text-primary-ink font-sans-bold text-xs">
                 {slide.card.initials}
               </Text>
             </View>
             <View className="flex-1">
               <Text
-                className="text-slate-900 text-xs font-semibold"
+                className="text-ink text-xs font-sans-semibold"
                 numberOfLines={1}
               >
                 {slide.card.title}
               </Text>
               <Text
-                className="text-slate-500 text-[11px] mt-0.5"
+                className="text-ink-3 text-[11px] mt-0.5"
                 numberOfLines={1}
               >
                 {slide.card.subtitle}
               </Text>
             </View>
-            <View className="w-6 h-6 rounded-full bg-emerald-600 items-center justify-center">
-              <Text className="text-white text-xs font-bold">✓</Text>
+            <View className="w-6 h-6 rounded-full bg-primary items-center justify-center">
+              <Text className="text-white text-xs font-sans-bold">✓</Text>
             </View>
           </View>
         </View>
 
         {/* Copy block */}
         <View className="px-5 mt-8">
-          <Text className="text-emerald-700 text-[11px] font-bold tracking-[1.5px]">
+          <Text className="text-primary text-[11px] font-sans-bold tracking-[1.5px]">
             {slide.eyebrow}
           </Text>
-          <Text className="text-slate-900 font-serif text-[2rem] leading-[38px] mt-3">
+          <Text className="text-ink font-serif text-[2rem] leading-[38px] mt-3">
             {slide.titlePre}
-            <Text className="italic">{slide.titleItalic}</Text>
+            <Text className="font-serif-italic">{slide.titleItalic}</Text>
             {slide.titlePost}
           </Text>
-          <Text className="text-slate-500 text-sm leading-6 mt-4">
+          <Text className="text-ink-3 text-sm leading-6 mt-4">
             {slide.subtitle}
           </Text>
         </View>
@@ -153,14 +153,14 @@ export default function IntroScreen() {
         {/* Bottom row — page counter + Continue */}
         <View className="flex-1" />
         <View className="px-5 pb-2 flex-row items-center justify-between">
-          <Text className="text-slate-500 text-sm">
+          <Text className="text-ink-3 text-sm">
             {page + 1} / {SLIDES.length}
           </Text>
           <Pressable
             onPress={handleContinue}
-            className="bg-emerald-700 rounded-full pl-6 pr-5 py-3 flex-row items-center gap-2 active:opacity-80"
+            className="bg-primary rounded-full pl-6 pr-5 py-3 flex-row items-center gap-2 active:opacity-80"
           >
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-white font-sans-semibold text-base">
               {isLast ? "Get started" : "Continue"}
             </Text>
             <Text className="text-white text-base">›</Text>

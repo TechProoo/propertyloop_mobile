@@ -137,7 +137,7 @@ export default function SignupScreen() {
     Alert.alert("Coming soon", `${provider} sign-in is not available yet.`);
 
   return (
-    <View className="flex-1 bg-[#f5f0eb]">
+    <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         <KeyboardAvoidingView
@@ -151,10 +151,10 @@ export default function SignupScreen() {
             {/* Top bar */}
             <View className="flex-row items-center justify-between pt-2">
               <Pressable onPress={() => router.back()} hitSlop={12}>
-                <Text className="text-slate-700 text-xl">‹</Text>
+                <Text className="text-ink-2 text-xl">‹</Text>
               </Pressable>
               <Pressable hitSlop={12}>
-                <Text className="text-slate-600 text-sm font-medium">Help</Text>
+                <Text className="text-ink-2 text-sm font-sans-medium">Help</Text>
               </Pressable>
             </View>
 
@@ -167,16 +167,16 @@ export default function SignupScreen() {
             </View>
 
             {/* Heading */}
-            <Text className="text-slate-900 font-serif text-3xl mt-6 leading-[36px]">
-              Let&apos;s get you <Text className="italic">home</Text>.
+            <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
+              Let&apos;s get you <Text className="font-serif-italic">home</Text>.
             </Text>
-            <Text className="text-slate-500 text-sm mt-2 leading-5">
-              Signing up as <Text className="font-semibold">{ROLE_LABEL[role]}</Text>.{" "}
+            <Text className="text-ink-3 text-sm mt-2 leading-5">
+              Signing up as <Text className="font-sans-semibold">{ROLE_LABEL[role]}</Text>.{" "}
               <Pressable
                 onPress={() => router.replace("/role-select" as Href)}
                 hitSlop={6}
               >
-                <Text className="text-emerald-700 font-semibold text-sm">
+                <Text className="text-primary font-sans-semibold text-sm">
                   Change
                 </Text>
               </Pressable>
@@ -288,9 +288,9 @@ export default function SignupScreen() {
             <Pressable
               onPress={handleSignup}
               disabled={submitting}
-              className="bg-emerald-700 rounded-full py-4 items-center mt-6 active:opacity-80 disabled:opacity-60"
+              className="bg-primary rounded-full py-4 items-center mt-6 active:opacity-80 disabled:opacity-60"
             >
-              <Text className="text-white font-semibold text-base">
+              <Text className="text-white font-sans-semibold text-base">
                 {submitting ? "Creating account…" : "Continue"}
               </Text>
             </Pressable>
@@ -298,7 +298,7 @@ export default function SignupScreen() {
             {/* Divider */}
             <View className="flex-row items-center gap-3 my-6">
               <View className="flex-1 h-px bg-slate-300" />
-              <Text className="text-slate-500 text-xs font-semibold">OR</Text>
+              <Text className="text-ink-3 text-xs font-sans-semibold">OR</Text>
               <View className="flex-1 h-px bg-slate-300" />
             </View>
 
@@ -316,16 +316,16 @@ export default function SignupScreen() {
               />
             </View>
 
-            <Text className="text-slate-500 text-[11px] text-center mt-6">
+            <Text className="text-ink-3 text-[11px] text-center mt-6">
               By continuing, you agree to our Terms &amp; Privacy Policy.
             </Text>
 
             <View className="flex-row justify-center mt-5">
-              <Text className="text-slate-600 text-sm">
+              <Text className="text-ink-2 text-sm">
                 Already have an account?{" "}
               </Text>
               <Pressable onPress={() => router.push("/(tabs)" as Href)}>
-                <Text className="text-emerald-700 font-semibold text-sm">
+                <Text className="text-primary font-sans-semibold text-sm">
                   Log in
                 </Text>
               </Pressable>
@@ -344,11 +344,11 @@ type FieldProps = React.ComponentProps<typeof TextInput> & { label: string };
 function Field({ label, ...inputProps }: FieldProps) {
   return (
     <View>
-      <Text className="text-slate-700 text-xs font-semibold mb-1.5">{label}</Text>
+      <Text className="text-ink-2 text-xs font-sans-semibold mb-1.5">{label}</Text>
       <TextInput
         {...inputProps}
-        placeholderTextColor="#94a3b8"
-        className="bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-900 text-base"
+        placeholderTextColor="#7f857f"
+        className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-base"
       />
     </View>
   );
@@ -356,7 +356,7 @@ function Field({ label, ...inputProps }: FieldProps) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <Text className="text-emerald-700 text-[11px] font-bold tracking-[1.5px] mt-6 mb-3">
+    <Text className="text-primary text-[11px] font-sans-bold tracking-[1.5px] mt-6 mb-3">
       {String(children).toUpperCase()}
     </Text>
   );
@@ -374,12 +374,12 @@ function SocialButton({
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white border border-slate-200 rounded-full py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
+      className="bg-white border border-line rounded-full py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
     >
-      <Text className="text-slate-900 text-base font-bold w-5 text-center">
+      <Text className="text-ink text-base font-sans-bold w-5 text-center">
         {glyph}
       </Text>
-      <Text className="text-slate-900 font-semibold text-base">{label}</Text>
+      <Text className="text-ink font-sans-semibold text-base">{label}</Text>
     </Pressable>
   );
 }

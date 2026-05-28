@@ -82,13 +82,13 @@ export default function BuyerPreferencesScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#f5f0eb]">
+    <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         {/* Top bar */}
         <View className="flex-row items-center justify-between px-5 pt-2">
           <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Text className="text-slate-700 text-xl">‹</Text>
+            <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
           <Pressable
             onPress={() =>
@@ -99,7 +99,7 @@ export default function BuyerPreferencesScreen() {
             }
             hitSlop={12}
           >
-            <Text className="text-slate-600 text-sm font-medium">Skip</Text>
+            <Text className="text-ink-2 text-sm font-sans-medium">Skip</Text>
           </Pressable>
         </View>
 
@@ -108,10 +108,10 @@ export default function BuyerPreferencesScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Heading */}
-          <Text className="text-slate-900 font-serif text-3xl mt-6 leading-[36px]">
-            What brings <Text className="italic">you</Text> here?
+          <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
+            What brings <Text className="font-serif-italic">you</Text> here?
           </Text>
-          <Text className="text-slate-500 text-sm mt-2 leading-5">
+          <Text className="text-ink-3 text-sm mt-2 leading-5">
             We'll tailor your home feed. You can change this any time.
           </Text>
 
@@ -125,38 +125,38 @@ export default function BuyerPreferencesScreen() {
                   onPress={() => setIntent(opt.id)}
                   className={`rounded-3xl p-4 flex-row items-center gap-3 border-2 active:opacity-80 ${
                     selected
-                      ? "bg-emerald-50 border-emerald-600"
-                      : "bg-white border-slate-200"
+                      ? "bg-primary-soft border-primary"
+                      : "bg-white border-line"
                   }`}
                 >
                   <View
                     className={`w-11 h-11 rounded-2xl items-center justify-center ${
-                      selected ? "bg-emerald-600" : "bg-emerald-50"
+                      selected ? "bg-primary" : "bg-primary-soft"
                     }`}
                   >
                     <Ionicons
                       name={opt.iconName}
                       size={22}
-                      color={selected ? "#ffffff" : "#047857"}
+                      color={selected ? "#ffffff" : "#1f6f43"}
                     />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-slate-900 font-bold text-base">
+                    <Text className="text-ink font-sans-bold text-base">
                       {opt.title}
                     </Text>
-                    <Text className="text-slate-500 text-xs mt-0.5">
+                    <Text className="text-ink-3 text-xs mt-0.5">
                       {opt.desc}
                     </Text>
                   </View>
                   <View
                     className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
                       selected
-                        ? "bg-emerald-600 border-emerald-600"
-                        : "border-slate-300"
+                        ? "bg-primary border-primary"
+                        : "border-line"
                     }`}
                   >
                     {selected && (
-                      <Text className="text-white text-xs font-bold">✓</Text>
+                      <Text className="text-white text-xs font-sans-bold">✓</Text>
                     )}
                   </View>
                 </Pressable>
@@ -167,12 +167,12 @@ export default function BuyerPreferencesScreen() {
           {/* Areas */}
           <View className="mt-7">
             <View className="flex-row items-baseline justify-between">
-              <Text className="text-slate-900 font-bold text-base">
+              <Text className="text-ink font-sans-bold text-base">
                 Areas you like
               </Text>
-              <Text className="text-slate-500 text-xs">
+              <Text className="text-ink-3 text-xs">
                 pick up to {MAX_AREAS} ·{" "}
-                <Text className="text-emerald-700 font-semibold">
+                <Text className="text-primary font-sans-semibold">
                   {areas.length}/{MAX_AREAS}
                 </Text>
               </Text>
@@ -191,13 +191,13 @@ export default function BuyerPreferencesScreen() {
                       selected
                         ? "bg-slate-900 border-slate-900"
                         : disabled
-                          ? "bg-white border-slate-200 opacity-40"
-                          : "bg-white border-slate-200"
+                          ? "bg-white border-line opacity-40"
+                          : "bg-white border-line"
                     } active:opacity-80`}
                   >
                     <Text
-                      className={`text-sm font-medium ${
-                        selected ? "text-white" : "text-slate-700"
+                      className={`text-sm font-sans-medium ${
+                        selected ? "text-white" : "text-ink-2"
                       }`}
                     >
                       {a}
@@ -210,23 +210,23 @@ export default function BuyerPreferencesScreen() {
 
           {/* Budget placeholder — TODO: add range slider */}
           <View className="mt-7">
-            <Text className="text-slate-900 font-bold text-base">
+            <Text className="text-ink font-sans-bold text-base">
               Yearly budget
             </Text>
-            <Text className="text-slate-500 text-xs mt-1">
+            <Text className="text-ink-3 text-xs mt-1">
               Coming soon — we'll add budget filtering shortly.
             </Text>
           </View>
         </ScrollView>
 
         {/* Sticky bottom CTA */}
-        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-[#f5f0eb]">
+        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
           <Pressable
             onPress={handleContinue}
             disabled={!canContinue}
-            className="bg-emerald-700 rounded-full py-4 items-center active:opacity-80 disabled:opacity-50"
+            className="bg-primary rounded-full py-4 items-center active:opacity-80 disabled:opacity-50"
           >
-            <Text className="text-white font-semibold text-base">
+            <Text className="text-white font-sans-semibold text-base">
               Show me homes
             </Text>
           </Pressable>
