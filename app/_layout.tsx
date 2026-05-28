@@ -20,6 +20,7 @@ export default function RootLayout() {
         <Stack.Screen name="intro" options={{ headerShown: false }} />
         <Stack.Screen name="role-select" options={{ headerShown: false }} />
         <Stack.Screen name="buyer-preferences" options={{ headerShown: false }} />
+        <Stack.Screen name="agent-setup" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
