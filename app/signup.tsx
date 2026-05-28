@@ -36,6 +36,14 @@ export default function SignupScreen() {
     role?: string;
     areas?: string;
     intent?: string;
+    // Forwarded from /agent-setup
+    agencyName?: string;
+    licenseNumber?: string;
+    businessAddress?: string;
+    yearsExperience?: string;
+    languages?: string;
+    specialties?: string;
+    bio?: string;
   }>();
   const role: Role =
     params.role === "AGENT" || params.role === "VENDOR" ? params.role : "BUYER";
@@ -52,10 +60,12 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
 
-  // Agent-specific
-  const [agencyName, setAgencyName] = useState("");
-  const [licenseNumber, setLicenseNumber] = useState("");
-  const [businessAddress, setBusinessAddress] = useState("");
+  // Agent-specific — pre-filled from /agent-setup if the user came through it
+  const [agencyName, setAgencyName] = useState(params.agencyName ?? "");
+  const [licenseNumber, setLicenseNumber] = useState(params.licenseNumber ?? "");
+  const [businessAddress, setBusinessAddress] = useState(
+    params.businessAddress ?? "",
+  );
 
   // Vendor-specific
   const [serviceCategory, setServiceCategory] = useState("");
