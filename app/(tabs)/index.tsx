@@ -573,7 +573,7 @@ function ShortletsSection() {
         {SHORTLETS.map((s) => (
           <Pressable
             key={s.id}
-            onPress={() => router.push(`/property/${s.id}` as Href)}
+            onPress={() => router.push(`/shortlet/${s.id}` as Href)}
             className="bg-white rounded-[18px] overflow-hidden border-line active:opacity-90"
             style={{ width: 240, borderWidth: 0.5 }}
           >
