@@ -79,6 +79,9 @@ export default function RootLayout() {
         {/* Service Loop (B10, B11) */}
         <Stack.Screen name="services" options={{ headerShown: false }} />
         <Stack.Screen name="book-service" options={{ headerShown: false, presentation: 'modal' }} />
+        {/* Returning user login (R1, R2) */}
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

@@ -45,7 +45,7 @@ export default function WelcomeScreen() {
 
           {/* Secondary CTA */}
           <Pressable
-            onPress={() => router.push("/(tabs)" as Href)}
+            onPress={() => router.push("/login" as Href)}
             className="mt-3 bg-slate-900 border border-slate-700 rounded-full py-4 items-center active:opacity-80"
           >
             <Text className="text-white font-sans-semibold text-base">
