@@ -66,6 +66,12 @@ export default function RootLayout() {
         <Stack.Screen name="agent-pay" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Buyer flow — modal-style sheets pushed from the listing detail */}
+        <Stack.Screen name="book-viewing" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="make-offer" options={{ headerShown: false, presentation: 'modal' }} />
+        {/* Buyer dashboard tributary screens (B4, B5) */}
+        <Stack.Screen name="offers" options={{ headerShown: false }} />
+        <Stack.Screen name="purchase-progress" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
