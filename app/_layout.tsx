@@ -76,6 +76,9 @@ export default function RootLayout() {
         <Stack.Screen name="shortlet/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="shortlet-request" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="rental-application" options={{ headerShown: false, presentation: 'modal' }} />
+        {/* Service Loop (B10, B11) */}
+        <Stack.Screen name="services" options={{ headerShown: false }} />
+        <Stack.Screen name="book-service" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

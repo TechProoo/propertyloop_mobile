@@ -424,9 +424,11 @@ function ServiceLoopSection() {
           <Text className="font-serif-italic text-[17px]">Service Loop</Text>
           <Text className="font-sans-bold"> · people who fix things</Text>
         </Text>
-        <Text className="text-[13px] font-sans-semibold text-primary">
-          Browse all
-        </Text>
+        <Pressable onPress={() => router.push("/services" as Href)} hitSlop={6}>
+          <Text className="text-[13px] font-sans-semibold text-primary">
+            Browse all
+          </Text>
+        </Pressable>
       </View>
       <Text className="px-5 mt-0.5 text-[12.5px] text-ink-3 leading-5">
         Verified vendors · pay through escrow only when the job's done.
@@ -441,7 +443,8 @@ function ServiceLoopSection() {
         {SERVICE_CATEGORIES.map((c) => (
           <Pressable
             key={c.id}
-            className="bg-white rounded-[14px] items-center justify-center gap-1.5 border-line"
+            onPress={() => router.push("/services" as Href)}
+            className="bg-white rounded-[14px] items-center justify-center gap-1.5 border-line active:opacity-90"
             style={{
               width: 76,
               paddingVertical: 14,
@@ -458,8 +461,14 @@ function ServiceLoopSection() {
 
       {/* Featured vendor */}
       <View className="px-4 pt-3">
-        <View
-          className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line"
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/book-service",
+              params: { vendorId: FEATURED_VENDOR.id },
+            } as Href)
+          }
+          className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line active:opacity-90"
           style={{ borderWidth: 0.5 }}
         >
           <PLAvatar initials={FEATURED_VENDOR.initials} size={48} tone="primary" />
@@ -488,10 +497,10 @@ function ServiceLoopSection() {
               From {FEATURED_VENDOR.fromPrice} · book today
             </Text>
           </View>
-          <Pressable className="w-9 h-9 rounded-full bg-primary items-center justify-center">
+          <View className="w-9 h-9 rounded-full bg-primary items-center justify-center">
             <Ionicons name="arrow-forward" size={16} color="#ffffff" />
-          </Pressable>
-        </View>
+          </View>
+        </Pressable>
       </View>
     </>
   );
