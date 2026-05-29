@@ -72,6 +72,10 @@ export default function RootLayout() {
         {/* Buyer dashboard tributary screens (B4, B5) */}
         <Stack.Screen name="offers" options={{ headerShown: false }} />
         <Stack.Screen name="purchase-progress" options={{ headerShown: false }} />
+        {/* Shortlet + rental flow (B7, B8, B9) */}
+        <Stack.Screen name="shortlet/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="shortlet-request" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="rental-application" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
