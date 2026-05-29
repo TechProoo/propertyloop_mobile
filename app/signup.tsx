@@ -324,7 +324,7 @@ export default function SignupScreen() {
               <Text className="text-ink-2 text-sm">
                 Already have an account?{" "}
               </Text>
-              <Pressable onPress={() => router.push("/(tabs)" as Href)}>
+              <Pressable onPress={() => router.push("/login" as Href)}>
                 <Text className="text-primary font-sans-semibold text-sm">
                   Log in
                 </Text>
