@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import {
@@ -265,9 +266,12 @@ function FeaturedCarousel({
       contentContainerClassName="px-5 pt-3 gap-3.5"
     >
       {items.map((c) => (
-        <View
+        <Pressable
           key={c.id}
-          className="bg-white rounded-[20px] overflow-hidden"
+          onPress={() =>
+            router.push(`/property/${c.id}` as Href)
+          }
+          className="bg-white rounded-[20px] overflow-hidden active:opacity-90"
           style={{
             width: 256,
             shadowColor: "#000",
@@ -322,7 +326,7 @@ function FeaturedCarousel({
               </View>
             </View>
           </View>
-        </View>
+        </Pressable>
       ))}
     </ScrollView>
   );
@@ -383,9 +387,10 @@ function RecentlyViewed() {
       contentContainerClassName="px-5 pt-3 gap-2.5"
     >
       {RECENT_ITEMS.map((c) => (
-        <View
+        <Pressable
           key={c.id}
-          className="bg-white rounded-[14px] overflow-hidden border-line"
+          onPress={() => router.push(`/property/${c.id}` as Href)}
+          className="bg-white rounded-[14px] overflow-hidden border-line active:opacity-90"
           style={{ width: 180, borderWidth: 0.5 }}
         >
           <Image
@@ -405,7 +410,7 @@ function RecentlyViewed() {
               {c.area} · {c.ago}
             </Text>
           </View>
-        </View>
+        </Pressable>
       ))}
     </ScrollView>
   );
@@ -496,9 +501,10 @@ function NearbyList({ items }: { items: typeof NEARBY_LEKKI }) {
   return (
     <View className="px-4 pt-2.5 gap-2.5">
       {items.map((r) => (
-        <View
+        <Pressable
           key={r.id}
-          className="flex-row gap-3 p-3 bg-white rounded-2xl"
+          onPress={() => router.push(`/property/${r.id}` as Href)}
+          className="flex-row gap-3 p-3 bg-white rounded-2xl active:opacity-90"
         >
           <Image
             source={picsum(r.imageSeed, 200, 200)}
@@ -538,7 +544,7 @@ function NearbyList({ items }: { items: typeof NEARBY_LEKKI }) {
               ) : null}
             </View>
           </View>
-        </View>
+        </Pressable>
       ))}
     </View>
   );
@@ -565,9 +571,10 @@ function ShortletsSection() {
         contentContainerClassName="px-5 pt-2.5 gap-3.5"
       >
         {SHORTLETS.map((s) => (
-          <View
+          <Pressable
             key={s.id}
-            className="bg-white rounded-[18px] overflow-hidden border-line"
+            onPress={() => router.push(`/property/${s.id}` as Href)}
+            className="bg-white rounded-[18px] overflow-hidden border-line active:opacity-90"
             style={{ width: 240, borderWidth: 0.5 }}
           >
             <View style={{ height: 140 }} className="relative">
@@ -615,7 +622,7 @@ function ShortletsSection() {
               </Text>
               <Text className="text-[11.5px] text-ink-3 mt-0.5">{s.area}</Text>
             </View>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
     </>
