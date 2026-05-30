@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
@@ -74,14 +75,26 @@ export default function ConversationScreen() {
               </Text>
             </View>
           </View>
-          <Pressable className="w-9 h-9 items-center justify-center">
+          <Pressable
+            onPress={() =>
+              Alert.alert("Conversation", "More options coming soon.", [
+                { text: "Mute", style: "cancel" },
+                { text: "Report", style: "destructive" },
+                { text: "Close", style: "cancel" },
+              ])
+            }
+            className="w-9 h-9 items-center justify-center"
+          >
             <Ionicons name="ellipsis-horizontal" size={18} color={INK_2} />
           </Pressable>
         </View>
 
         {/* Pinned listing card */}
         <View className="px-4 pt-2.5">
-          <Pressable className="flex-row items-center gap-2.5 p-2.5 bg-primary-soft rounded-2xl active:opacity-90">
+          <Pressable
+            onPress={() => router.push(`/property/${thread.id}` as Href)}
+            className="flex-row items-center gap-2.5 p-2.5 bg-primary-soft rounded-2xl active:opacity-90"
+          >
             <Image
               source={picsum(thread.pinned.imageSeed)}
               style={{ width: 52, height: 52, borderRadius: 10 }}
@@ -147,7 +160,12 @@ export default function ConversationScreen() {
           className="px-3.5 pt-2 pb-6 flex-row items-center gap-2 bg-cream"
           style={{ borderTopWidth: 0.5, borderTopColor: LINE }}
         >
-          <Pressable className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center">
+          <Pressable
+            onPress={() =>
+              Alert.alert("Attach", "Attach a file or photo — coming soon.")
+            }
+            className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"
+          >
             <Ionicons name="add" size={18} color={INK_2} />
           </Pressable>
           <View className="flex-1 bg-cream-2 rounded-full px-4 py-2.5">

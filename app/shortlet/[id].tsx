@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Share, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -40,6 +40,13 @@ function picsum(seed: string) {
 export default function ShortletDetailScreen() {
   useLocalSearchParams<{ id?: string }>();
   const [guests, setGuests] = useState(2);
+  const [saved, setSaved] = useState(false);
+
+  const handleShare = () =>
+    Share.share({
+      title: SHORTLET.title,
+      message: `${SHORTLET.title} — ${SHORTLET.nightlyPrice}/night · ${SHORTLET.address}`,
+    }).catch(() => {});
 
   return (
     <View className="flex-1 bg-cream">
@@ -78,16 +85,22 @@ export default function ShortletDetailScreen() {
             </Pressable>
             <View className="flex-row gap-2">
               <Pressable
+                onPress={handleShare}
                 className="w-10 h-10 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
               >
                 <Ionicons name="share-outline" size={18} color="#ffffff" />
               </Pressable>
               <Pressable
+                onPress={() => setSaved((s) => !s)}
                 className="w-10 h-10 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
               >
-                <Ionicons name="heart-outline" size={18} color="#ffffff" />
+                <Ionicons
+                  name={saved ? "heart" : "heart-outline"}
+                  size={18}
+                  color={saved ? "#ff5a5f" : "#ffffff"}
+                />
               </Pressable>
             </View>
           </View>

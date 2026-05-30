@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -80,6 +80,9 @@ export default function ExploreMapScreen() {
       >
         <View className="flex-row gap-2 px-4 pt-2">
           <Pressable
+            onPress={() =>
+              Alert.alert("Location", "Area search picker coming soon.")
+            }
             className="flex-1 bg-white rounded-full px-3.5 py-3 flex-row items-center gap-2.5"
             style={{
               shadowColor: "#000",
@@ -98,6 +101,9 @@ export default function ExploreMapScreen() {
             </Text>
           </Pressable>
           <Pressable
+            onPress={() =>
+              Alert.alert("Filters", "Filter sheet coming soon.")
+            }
             className="w-[42px] h-[42px] rounded-full bg-white items-center justify-center"
             style={{
               shadowColor: "#000",
@@ -117,8 +123,20 @@ export default function ExploreMapScreen() {
         pointerEvents="box-none"
         style={{ position: "absolute", top: 220, right: 16, gap: 8 }}
       >
-        <MapControl icon="locate-outline" color={PRIMARY} />
-        <MapControl icon="layers-outline" color={INK} />
+        <MapControl
+          icon="locate-outline"
+          color={PRIMARY}
+          onPress={() =>
+            Alert.alert("Locate me", "Centring on your location requires permission.")
+          }
+        />
+        <MapControl
+          icon="layers-outline"
+          color={INK}
+          onPress={() =>
+            Alert.alert("Layers", "Satellite / standard toggle coming soon.")
+          }
+        />
       </View>
 
       {/* Bottom sheet with swipeable cards */}
@@ -234,12 +252,15 @@ export default function ExploreMapScreen() {
 function MapControl({
   icon,
   color,
+  onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
+  onPress?: () => void;
 }) {
   return (
     <Pressable
+      onPress={onPress}
       className="w-[42px] h-[42px] rounded-full bg-white items-center justify-center"
       style={{
         shadowColor: "#000",

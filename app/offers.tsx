@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -229,9 +229,41 @@ function OfferCard({ offer }: { offer: Offer }) {
           className="flex-row"
           style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}
         >
-          <ActionBtn label="Decline" soft />
-          <ActionBtn label="Counter" color={PRIMARY} />
-          <ActionBtn label="Accept" filled />
+          <ActionBtn
+            label="Decline"
+            soft
+            onPress={() =>
+              Alert.alert(
+                "Decline counter?",
+                `Decline the ₦${offer.counter} counter on ${offer.home}?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Decline", style: "destructive" },
+                ],
+              )
+            }
+          />
+          <ActionBtn
+            label="Counter"
+            color={PRIMARY}
+            onPress={() =>
+              Alert.alert("Counter", "Counter-offer sheet coming soon.")
+            }
+          />
+          <ActionBtn
+            label="Accept"
+            filled
+            onPress={() =>
+              Alert.alert(
+                "Accept counter?",
+                `Accept the seller's ${offer.counter} counter on ${offer.home}? This kicks off the purchase process.`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Accept", style: "default" },
+                ],
+              )
+            }
+          />
         </View>
       )}
     </View>
@@ -279,16 +311,19 @@ function ActionBtn({
   soft,
   filled,
   color,
+  onPress,
 }: {
   label: string;
   soft?: boolean;
   filled?: boolean;
   color?: string;
+  onPress?: () => void;
 }) {
   const bg = filled ? PRIMARY : "transparent";
   const fg = filled ? "#ffffff" : soft ? INK_3 : color ?? "#1a2120";
   return (
     <Pressable
+      onPress={onPress}
       className="flex-1 items-center justify-center active:opacity-80"
       style={{
         backgroundColor: bg,

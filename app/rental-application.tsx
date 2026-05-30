@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,7 +53,13 @@ export default function RentalApplicationScreen() {
         <Text className="flex-1 text-center text-[15px] font-sans-bold text-ink">
           Rental application
         </Text>
-        <Pressable hitSlop={8} style={{ width: 50 }}>
+        <Pressable
+          hitSlop={8}
+          style={{ width: 50 }}
+          onPress={() =>
+            Alert.alert("Saved", "Your draft application has been saved.")
+          }
+        >
           <Text className="text-xs font-sans-bold text-primary text-right">
             Save
           </Text>
