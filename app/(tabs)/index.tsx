@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   Linking,
   Pressable,
   ScrollView,
@@ -110,7 +111,15 @@ function Header() {
         </Text>
       </View>
       <View className="flex-row gap-2">
-        <Pressable className="w-10 h-10 rounded-full bg-cream-2 items-center justify-center">
+        <Pressable
+          onPress={() =>
+            Alert.alert(
+              "Notifications",
+              "Your activity feed will appear here.",
+            )
+          }
+          className="w-10 h-10 rounded-full bg-cream-2 items-center justify-center"
+        >
           <Ionicons name="notifications-outline" size={18} color={INK} />
           <View
             className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent"
@@ -293,7 +302,14 @@ function FeaturedCarousel({
                 </Text>
               </View>
             )}
-            <Pressable className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 items-center justify-center">
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                Alert.alert("Saved", `${c.title} added to your shortlist.`);
+              }}
+              className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 items-center justify-center"
+              hitSlop={6}
+            >
               <Ionicons name="heart-outline" size={16} color={INK} />
             </Pressable>
           </View>
@@ -744,7 +760,15 @@ function LogbookTeaser() {
         </View>
       </View>
 
-      <Pressable className="mt-3.5 self-start bg-primary rounded-full px-4 py-2.5 flex-row items-center gap-1.5">
+      <Pressable
+        onPress={() =>
+          Alert.alert(
+            "Property Logbook",
+            "Every property carries a permanent digital service history — repairs, inspections, and receipts recorded by verified vendors. A deeper how-it-works screen is coming soon.",
+          )
+        }
+        className="mt-3.5 self-start bg-primary rounded-full px-4 py-2.5 flex-row items-center gap-1.5"
+      >
         <Text className="text-[12.5px] font-sans-bold text-white">
           How it works
         </Text>

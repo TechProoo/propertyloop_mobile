@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -113,10 +114,20 @@ export default function BookViewingScreen() {
           >
             <Text className="font-serif text-[20px] text-ink">May 2026</Text>
             <View className="flex-row gap-1.5">
-              <Pressable className="w-[30px] h-[30px] rounded-full bg-cream-2 items-center justify-center">
+              <Pressable
+                onPress={() =>
+                  Alert.alert("Calendar", "Month navigation coming soon.")
+                }
+                className="w-[30px] h-[30px] rounded-full bg-cream-2 items-center justify-center"
+              >
                 <Ionicons name="chevron-back" size={14} color={INK_2} />
               </Pressable>
-              <Pressable className="w-[30px] h-[30px] rounded-full bg-cream-2 items-center justify-center">
+              <Pressable
+                onPress={() =>
+                  Alert.alert("Calendar", "Month navigation coming soon.")
+                }
+                className="w-[30px] h-[30px] rounded-full bg-cream-2 items-center justify-center"
+              >
                 <Ionicons name="chevron-forward" size={14} color={INK_2} />
               </Pressable>
             </View>

@@ -153,7 +153,15 @@ export default function SignupScreen() {
               <Pressable onPress={() => router.back()} hitSlop={12}>
                 <Text className="text-ink-2 text-xl">‹</Text>
               </Pressable>
-              <Pressable hitSlop={12}>
+              <Pressable
+                hitSlop={12}
+                onPress={() =>
+                  Alert.alert(
+                    "Help",
+                    "Need a hand signing up? Reach our team at +234 705 305 3040 (9am–6pm WAT).",
+                  )
+                }
+              >
                 <Text className="text-ink-2 text-sm font-sans-medium">Help</Text>
               </Pressable>
             </View>

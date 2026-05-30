@@ -1,6 +1,6 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { Stack, router } from "expo-router";
+import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
@@ -125,7 +125,15 @@ export default function PurchaseProgressScreen() {
               {PURCHASE.pendingAction.detail}
             </Text>
           </View>
-          <Pressable className="bg-primary rounded-full px-3.5 py-2.5 active:opacity-80">
+          <Pressable
+            onPress={() =>
+              Alert.alert(
+                "Sign document",
+                "Document e-signature flow coming soon.",
+              )
+            }
+            className="bg-primary rounded-full px-3.5 py-2.5 active:opacity-80"
+          >
             <Text className="text-[12px] font-sans-bold text-white">Sign</Text>
           </Pressable>
         </View>
@@ -150,7 +158,10 @@ export default function PurchaseProgressScreen() {
                   {p.role}
                 </Text>
               </View>
-              <Pressable className="w-[34px] h-[34px] rounded-full bg-cream-2 items-center justify-center">
+              <Pressable
+                onPress={() => router.push("/conversation/chinwe" as Href)}
+                className="w-[34px] h-[34px] rounded-full bg-cream-2 items-center justify-center"
+              >
                 <Ionicons name="chatbubble-outline" size={16} color={INK_2} />
               </Pressable>
             </View>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +19,23 @@ function picsum(seed: string) {
 
 export default function SavedScreen() {
   const [tab, setTab] = useState<(typeof SAVED_TABS)[number]["id"]>("all");
+  const [unsaved, setUnsaved] = useState<Set<string>>(new Set());
+
+  const list = useMemo(
+    () => SAVED_LISTINGS.filter((l) => !unsaved.has(l.id)),
+    [unsaved],
+  );
+
+  const handleUnsave = (id: string, title: string) => {
+    Alert.alert("Remove from shortlist?", title, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => setUnsaved((s) => new Set(s).add(id)),
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -74,8 +91,8 @@ export default function SavedScreen() {
 
         {/* Saved cards */}
         <View className="px-5 pt-4 gap-3.5">
-          {SAVED_LISTINGS.map((c) => (
-            <SavedCard key={c.id} card={c} />
+          {list.map((c) => (
+            <SavedCard key={c.id} card={c} onUnsave={handleUnsave} />
           ))}
 
           {/* Empty-state / collection prompt */}
@@ -107,7 +124,13 @@ export default function SavedScreen() {
   );
 }
 
-function SavedCard({ card }: { card: SavedListing }) {
+function SavedCard({
+  card,
+  onUnsave,
+}: {
+  card: SavedListing;
+  onUnsave: (id: string, title: string) => void;
+}) {
   return (
     <Pressable
       onPress={() => router.push(`/property/${card.id}` as Href)}
@@ -133,7 +156,14 @@ function SavedCard({ card }: { card: SavedListing }) {
               </Text>
               <Text className="text-xs text-ink-3 mt-0.5">{card.area}</Text>
             </View>
-            <Pressable hitSlop={6} className="w-7 h-7 items-center justify-center">
+            <Pressable
+              hitSlop={6}
+              className="w-7 h-7 items-center justify-center"
+              onPress={(e) => {
+                e.stopPropagation();
+                onUnsave(card.id, card.title);
+              }}
+            >
               <Ionicons name="heart" size={19} color={PRIMARY} />
             </Pressable>
           </View>

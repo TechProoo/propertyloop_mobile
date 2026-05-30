@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +19,13 @@ function picsum(seed: string, w = 1200, h = 900) {
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const listing = getSaleListing(id);
+  const [saved, setSaved] = useState(false);
+
+  const handleShare = () =>
+    Share.share({
+      title: listing.title,
+      message: `${listing.title} — ${listing.priceLabel} · ${listing.area}`,
+    }).catch(() => {});
 
   return (
     <View className="flex-1 bg-cream">
@@ -59,16 +67,22 @@ export default function ListingDetailScreen() {
             </Pressable>
             <View className="flex-row gap-2">
               <Pressable
+                onPress={handleShare}
                 className="w-10 h-10 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
               >
                 <Ionicons name="share-outline" size={18} color="#ffffff" />
               </Pressable>
               <Pressable
+                onPress={() => setSaved((s) => !s)}
                 className="w-10 h-10 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
               >
-                <Ionicons name="heart-outline" size={18} color="#ffffff" />
+                <Ionicons
+                  name={saved ? "heart" : "heart-outline"}
+                  size={18}
+                  color={saved ? "#ff5a5f" : "#ffffff"}
+                />
               </Pressable>
             </View>
           </View>
@@ -172,7 +186,15 @@ export default function ListingDetailScreen() {
                 Open to <Text className="font-sans-bold">offers</Text> · area
                 median {listing.areaMedianPerSqm}
               </Text>
-              <Pressable className="flex-row items-center gap-1">
+              <Pressable
+                onPress={() =>
+                  Alert.alert(
+                    "Comparable sales",
+                    "Recent sales in this area will appear here.",
+                  )
+                }
+                className="flex-row items-center gap-1"
+              >
                 <Text
                   className="text-[12.5px] font-sans-bold"
                   style={{ color: PRIMARY_INK }}

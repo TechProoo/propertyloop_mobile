@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -116,7 +117,15 @@ export default function AgentSetupScreen() {
 
             {/* Profile photo */}
             <View className="flex-row items-center gap-3 mt-7">
-              <Pressable className="w-16 h-16 rounded-full bg-amber-100 items-center justify-center border-2 border-amber-200 active:opacity-80">
+              <Pressable
+                onPress={() =>
+                  Alert.alert(
+                    "Profile photo",
+                    "Photo upload coming soon — needs camera + library permissions.",
+                  )
+                }
+                className="w-16 h-16 rounded-full bg-amber-100 items-center justify-center border-2 border-amber-200 active:opacity-80"
+              >
                 <Text className="text-amber-700 font-sans-bold text-lg">
                   {initials}
                 </Text>
