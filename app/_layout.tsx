@@ -84,6 +84,8 @@ export default function RootLayout() {
         <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: 'modal' }} />
         {/* Inbox thread */}
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
+        {/* Returning user landing (R4) */}
+        <Stack.Screen name="welcome-back" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

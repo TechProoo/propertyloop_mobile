@@ -40,10 +40,10 @@ export default function LoginScreen() {
       return;
     }
     setSubmitting(true);
-    // Demo mode — fake delay then navigate. Backend wiring goes here:
-    //   await authService.login({ phone, password });
+    // Demo mode — fake delay then drop on the "Welcome back" landing.
+    // Backend wiring goes here:  await authService.login({ phone, password });
     await new Promise((r) => setTimeout(r, 500));
-    router.replace("/(tabs)" as Href);
+    router.replace("/welcome-back" as Href);
   };
 
   const stub = (label: string) =>
