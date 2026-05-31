@@ -10,7 +10,9 @@ import {
   View,
 } from "react-native";
 import { Stack, router } from "expo-router";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { SETTINGS_PROFILE } from "@/mocks/buyer-extra";
@@ -26,6 +28,45 @@ export default function EditProfileScreen() {
   const [bio, setBio]     = useState(
     "Relocating from Ikoyi to Lekki — looking for a 3-bed family home near good schools.",
   );
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+
+  const pickAvatar = () =>
+    Alert.alert("Profile photo", "Choose a source", [
+      { text: "Photo library", onPress: pickFromLibrary },
+      { text: "Take a photo",  onPress: takeWithCamera },
+      avatarUri ? { text: "Remove", style: "destructive" as const, onPress: () => setAvatarUri(null) } : null,
+      { text: "Cancel", style: "cancel" as const },
+    ].filter(Boolean) as Parameters<typeof Alert.alert>[2]);
+
+  const pickFromLibrary = async () => {
+    const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!lib.granted) {
+      Alert.alert("Photo library", "Allow library access in Settings.");
+      return;
+    }
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!r.canceled && r.assets[0]) setAvatarUri(r.assets[0].uri);
+  };
+
+  const takeWithCamera = async () => {
+    const cam = await ImagePicker.requestCameraPermissionsAsync();
+    if (!cam.granted) {
+      Alert.alert("Camera", "Allow camera access in Settings.");
+      return;
+    }
+    const r = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!r.canceled && r.assets[0]) setAvatarUri(r.assets[0].uri);
+  };
 
   const onSave = () => {
     if (!name.trim() || !email.trim()) {
@@ -67,16 +108,23 @@ export default function EditProfileScreen() {
         >
           {/* Avatar */}
           <View className="items-center mt-3">
-            <View className="relative">
-              <PLAvatar initials={SETTINGS_PROFILE.initials} size={88} tone="primary" />
-              <Pressable
-                onPress={() => Alert.alert("Photo", "Camera + library upload coming soon.")}
+            <Pressable onPress={pickAvatar} className="relative active:opacity-90">
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={{ width: 88, height: 88, borderRadius: 44 }}
+                  contentFit="cover"
+                />
+              ) : (
+                <PLAvatar initials={SETTINGS_PROFILE.initials} size={88} tone="primary" />
+              )}
+              <View
                 className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary items-center justify-center"
                 style={{ borderWidth: 3, borderColor: "#f5f0eb" }}
               >
                 <Ionicons name="camera" size={15} color="#ffffff" />
-              </Pressable>
-            </View>
+              </View>
+            </Pressable>
             <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-3">
               Profile photo
             </Text>

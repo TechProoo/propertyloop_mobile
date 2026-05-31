@@ -106,6 +106,8 @@ export default function RootLayout() {
         <Stack.Screen name="add-card" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="comps" options={{ headerShown: false }} />
         <Stack.Screen name="new-message" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="terms" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
