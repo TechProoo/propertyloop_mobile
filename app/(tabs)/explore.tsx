@@ -101,9 +101,7 @@ export default function ExploreMapScreen() {
             </Text>
           </Pressable>
           <Pressable
-            onPress={() =>
-              Alert.alert("Filters", "Filter sheet coming soon.")
-            }
+            onPress={() => router.push("/filters" as Href)}
             className="w-[42px] h-[42px] rounded-full bg-white items-center justify-center"
             style={{
               shadowColor: "#000",

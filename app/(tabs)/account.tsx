@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+// Settings entry sits in the hero — see header below.
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import {
@@ -62,6 +63,13 @@ export default function AccountScreen() {
                   <Text className="font-serif-italic">search at a glance</Text>
                 </Text>
               </View>
+              <Pressable
+                onPress={() => router.push("/settings" as Href)}
+                className="w-10 h-10 rounded-full bg-white items-center justify-center"
+                hitSlop={6}
+              >
+                <Ionicons name="settings-outline" size={18} color={PRIMARY_INK} />
+              </Pressable>
             </View>
 
             {/* Stat strip */}
@@ -97,7 +105,9 @@ export default function AccountScreen() {
           {/* Saved searches */}
           <View className="px-5 pt-3.5 flex-row items-baseline justify-between">
             <SectionLabel className="">Saved searches</SectionLabel>
-            <Text className="text-xs font-sans-bold text-primary">Manage</Text>
+            <Pressable onPress={() => router.push("/settings" as Href)} hitSlop={6}>
+              <Text className="text-xs font-sans-bold text-primary">Manage</Text>
+            </Pressable>
           </View>
           <ScrollView
             horizontal

@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
@@ -264,7 +264,11 @@ export default function BookServiceScreen() {
           <Pressable
             className="bg-primary rounded-full items-center active:opacity-80"
             style={{ paddingVertical: 17 }}
-            onPress={() => router.back()}
+            onPress={() =>
+              router.push(
+                `/payment?amount=${selectedTier.priceNaira}&title=${encodeURIComponent(`${VENDOR.name} · ${selectedTier.label}`)}&purpose=escrow` as Href,
+              )
+            }
           >
             <Text className="text-white font-sans-bold text-[15px]">
               Pay {selectedTier.priceLabel} to escrow & book
