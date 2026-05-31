@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -122,12 +122,7 @@ export default function ServicesScreen() {
 
         {/* Escrow trust strip */}
         <Pressable
-          onPress={() =>
-            Alert.alert(
-              "How escrow works",
-              "When you hire a vendor, your payment is held by PropertyLoop. It only releases to the vendor after you confirm the job is done. If anything goes wrong, you can dispute before release.",
-            )
-          }
+          onPress={() => router.push("/escrow-info" as Href)}
           className="mx-4 mt-3.5 bg-ink rounded-2xl px-3.5 py-3.5 flex-row items-center gap-3 active:opacity-90"
         >
           <View

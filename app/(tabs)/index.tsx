@@ -761,12 +761,7 @@ function LogbookTeaser() {
       </View>
 
       <Pressable
-        onPress={() =>
-          Alert.alert(
-            "Property Logbook",
-            "Every property carries a permanent digital service history — repairs, inspections, and receipts recorded by verified vendors. A deeper how-it-works screen is coming soon.",
-          )
-        }
+        onPress={() => router.push("/logbook-info" as Href)}
         className="mt-3.5 self-start bg-primary rounded-full px-4 py-2.5 flex-row items-center gap-1.5"
       >
         <Text className="text-[12.5px] font-sans-bold text-white">

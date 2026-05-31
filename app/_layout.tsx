@@ -86,6 +86,13 @@ export default function RootLayout() {
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
         {/* Returning user landing (R4) */}
         <Stack.Screen name="welcome-back" options={{ headerShown: false }} />
+        {/* Linked detail screens (X1–X6) */}
+        <Stack.Screen name="service-job/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-document" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="offer-action" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="logbook-info" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="search-results" options={{ headerShown: false }} />
+        <Stack.Screen name="escrow-info" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

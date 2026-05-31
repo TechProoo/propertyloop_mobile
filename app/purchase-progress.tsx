@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -126,12 +126,7 @@ export default function PurchaseProgressScreen() {
             </Text>
           </View>
           <Pressable
-            onPress={() =>
-              Alert.alert(
-                "Sign document",
-                "Document e-signature flow coming soon.",
-              )
-            }
+            onPress={() => router.push("/sign-document" as Href)}
             className="bg-primary rounded-full px-3.5 py-2.5 active:opacity-80"
           >
             <Text className="text-[12px] font-sans-bold text-white">Sign</Text>
