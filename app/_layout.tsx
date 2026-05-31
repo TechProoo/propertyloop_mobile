@@ -108,6 +108,12 @@ export default function RootLayout() {
         <Stack.Screen name="new-message" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="terms" options={{ headerShown: false }} />
         <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        {/* Agent journey */}
+        <Stack.Screen name="agent-verify" options={{ headerShown: false }} />
+        <Stack.Screen name="(agent-tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="create-listing" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="agent-listing/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="agent-profile/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
