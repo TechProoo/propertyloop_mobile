@@ -246,9 +246,7 @@ function OfferCard({ offer }: { offer: Offer }) {
           <ActionBtn
             label="Counter"
             color={PRIMARY}
-            onPress={() =>
-              Alert.alert("Counter", "Counter-offer sheet coming soon.")
-            }
+            onPress={() => router.push("/offer-action" as Href)}
           />
           <ActionBtn
             label="Accept"

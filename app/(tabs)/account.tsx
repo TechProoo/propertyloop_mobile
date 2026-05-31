@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -176,12 +176,7 @@ function UpNextRow({ item }: { item: UpNextItem }) {
 function SavedSearchCard({ item }: { item: SavedSearch }) {
   return (
     <Pressable
-      onPress={() =>
-        Alert.alert(
-          item.title,
-          `${item.homes} matches · ${item.detail}\n\nResults screen coming soon.`,
-        )
-      }
+      onPress={() => router.push("/search-results" as Href)}
       className="bg-white rounded-2xl px-3.5 py-3 border-line active:opacity-90"
       style={{ width: 200, borderWidth: 0.5 }}
     >
@@ -247,14 +242,7 @@ function ServiceJobRow({ job }: { job: ServiceJob }) {
         {job.status === "confirm" && (
           <Pressable
             onPress={() =>
-              Alert.alert(
-                "Release payment?",
-                `Release ${job.amount} to ${job.vendor}? This confirms the job is complete.`,
-                [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "Release", style: "default" },
-                ],
-              )
+              router.push(`/service-job/${job.id}` as Href)
             }
             className="mt-1 bg-primary rounded-full px-2.5 py-1"
           >
