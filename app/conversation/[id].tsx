@@ -12,6 +12,8 @@ import {
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { getThread, type Bubble as MsgBubble } from "@/mocks/inbox";
@@ -32,6 +34,49 @@ export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const thread = getThread(id);
   const [draft, setDraft] = useState("");
+
+  // Mock attach handlers — would fire off an upload + chat-bubble insert.
+  const pickPhoto = async () => {
+    const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!lib.granted) {
+      Alert.alert("Photo library", "Allow library access in Settings to attach photos.");
+      return;
+    }
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!r.canceled && r.assets[0]) {
+      Alert.alert("Photo attached", "Upload would be sent on next message.");
+    }
+  };
+
+  const takePhoto = async () => {
+    const cam = await ImagePicker.requestCameraPermissionsAsync();
+    if (!cam.granted) {
+      Alert.alert("Camera", "Allow camera access in Settings to take photos.");
+      return;
+    }
+    const r = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!r.canceled && r.assets[0]) {
+      Alert.alert("Photo attached", "Upload would be sent on next message.");
+    }
+  };
+
+  const pickDocument = async () => {
+    const r = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "image/*"],
+      copyToCacheDirectory: true,
+    });
+    if (!r.canceled && r.assets[0]) {
+      Alert.alert("Document attached", `${r.assets[0].name} ready to send.`);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -178,9 +223,9 @@ export default function ConversationScreen() {
           <Pressable
             onPress={() =>
               Alert.alert("Attach", "What would you like to attach?", [
-                { text: "Photo from library", onPress: () => Alert.alert("Photo", "Photo library access coming soon.") },
-                { text: "Take a photo",       onPress: () => Alert.alert("Camera", "Camera access coming soon.") },
-                { text: "Document",           onPress: () => Alert.alert("Document", "Document picker coming soon.") },
+                { text: "Photo from library", onPress: pickPhoto },
+                { text: "Take a photo", onPress: takePhoto },
+                { text: "Document", onPress: pickDocument },
                 { text: "Cancel", style: "cancel" },
               ])
             }

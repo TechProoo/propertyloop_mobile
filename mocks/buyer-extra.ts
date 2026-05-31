@@ -134,8 +134,8 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Legal",
     links: [
-      { id: "terms",   icon: "reader-outline",  title: "Terms of service" },
-      { id: "privacy", icon: "eye-outline",     title: "Privacy policy"   },
+      { id: "terms",   icon: "reader-outline",  title: "Terms of service", href: "/terms"   },
+      { id: "privacy", icon: "eye-outline",     title: "Privacy policy",   href: "/privacy" },
       { id: "out",     icon: "log-out-outline", title: "Sign out", destructive: true },
     ],
   },
