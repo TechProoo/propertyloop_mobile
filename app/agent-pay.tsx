@@ -64,14 +64,14 @@ export default function AgentPayScreen() {
       Alert.alert(
         "Founding tier activated",
         "Welcome to PropertyLoop. Your account is free forever.",
-        [{ text: "Continue", onPress: () => router.replace("/(tabs)" as Href) }],
+        [{ text: "Continue", onPress: () => router.replace("/(agent-tabs)" as Href) }],
       );
       return;
     }
     Alert.alert(
       "Paystack checkout",
       "This will open Paystack's secure checkout in a moment.",
-      [{ text: "OK", onPress: () => router.replace("/(tabs)" as Href) }],
+      [{ text: "OK", onPress: () => router.replace("/(agent-tabs)" as Href) }],
     );
   };
 

@@ -121,7 +121,8 @@ export default function SignupScreen() {
       // Agents finish onboarding via plan + payment; everyone else lands
       // straight in the app.
       if (role === "AGENT") {
-        router.replace("/agent-plan" as Href);
+        // Step 2 of the agent chain — identity + licence verification.
+        router.replace("/agent-verify" as Href);
       } else {
         router.replace("/(tabs)" as Href);
       }
