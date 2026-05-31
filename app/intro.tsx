@@ -122,10 +122,7 @@ export default function IntroScreen() {
               >
                 {slide.card.title}
               </Text>
-              <Text
-                className="text-ink-3 text-[11px] mt-0.5"
-                numberOfLines={1}
-              >
+              <Text className="text-ink-3 text-[11px] mt-0.5" numberOfLines={1}>
                 {slide.card.subtitle}
               </Text>
             </View>

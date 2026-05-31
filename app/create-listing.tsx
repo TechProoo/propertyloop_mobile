@@ -10,11 +10,12 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { Stack, router, type Href } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  AGENT_LISTINGS,
   CREATE_LISTING_AMENITIES,
   CREATE_LISTING_TYPES,
 } from "@/mocks/agent";
@@ -28,23 +29,38 @@ const STEPS = ["Basics", "Photos", "Details", "Publish"] as const;
 type Step = (typeof STEPS)[number];
 
 export default function CreateListingScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = AGENT_LISTINGS.find((l) => l.id === id) ?? null;
+  const isEdit = !!editing;
+
   const [step, setStep] = useState<Step>("Basics");
 
-  // Basics
-  const [type, setType]     = useState("sale");
-  const [title, setTitle]   = useState("");
-  const [area, setArea]     = useState("");
-  const [price, setPrice]   = useState("");
+  // Basics — prefilled when editing
+  const [type, setType]     = useState(
+    editing
+      ? editing.price.includes("/yr") || editing.price.includes("/night")
+        ? "rent" : "sale"
+      : "sale",
+  );
+  const [title, setTitle]   = useState(editing?.title ?? "");
+  const [area, setArea]     = useState(editing?.area ?? "");
+  const [price, setPrice]   = useState(
+    editing ? String(editing.price.replace(/[^0-9]/g, "")) : "",
+  );
 
-  // Photos
+  // Photos — for edits, we don't have real URIs in the mock so start empty.
   const [photos, setPhotos] = useState<string[]>([]);
 
   // Details
-  const [beds, setBeds]     = useState("3");
-  const [baths, setBaths]   = useState("3");
+  const [beds, setBeds]     = useState(editing ? String(editing.beds) : "3");
+  const [baths, setBaths]   = useState(editing ? String(editing.baths) : "3");
   const [sqm, setSqm]       = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(
+    editing
+      ? `Spacious ${editing.beds}-bedroom home in ${editing.area}. Currently ${editing.views > 0 ? `${editing.views} views` : "new"}.`
+      : "",
+  );
 
   const stepIdx = STEPS.indexOf(step);
   const progress = (stepIdx + 1) / STEPS.length;
@@ -58,11 +74,19 @@ export default function CreateListingScreen() {
   };
   const goNext = () => {
     if (stepIdx === STEPS.length - 1) {
-      Alert.alert(
-        "Listing published",
-        "Your listing is live and visible to buyers in matching searches.",
-        [{ text: "OK", onPress: () => router.replace("/(agent-tabs)/listings" as Href) }],
-      );
+      if (isEdit) {
+        Alert.alert(
+          "Changes saved",
+          "Your listing has been updated.",
+          [{ text: "OK", onPress: () => router.back() }],
+        );
+      } else {
+        Alert.alert(
+          "Listing published",
+          "Your listing is live and visible to buyers in matching searches.",
+          [{ text: "OK", onPress: () => router.replace("/(agent-tabs)/listings" as Href) }],
+        );
+      }
       return;
     }
     setStep(STEPS[stepIdx + 1]);
@@ -115,7 +139,7 @@ export default function CreateListingScreen() {
             <Ionicons name={stepIdx === 0 ? "close" : "chevron-back"} size={18} color={INK_2} />
           </Pressable>
           <Text className="text-[15px] font-sans-bold text-ink">
-            New listing
+            {isEdit ? "Edit listing" : "New listing"}
           </Text>
           <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest">
             {stepIdx + 1}/{STEPS.length}
@@ -363,7 +387,9 @@ export default function CreateListingScreen() {
             style={{ paddingVertical: 16 }}
           >
             <Text className="text-white font-sans-bold text-[15px]">
-              {step === "Publish" ? "Publish listing" : "Continue"}
+              {step === "Publish"
+                ? (isEdit ? "Save changes" : "Publish listing")
+                : "Continue"}
             </Text>
           </Pressable>
         </View>

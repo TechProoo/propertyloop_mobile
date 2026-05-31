@@ -131,7 +131,7 @@ export default function AgentListingDetailScreen() {
 
           {/* Inline edit shortcut */}
           <Pressable
-            onPress={() => Alert.alert("Edit listing", "Inline editing coming soon.")}
+            onPress={() => router.push(`/create-listing?id=${listing.id}` as Href)}
             className="mt-4 bg-white rounded-2xl px-3.5 py-3 flex-row items-center gap-3 border-line active:opacity-90"
             style={{ borderWidth: 0.5 }}
           >
