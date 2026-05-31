@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -41,14 +40,26 @@ const SLOTS: Slot[] = [
   { t: "16:00" },
 ];
 
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
 export default function BookViewingScreen() {
   useLocalSearchParams<{ listingId?: string }>(); // wire-up only, mocked
   const [dateIdx, setDateIdx] = useState(2);
   const [slot, setSlot] = useState("10:00");
   const [mode, setMode] = useState<Mode>("in-person");
   const [note, setNote] = useState("");
+  // Start at May 2026 (index 4) to match the seeded DATES strip.
+  const [monthOffset, setMonthOffset] = useState(0);
 
   const selectedDate = DATES[dateIdx];
+  const baseMonthIdx = 4;
+  const baseYear = 2026;
+  const totalIdx = baseMonthIdx + monthOffset;
+  const monthName = MONTHS[((totalIdx % 12) + 12) % 12];
+  const yearLabel = baseYear + Math.floor(totalIdx / 12);
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -112,20 +123,18 @@ export default function BookViewingScreen() {
             className="flex-row items-center justify-between mt-4"
             style={{ paddingHorizontal: 4 }}
           >
-            <Text className="font-serif text-[20px] text-ink">May 2026</Text>
+            <Text className="font-serif text-[20px] text-ink">
+              {monthName} {yearLabel}
+            </Text>
             <View className="flex-row gap-1.5">
               <Pressable
-                onPress={() =>
-                  Alert.alert("Calendar", "Month navigation coming soon.")
-                }
+                onPress={() => setMonthOffset((m) => m - 1)}
                 className="w-[30px] h-[30px] rounded-full bg-cream-2 items-center justify-center"
               >
                 <Ionicons name="chevron-back" size={14} color={INK_2} />
               </Pressable>
               <Pressable
-                onPress={() =>
-                  Alert.alert("Calendar", "Month navigation coming soon.")
-                }
+                onPress={() => setMonthOffset((m) => m + 1)}
                 className="w-[30px] h-[30px] rounded-full bg-cream-2 items-center justify-center"
               >
                 <Ionicons name="chevron-forward" size={14} color={INK_2} />

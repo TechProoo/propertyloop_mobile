@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, Share, Text, View } from "react-native";
+import { Pressable, ScrollView, Share, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -187,12 +187,7 @@ export default function ListingDetailScreen() {
                 median {listing.areaMedianPerSqm}
               </Text>
               <Pressable
-                onPress={() =>
-                  Alert.alert(
-                    "Comparable sales",
-                    "Recent sales in this area will appear here.",
-                  )
-                }
+                onPress={() => router.push(`/comps?id=${id ?? ""}` as Href)}
                 className="flex-row items-center gap-1"
               >
                 <Text

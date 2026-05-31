@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -177,12 +177,7 @@ export default function LogbookInfoScreen() {
         style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28 }}
       >
         <Pressable
-          onPress={() =>
-            Alert.alert(
-              "Sample logbook",
-              "Sample logbook viewer coming soon.",
-            )
-          }
+          onPress={() => router.push("/logbook/hibiscus-1" as never)}
           className="bg-primary rounded-full items-center active:opacity-80"
           style={{ paddingVertical: 16 }}
         >

@@ -77,10 +77,25 @@ export default function ConversationScreen() {
           </View>
           <Pressable
             onPress={() =>
-              Alert.alert("Conversation", "More options coming soon.", [
-                { text: "Mute", style: "cancel" },
-                { text: "Report", style: "destructive" },
-                { text: "Close", style: "cancel" },
+              Alert.alert(thread.name, "Conversation options", [
+                {
+                  text: "Mute notifications",
+                  onPress: () =>
+                    Alert.alert("Muted", `You won't be notified about new messages from ${thread.name}.`),
+                },
+                {
+                  text: "Block",
+                  style: "destructive",
+                  onPress: () =>
+                    Alert.alert("Blocked", `${thread.name} can no longer message you.`),
+                },
+                {
+                  text: "Report",
+                  style: "destructive",
+                  onPress: () =>
+                    Alert.alert("Reported", "Our team will review this conversation within 24 hours."),
+                },
+                { text: "Cancel", style: "cancel" },
               ])
             }
             className="w-9 h-9 items-center justify-center"
@@ -162,7 +177,12 @@ export default function ConversationScreen() {
         >
           <Pressable
             onPress={() =>
-              Alert.alert("Attach", "Attach a file or photo — coming soon.")
+              Alert.alert("Attach", "What would you like to attach?", [
+                { text: "Photo from library", onPress: () => Alert.alert("Photo", "Photo library access coming soon.") },
+                { text: "Take a photo",       onPress: () => Alert.alert("Camera", "Camera access coming soon.") },
+                { text: "Document",           onPress: () => Alert.alert("Document", "Document picker coming soon.") },
+                { text: "Cancel", style: "cancel" },
+              ])
             }
             className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"
           >

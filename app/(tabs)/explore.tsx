@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, type MapType } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   MAP_CARDS,
@@ -23,13 +23,24 @@ function picsum(seed: string) {
 
 export default function ExploreMapScreen() {
   const [selectedPin, setSelectedPin] = useState("p1");
+  const [mapType, setMapType] = useState<MapType>("standard");
+  const mapRef = useRef<MapView | null>(null);
+
+  const recenter = () => {
+    mapRef.current?.animateToRegion(MAP_REGION, 600);
+  };
+  const toggleLayer = () => {
+    setMapType((t) => (t === "standard" ? "satellite" : "standard"));
+  };
 
   return (
     <View className="flex-1 bg-cream">
       {/* Map fills the entire screen */}
       <MapView
+        ref={mapRef}
         style={{ flex: 1 }}
         initialRegion={MAP_REGION}
+        mapType={mapType}
         showsCompass={false}
         toolbarEnabled={false}
       >
@@ -80,9 +91,7 @@ export default function ExploreMapScreen() {
       >
         <View className="flex-row gap-2 px-4 pt-2">
           <Pressable
-            onPress={() =>
-              Alert.alert("Location", "Area search picker coming soon.")
-            }
+            onPress={() => router.push("/search-results" as Href)}
             className="flex-1 bg-white rounded-full px-3.5 py-3 flex-row items-center gap-2.5"
             style={{
               shadowColor: "#000",
@@ -121,19 +130,11 @@ export default function ExploreMapScreen() {
         pointerEvents="box-none"
         style={{ position: "absolute", top: 220, right: 16, gap: 8 }}
       >
+        <MapControl icon="locate-outline" color={PRIMARY} onPress={recenter} />
         <MapControl
-          icon="locate-outline"
-          color={PRIMARY}
-          onPress={() =>
-            Alert.alert("Locate me", "Centring on your location requires permission.")
-          }
-        />
-        <MapControl
-          icon="layers-outline"
+          icon={mapType === "standard" ? "layers-outline" : "layers"}
           color={INK}
-          onPress={() =>
-            Alert.alert("Layers", "Satellite / standard toggle coming soon.")
-          }
+          onPress={toggleLayer}
         />
       </View>
 

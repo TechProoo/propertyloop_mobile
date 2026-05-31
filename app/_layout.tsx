@@ -101,6 +101,11 @@ export default function RootLayout() {
         <Stack.Screen name="logbook/[propertyId]" options={{ headerShown: false }} />
         <Stack.Screen name="verify-identity" options={{ headerShown: false }} />
         <Stack.Screen name="help" options={{ headerShown: false }} />
+        {/* Polish-pass screens */}
+        <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="add-card" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="comps" options={{ headerShown: false }} />
+        <Stack.Screen name="new-message" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

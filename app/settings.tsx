@@ -72,7 +72,7 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Pressable
-            onPress={() => Alert.alert("Edit profile", "Coming soon.")}
+            onPress={() => router.push("/edit-profile" as Href)}
             hitSlop={8}
           >
             <Text className="text-[12px] font-sans-bold text-primary">Edit</Text>
