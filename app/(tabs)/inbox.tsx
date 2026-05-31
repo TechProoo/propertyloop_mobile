@@ -1,4 +1,4 @@
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,12 +35,7 @@ export default function InboxScreen() {
             </Text>
           </View>
           <Pressable
-            onPress={() =>
-              Alert.alert(
-                "New message",
-                "Start a conversation by tapping any agent or vendor profile.",
-              )
-            }
+            onPress={() => router.push("/new-message" as Href)}
             className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"
           >
             <Ionicons name="create-outline" size={18} color={INK} />

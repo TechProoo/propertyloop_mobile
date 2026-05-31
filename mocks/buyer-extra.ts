@@ -110,7 +110,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Account",
     links: [
-      { id: "edit",  icon: "person-outline",       title: "Edit profile",            href: "/settings" },
+      { id: "edit",  icon: "person-outline",       title: "Edit profile",            href: "/edit-profile" },
       { id: "kyc",   icon: "shield-checkmark-outline", title: "Identity verification", detail: "Verified · NIN on file", href: "/verify-identity" },
       { id: "pay",   icon: "card-outline",         title: "Payment methods",         detail: "GTBank •• 4421",       href: "/payment" },
     ],

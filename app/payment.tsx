@@ -155,7 +155,7 @@ export default function PaymentScreen() {
         </View>
 
         <Pressable
-          onPress={() => Alert.alert("Add card", "Card capture coming soon.")}
+          onPress={() => router.push("/add-card" as never)}
           className="mt-2 flex-row items-center gap-2 px-1"
           hitSlop={8}
         >
