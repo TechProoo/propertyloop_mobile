@@ -29,10 +29,13 @@ const KNOWN_USER = {
   phoneMasked: "+234 80 •••• 5678",
 };
 
+type Role = "buyer" | "agent";
+
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [role, setRole] = useState<Role>("buyer");
 
   const handleSignIn = async () => {
     if (password.length < 1) {
@@ -40,10 +43,15 @@ export default function LoginScreen() {
       return;
     }
     setSubmitting(true);
-    // Demo mode — fake delay then drop on the "Welcome back" landing.
+    // Demo mode — fake delay then route by selected role. Buyers see the
+    // "Welcome back" landing; agents drop straight into the agent tabs.
     // Backend wiring goes here:  await authService.login({ phone, password });
     await new Promise((r) => setTimeout(r, 500));
-    router.replace("/welcome-back" as Href);
+    if (role === "agent") {
+      router.replace("/(agent-tabs)" as Href);
+    } else {
+      router.replace("/welcome-back" as Href);
+    }
   };
 
   const stub = (label: string) =>
@@ -126,6 +134,35 @@ export default function LoginScreen() {
                 Change
               </Text>
             </Pressable>
+          </View>
+
+          {/* Role toggle */}
+          <Text className="text-xs font-sans-bold text-ink-2 mt-4">
+            Sign in as
+          </Text>
+          <View className="flex-row gap-2 mt-2">
+            {(["buyer", "agent"] as Role[]).map((r) => {
+              const on = role === r;
+              return (
+                <Pressable
+                  key={r}
+                  onPress={() => setRole(r)}
+                  className="flex-1 rounded-full items-center py-2.5"
+                  style={{
+                    backgroundColor: on ? INK : "#ffffff",
+                    borderWidth: on ? 0 : 1,
+                    borderColor: "#e1dcd3",
+                  }}
+                >
+                  <Text
+                    className="text-[13px] font-sans-bold"
+                    style={{ color: on ? "#ffffff" : INK_2 }}
+                  >
+                    {r === "buyer" ? "Buyer / Renter" : "Agent"}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           {/* Password */}

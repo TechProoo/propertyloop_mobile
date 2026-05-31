@@ -9,7 +9,9 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const SPECIALTIES = [
@@ -32,11 +34,52 @@ export default function AgentSetupScreen() {
   const [languages, setLanguages] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [bio, setBio] = useState("");
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   // For the avatar placeholder we'd normally derive initials from the user's
   // name. Since name isn't collected yet on this screen, fall back to "EA"
   // (matching the mockup) until we wire the multi-step state container.
   const initials = "EA";
+
+  const pickPhoto = () =>
+    Alert.alert("Profile photo", "Choose a source", [
+      { text: "Photo library", onPress: pickFromLibrary },
+      { text: "Take a photo",  onPress: takeWithCamera },
+      photoUri
+        ? { text: "Remove", style: "destructive" as const, onPress: () => setPhotoUri(null) }
+        : null,
+      { text: "Cancel", style: "cancel" as const },
+    ].filter(Boolean) as Parameters<typeof Alert.alert>[2]);
+
+  const pickFromLibrary = async () => {
+    const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!lib.granted) {
+      Alert.alert("Photo library", "Allow library access in Settings.");
+      return;
+    }
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (!r.canceled && r.assets[0]) setPhotoUri(r.assets[0].uri);
+  };
+
+  const takeWithCamera = async () => {
+    const cam = await ImagePicker.requestCameraPermissionsAsync();
+    if (!cam.granted) {
+      Alert.alert("Camera", "Allow camera access in Settings.");
+      return;
+    }
+    const r = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (!r.canceled && r.assets[0]) setPhotoUri(r.assets[0].uri);
+  };
 
   const toggleSpecialty = (s: string) => {
     setSpecialties((prev) => {
@@ -118,17 +161,25 @@ export default function AgentSetupScreen() {
             {/* Profile photo */}
             <View className="flex-row items-center gap-3 mt-7">
               <Pressable
-                onPress={() =>
-                  Alert.alert(
-                    "Profile photo",
-                    "Photo upload coming soon — needs camera + library permissions.",
-                  )
+                onPress={pickPhoto}
+                className="w-16 h-16 rounded-full items-center justify-center active:opacity-80"
+                style={
+                  photoUri
+                    ? { overflow: "hidden", borderWidth: 2, borderColor: "#1f6f43" }
+                    : { backgroundColor: "#fef3c7", borderWidth: 2, borderColor: "#fde68a" }
                 }
-                className="w-16 h-16 rounded-full bg-amber-100 items-center justify-center border-2 border-amber-200 active:opacity-80"
               >
-                <Text className="text-amber-700 font-sans-bold text-lg">
-                  {initials}
-                </Text>
+                {photoUri ? (
+                  <Image
+                    source={{ uri: photoUri }}
+                    style={{ width: 64, height: 64 }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <Text className="text-amber-700 font-sans-bold text-lg">
+                    {initials}
+                  </Text>
+                )}
               </Pressable>
               <View className="flex-1">
                 <Text className="text-ink font-sans-semibold text-sm">
