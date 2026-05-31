@@ -28,7 +28,9 @@ export default function PurchaseProgressScreen() {
         >
           <Ionicons name="chevron-back" size={18} color={INK_2} />
         </Pressable>
-        <Text className="text-[13px] font-sans-bold text-ink-3">Help</Text>
+        <Pressable onPress={() => router.push("/help" as Href)} hitSlop={8}>
+          <Text className="text-[13px] font-sans-bold text-primary">Help</Text>
+        </Pressable>
       </View>
 
       <ScrollView

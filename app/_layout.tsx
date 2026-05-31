@@ -93,6 +93,14 @@ export default function RootLayout() {
         <Stack.Screen name="logbook-info" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="search-results" options={{ headerShown: false }} />
         <Stack.Screen name="escrow-info" options={{ headerShown: false, presentation: 'modal' }} />
+        {/* Buyer extras — notifications, filters, settings, payment, logbook, KYC, help */}
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="filters" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
+        <Stack.Screen name="payment" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="logbook/[propertyId]" options={{ headerShown: false }} />
+        <Stack.Screen name="verify-identity" options={{ headerShown: false }} />
+        <Stack.Screen name="help" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

@@ -112,12 +112,7 @@ function Header() {
       </View>
       <View className="flex-row gap-2">
         <Pressable
-          onPress={() =>
-            Alert.alert(
-              "Notifications",
-              "Your activity feed will appear here.",
-            )
-          }
+          onPress={() => router.push("/notifications" as Href)}
           className="w-10 h-10 rounded-full bg-cream-2 items-center justify-center"
         >
           <Ionicons name="notifications-outline" size={18} color={INK} />
@@ -143,9 +138,13 @@ function SearchBar() {
           className="flex-1 text-sm text-ink font-sans-medium"
           style={{ paddingVertical: 0 }}
         />
-        <View className="w-7 h-7 rounded-full bg-ink items-center justify-center">
+        <Pressable
+          onPress={() => router.push("/filters" as Href)}
+          hitSlop={6}
+          className="w-7 h-7 rounded-full bg-ink items-center justify-center"
+        >
           <Ionicons name="options-outline" size={14} color="#ffffff" />
-        </View>
+        </Pressable>
       </View>
     </View>
   );
@@ -726,7 +725,10 @@ function LogbookTeaser() {
       </Text>
 
       {/* Mini-logbook preview */}
-      <View className="mt-3.5 bg-white rounded-xl px-3 py-2.5">
+      <Pressable
+        onPress={() => router.push("/logbook/hibiscus-1" as Href)}
+        className="mt-3.5 bg-white rounded-xl px-3 py-2.5 active:opacity-90"
+      >
         <View className="flex-row items-center justify-between">
           <Text className="text-[11px] font-sans-bold text-ink-2">
             {LOGBOOK_PREVIEW.propertyName}
@@ -758,7 +760,7 @@ function LogbookTeaser() {
             </View>
           ))}
         </View>
-      </View>
+      </Pressable>
 
       <Pressable
         onPress={() => router.push("/logbook-info" as Href)}
