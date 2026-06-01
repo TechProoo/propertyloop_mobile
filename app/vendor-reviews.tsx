@@ -1,5 +1,5 @@
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { Stack, router } from "expo-router";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
@@ -114,8 +114,7 @@ export default function VendorReviewsScreen() {
 }
 
 function ReviewCard({ review }: { review: Review }) {
-  const reply = () =>
-    Alert.alert("Reply publicly", "Public reply composer coming soon.");
+  const reply = () => router.push(`/vendor-reply?reviewId=${review.id}` as Href);
   return (
     <View
       className="bg-white rounded-2xl p-3.5 border-line"

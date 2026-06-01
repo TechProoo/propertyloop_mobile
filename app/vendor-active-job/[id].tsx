@@ -234,12 +234,7 @@ export default function VendorActiveJobScreen() {
 
         {/* Add extra */}
         <Pressable
-          onPress={() =>
-            Alert.alert(
-              "Add unexpected extra",
-              "Send the customer a request to charge an additional amount. They must approve before charging.",
-            )
-          }
+          onPress={() => router.push(`/vendor-extra?jobId=${job.id}` as Href)}
           className="mt-3 flex-row items-center gap-3 px-3.5 py-3 rounded-2xl active:opacity-90"
           style={{
             backgroundColor: "#ece6df",

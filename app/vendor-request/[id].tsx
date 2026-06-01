@@ -32,7 +32,9 @@ export default function VendorRequestScreen() {
     );
 
   const propose = () =>
-    Alert.alert("Propose another time", "Slot picker coming soon. The customer will see your proposal in the thread.");
+    router.push(
+      `/reschedule-viewing?leadId=${req.id}&buyer=${encodeURIComponent(req.customer.name)}&listing=${encodeURIComponent(req.service)}` as Href,
+    );
 
   const decline = () =>
     Alert.alert("Decline?", "The customer will be notified and can book a different vendor.", [
