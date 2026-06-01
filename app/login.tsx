@@ -29,7 +29,7 @@ const KNOWN_USER = {
   phoneMasked: "+234 80 •••• 5678",
 };
 
-type Role = "buyer" | "agent";
+type Role = "buyer" | "agent" | "vendor";
 
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
@@ -49,6 +49,8 @@ export default function LoginScreen() {
     await new Promise((r) => setTimeout(r, 500));
     if (role === "agent") {
       router.replace("/(agent-tabs)" as Href);
+    } else if (role === "vendor") {
+      router.replace("/(vendor-tabs)" as Href);
     } else {
       router.replace("/welcome-back" as Href);
     }
@@ -141,8 +143,10 @@ export default function LoginScreen() {
             Sign in as
           </Text>
           <View className="flex-row gap-2 mt-2">
-            {(["buyer", "agent"] as Role[]).map((r) => {
+            {(["buyer", "agent", "vendor"] as Role[]).map((r) => {
               const on = role === r;
+              const label =
+                r === "buyer" ? "Buyer" : r === "agent" ? "Agent" : "Vendor";
               return (
                 <Pressable
                   key={r}
@@ -158,7 +162,7 @@ export default function LoginScreen() {
                     className="text-[13px] font-sans-bold"
                     style={{ color: on ? "#ffffff" : INK_2 }}
                   >
-                    {r === "buyer" ? "Buyer / Renter" : "Agent"}
+                    {label}
                   </Text>
                 </Pressable>
               );

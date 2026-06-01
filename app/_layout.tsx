@@ -117,6 +117,21 @@ export default function RootLayout() {
         <Stack.Screen name="reschedule-viewing" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="payout-bank" options={{ headerShown: false }} />
         <Stack.Screen name="listing-defaults" options={{ headerShown: false }} />
+        {/* Vendor (Service Loop) journey */}
+        <Stack.Screen name="vendor-setup" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-categories" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-first-service" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-payout-setup" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-submitted" options={{ headerShown: false }} />
+        <Stack.Screen name="(vendor-tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-request/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-active-job/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-job-done" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-dispute/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-reviews" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-menu" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor-availability" options={{ headerShown: false }} />
+        <Stack.Screen name="vendor/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
