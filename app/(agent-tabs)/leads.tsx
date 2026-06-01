@@ -209,7 +209,15 @@ function LeadCard({ lead }: { lead: Lead }) {
           </>
         ) : lead.kind === "viewing" ? (
           <>
-            <ActionBtn label="Reschedule" soft onPress={() => Alert.alert("Reschedule", "Pick a new slot.")} />
+            <ActionBtn
+              label="Reschedule"
+              soft
+              onPress={() =>
+                router.push(
+                  `/reschedule-viewing?leadId=${lead.id}&buyer=${encodeURIComponent(lead.buyer.name)}&listing=${encodeURIComponent(lead.listing.title)}` as Href,
+                )
+              }
+            />
             <ActionBtn label="Decline" onPress={() => Alert.alert("Decline", "Decline this viewing?", [
               { text: "Cancel", style: "cancel" },
               { text: "Decline", style: "destructive" },

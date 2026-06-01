@@ -35,7 +35,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     label: "Billing",
     rows: [
       { id: "plan",    icon: "star-outline",   title: "Plan & billing",    detail: "Founding · free forever", href: "/agent-plan" },
-      { id: "payout",  icon: "wallet-outline", title: "Payout bank account", detail: "GTBank •• 4421" },
+      { id: "payout",  icon: "wallet-outline", title: "Payout bank account", detail: "GTBank •• 4421", href: "/payout-bank" },
       { id: "invoices",icon: "receipt-outline", title: "Invoices & receipts" },
     ],
   },
@@ -43,7 +43,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     label: "Preferences",
     rows: [
       { id: "notif",   icon: "notifications-outline", title: "Notifications",   detail: "Push + email" },
-      { id: "defaults",icon: "options-outline",       title: "Listing defaults", detail: "Hours, response time, area" },
+      { id: "defaults",icon: "options-outline",       title: "Listing defaults", detail: "Hours, response time, area", href: "/listing-defaults" },
       { id: "lang",    icon: "globe-outline",         title: "Language",         detail: "English (NG)" },
     ],
   },
