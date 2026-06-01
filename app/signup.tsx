@@ -123,6 +123,9 @@ export default function SignupScreen() {
       if (role === "AGENT") {
         // Step 2 of the agent chain — identity + licence verification.
         router.replace("/agent-verify" as Href);
+      } else if (role === "VENDOR") {
+        // Vendors go straight into the 4-step vendor onboarding wizard.
+        router.replace("/vendor-setup" as Href);
       } else {
         router.replace("/(tabs)" as Href);
       }
