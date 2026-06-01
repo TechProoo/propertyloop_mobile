@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VENDOR_AVAILABILITY } from "@/mocks/vendor";
@@ -175,7 +175,7 @@ export default function VendorAvailabilityScreen() {
             </View>
           ))}
           <Pressable
-            onPress={() => Alert.alert("Block dates", "Calendar picker coming soon.")}
+            onPress={() => router.push("/vendor-blackout" as Href)}
             className="flex-row items-center gap-1.5 rounded-full px-3.5 py-1.5"
             style={{
               borderWidth: 1, borderStyle: "dashed", borderColor: "#d3cdc1",

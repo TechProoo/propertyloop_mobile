@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { Stack, router, type Href } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,6 +15,9 @@ const INK_3 = "#7f857f";
 type VerifyState = "done" | "active" | "todo";
 
 export default function VendorCategoriesScreen() {
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const isManage = params.mode === "manage";
+
   const [cats, setCats]       = useState<string[]>(["cleaning"]);
   const [area, setArea]       = useState("Lekki, Ikoyi, V.I.");
   const [radius, setRadius]   = useState("10");
@@ -59,11 +62,24 @@ export default function VendorCategoriesScreen() {
   const stepState = (done: boolean, prev: boolean): VerifyState =>
     done ? "done" : prev ? "active" : "todo";
 
-  const canContinue = cats.length > 0 && idDone && (skillDone || samples.length >= 3);
+  const canContinueOnboarding = cats.length > 0 && idDone && (skillDone || samples.length >= 3);
+  const canSaveManage = cats.length > 0;
+  const canContinue = isManage ? canSaveManage : canContinueOnboarding;
 
   const onContinue = () => {
     if (!canContinue) {
-      Alert.alert("Almost there", "Pick at least one category and finish the verification steps.");
+      Alert.alert(
+        "Almost there",
+        isManage
+          ? "Pick at least one category to save."
+          : "Pick at least one category and finish the verification steps.",
+      );
+      return;
+    }
+    if (isManage) {
+      Alert.alert("Categories saved", `Your service categories are now: ${cats.length} active.`, [
+        { text: "OK", onPress: () => router.back() },
+      ]);
       return;
     }
     router.push("/vendor-first-service" as Href);
@@ -83,8 +99,12 @@ export default function VendorCategoriesScreen() {
             <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
           <View className="items-center">
-            <Text className="text-ink font-sans-bold text-sm">Categories & verification</Text>
-            <Text className="text-ink-3 text-xs mt-0.5">Step 2 of 4</Text>
+            <Text className="text-ink font-sans-bold text-sm">
+              {isManage ? "Service categories" : "Categories & verification"}
+            </Text>
+            {!isManage && (
+              <Text className="text-ink-3 text-xs mt-0.5">Step 2 of 4</Text>
+            )}
           </View>
           <View style={{ width: 36 }} />
         </View>
@@ -139,6 +159,8 @@ export default function VendorCategoriesScreen() {
           </View>
 
           {/* Verification */}
+          {!isManage && (
+          <>
           <Label className="mt-6">Get the verified badge</Label>
           <View className="gap-2 mt-2">
             <VerifyRow
@@ -207,6 +229,8 @@ export default function VendorCategoriesScreen() {
               </Pressable>
             )}
           </View>
+          </>
+          )}
         </ScrollView>
 
         <View
@@ -219,7 +243,9 @@ export default function VendorCategoriesScreen() {
             className="bg-primary rounded-full items-center active:opacity-80 disabled:opacity-50"
             style={{ paddingVertical: 17 }}
           >
-            <Text className="text-white font-sans-bold text-[15px]">Continue</Text>
+            <Text className="text-white font-sans-bold text-[15px]">
+              {isManage ? "Save categories" : "Continue"}
+            </Text>
           </Pressable>
         </View>
       </SafeAreaView>

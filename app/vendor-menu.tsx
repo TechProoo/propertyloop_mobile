@@ -1,5 +1,5 @@
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VENDOR_SERVICES, type VendorService } from "@/mocks/vendor";
@@ -31,7 +31,7 @@ export default function VendorMenuScreen() {
           <Text className="text-[14px] font-sans-bold text-ink">Service menu</Text>
         </View>
         <Pressable
-          onPress={() => router.push("/vendor-first-service" as never)}
+          onPress={() => router.push("/vendor-first-service?mode=add" as Href)}
           className="flex-row items-center gap-1 px-3 py-1.5 rounded-full"
           style={{ backgroundColor: PRIMARY }}
         >
@@ -72,7 +72,7 @@ export default function VendorMenuScreen() {
 
 function ServiceCard({ service }: { service: VendorService }) {
   const archived = !!service.archived;
-  const edit = () => Alert.alert("Edit service", `Edit "${service.name}" — coming soon.`);
+  const edit = () => router.push(`/vendor-first-service?id=${service.id}` as Href);
   const toggle = () =>
     Alert.alert(
       archived ? "Restore service?" : "Archive service?",

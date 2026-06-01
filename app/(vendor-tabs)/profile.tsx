@@ -30,7 +30,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
       { id: "menu",     icon: "list-outline",       title: "Service menu",       detail: "3 active", href: "/vendor-menu" },
       { id: "avail",    icon: "calendar-outline",   title: "Availability",                          href: "/vendor-availability" },
       { id: "reviews",  icon: "star-outline",       title: "Reputation & reviews", detail: `${VENDOR.rating}`, href: "/vendor-reviews" },
-      { id: "cats",     icon: "grid-outline",       title: "Service categories", detail: VENDOR.category },
+      { id: "cats",     icon: "grid-outline",       title: "Service categories", detail: VENDOR.category, href: "/vendor-categories?mode=manage" },
     ],
   },
   {
@@ -44,7 +44,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     label: "Account",
     rows: [
       { id: "verify",   icon: "shield-checkmark-outline", title: "Verification",  detail: "Verified", badge: true },
-      { id: "edit",     icon: "create-outline",            title: "Edit business profile",      href: "/edit-profile" },
+      { id: "edit",     icon: "create-outline",            title: "Edit business profile",      href: "/vendor-edit-profile" },
       { id: "public",   icon: "eye-outline",               title: "Preview public profile",     href: "/vendor/vendor-sparkle" },
       { id: "notif",    icon: "notifications-outline",     title: "Notifications" },
       { id: "help",     icon: "help-circle-outline",       title: "Help & vendor FAQ",          href: "/help" },
