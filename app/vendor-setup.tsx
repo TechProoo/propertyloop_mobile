@@ -73,7 +73,11 @@ export default function VendorSetupScreen() {
 
   const onContinue = () => {
     if (!canContinue) {
-      Alert.alert("Almost there", "Fill in your name, a short about, and at least one language.");
+      const missing: string[] = [];
+      if (name.trim().length <= 1) missing.push("a display name");
+      if (about.trim().length <= 10) missing.push("an About of at least 10 characters");
+      if (langs.length === 0) missing.push("at least one language");
+      Alert.alert("Almost there", `Please add ${missing.join(", ")} to continue.`);
       return;
     }
     router.push("/vendor-categories" as Href);
@@ -155,7 +159,14 @@ export default function VendorSetupScreen() {
               placeholder="One short line about what you do"
               trail={<Text className="text-[11px] text-ink-3">{tagline.length} / 40</Text>}
             />
-            <Label className="mt-4">About</Label>
+            <View className="flex-row items-center justify-between mt-4">
+              <Label>About</Label>
+              <Text className="text-[11px] text-ink-3">
+                {about.trim().length <= 10
+                  ? `${Math.max(0, 11 - about.trim().length)} more characters`
+                  : "✓"}
+              </Text>
+            </View>
             <TextInput
               value={about}
               onChangeText={setAbout}
@@ -218,9 +229,8 @@ export default function VendorSetupScreen() {
           >
             <Pressable
               onPress={onContinue}
-              disabled={!canContinue}
-              className="bg-primary rounded-full items-center active:opacity-80 disabled:opacity-50"
-              style={{ paddingVertical: 17 }}
+              className="bg-primary rounded-full items-center active:opacity-80"
+              style={{ paddingVertical: 17, opacity: canContinue ? 1 : 0.5 }}
             >
               <Text className="text-white font-sans-bold text-[15px]">Continue</Text>
             </Pressable>
