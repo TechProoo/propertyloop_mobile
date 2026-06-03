@@ -297,7 +297,7 @@ function DocRow({
       <View
         className="w-8 h-8 rounded-lg items-center justify-center"
         style={{
-          backgroundColor: uploaded ? "#ffffff" : "#ece6df",
+          backgroundColor: uploaded ? "#ffffff" : "#f0f0f0",
         }}
       >
         <Ionicons

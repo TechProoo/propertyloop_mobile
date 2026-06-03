@@ -186,7 +186,7 @@ export default function VendorBlackoutScreen() {
           </View>
 
           {/* Summary */}
-          <View className="mt-5 rounded-2xl px-4 py-3" style={{ backgroundColor: "#ece6df" }}>
+          <View className="mt-5 rounded-2xl px-4 py-3" style={{ backgroundColor: "#f0f0f0" }}>
             <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
               Blocking
             </Text>

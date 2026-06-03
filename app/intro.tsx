@@ -102,7 +102,7 @@ export default function IntroScreen() {
           <View className="rounded-3xl overflow-hidden bg-stone-200">
             <Image
               source={slide.image}
-              style={{ width: "100%", height: 480 }}
+              style={{ width: "100%", height: 380 }}
               contentFit="cover"
               transition={250}
             />

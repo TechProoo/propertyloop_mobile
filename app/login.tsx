@@ -90,7 +90,7 @@ export default function LoginScreen() {
               <PLAvatar initials={KNOWN_USER.initials} size={64} tone="primary" />
               <View
                 className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-primary items-center justify-center"
-                style={{ borderWidth: 3, borderColor: "#f5f0eb" }}
+                style={{ borderWidth: 3, borderColor: "#ffffff" }}
               >
                 <Ionicons name="checkmark" size={12} color="#ffffff" />
               </View>

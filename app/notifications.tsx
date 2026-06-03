@@ -18,7 +18,7 @@ const INK_3 = "#7f857f";
 const TONE_BG: Record<string, string> = {
   primary: "#e3efe7",
   accent:  "#f5ead4",
-  neutral: "#ece6df",
+  neutral: "#f0f0f0",
 };
 const TONE_FG: Record<string, string> = {
   primary: PRIMARY_INK,

@@ -163,3 +163,43 @@ export const LOCATIONS = ["All", "Lekki", "Ikoyi", "Ikeja", "Yaba", "V.I.", "Mai
 // ─── Mode switcher ──────────────────────────────────────────────
 export const MODES = ["Rent", "Buy", "Shortlet"] as const;
 export type Mode = (typeof MODES)[number];
+
+// ─── Buyer home grid (photo-led 2-up cards) ─────────────────────
+// Each card is pure photo with overlays: a verified badge, a price pill,
+// and a rating/title/location strip. `category` drives the chip filter;
+// `title` + `area` are what the search field matches against.
+export const HOME_CATEGORIES = [
+  "Rental House",
+  "Apartment",
+  "Houses",
+  "Rooms",
+] as const;
+export type HomeCategory = (typeof HOME_CATEGORIES)[number];
+
+export type HomeListing = {
+  id: string;
+  title: string;
+  area: string;
+  price: string;
+  /** e.g. "/yr" for rentals; omitted for sale. */
+  period?: string;
+  rating: string;
+  verified: boolean;
+  category: HomeCategory;
+  beds: number;
+  baths: number;
+  size: string;
+  imageSeed: string;
+};
+
+export const BUYER_HOME_LISTINGS: HomeListing[] = [
+  { id: "sandbridge-court", title: "Sandbridge Court",   area: "Lekki, Lagos",        price: "₦4.8M",  period: "/yr", rating: "4.8",  verified: true, category: "Rental House", beds: 3, baths: 3, size: "210 m²", imageSeed: "ph-2" },
+  { id: "foreshore-mews",   title: "Foreshore Mews",     area: "Lekki, Lagos",        price: "₦3.5M",  period: "/yr", rating: "4.7",  verified: true, category: "Rental House", beds: 2, baths: 2, size: "180 m²", imageSeed: "ph-4" },
+  { id: "adesoji-court",    title: "Adesoji Court",      area: "Yaba, Lagos",         price: "₦1.8M",  period: "/yr", rating: "4.5",  verified: true, category: "Rental House", beds: 2, baths: 1, size: "120 m²", imageSeed: "ph-7" },
+  { id: "serene-nest",      title: "The Serene Nest",    area: "Ikeja GRA, Lagos",    price: "₦5.2M",  period: "/yr", rating: "4.6",  verified: true, category: "Rental House", beds: 3, baths: 2, size: "240 m²", imageSeed: "ph-9" },
+  { id: "marlin-studios",   title: "Marlin Studios",     area: "Victoria Island",     price: "₦2.4M",  period: "/yr", rating: "4.6",  verified: true, category: "Apartment",    beds: 1, baths: 1, size: "84 m²",  imageSeed: "ph-6" },
+  { id: "quay-penthouse",   title: "The Quay Penthouse", area: "Banana Island",       price: "₦125M",  rating: "4.95", verified: true, category: "Apartment",    beds: 5, baths: 5, size: "410 m²", imageSeed: "ph-3" },
+  { id: "hibiscus-house",   title: "Hibiscus House",     area: "Lekki, Lagos",        price: "₦78M",   rating: "4.8",  verified: true, category: "Houses",       beds: 4, baths: 4, size: "320 m²", imageSeed: "ph-1" },
+  { id: "loom-house",       title: "The Loom House",     area: "Old Ikoyi, Lagos",    price: "₦112M",  rating: "4.9",  verified: true, category: "Houses",       beds: 4, baths: 5, size: "360 m²", imageSeed: "ph-5" },
+  { id: "bode-thomas",      title: "Bode Thomas Loft",   area: "Surulere, Lagos",     price: "₦950k",  period: "/yr", rating: "4.4",  verified: true, category: "Rooms",        beds: 1, baths: 1, size: "40 m²",  imageSeed: "ph-8" },
+];

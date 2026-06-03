@@ -173,7 +173,7 @@ function EventRow({ event, last }: { event: LogbookEvent; last: boolean }) {
             width: 22,
             height: 22,
             borderRadius: 11,
-            backgroundColor: event.verified ? PRIMARY : "#ece6df",
+            backgroundColor: event.verified ? PRIMARY : "#f0f0f0",
             borderWidth: event.verified ? 0 : 1.5,
             borderColor: "#d3cdc1",
             alignItems: "center",

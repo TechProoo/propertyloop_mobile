@@ -26,7 +26,7 @@ const KIND_META: Record<LeadKind, { icon: keyof typeof Ionicons.glyphMap; tone: 
   offer:   { icon: "swap-horizontal-outline",   tone: "accent"  },
 };
 
-const TONE_BG = { primary: "#e3efe7", accent: "#f5ead4", neutral: "#ece6df" };
+const TONE_BG = { primary: "#e3efe7", accent: "#f5ead4", neutral: "#f0f0f0" };
 const TONE_FG = { primary: PRIMARY_INK, accent: ACCENT_INK, neutral: INK_2 };
 
 const STATUS_LABEL: Record<Lead["status"], string> = {

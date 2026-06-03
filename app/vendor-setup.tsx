@@ -136,7 +136,7 @@ export default function VendorSetupScreen() {
                 )}
                 <View
                   className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-ink items-center justify-center"
-                  style={{ borderWidth: 3, borderColor: "#f5f0eb" }}
+                  style={{ borderWidth: 3, borderColor: "#ffffff" }}
                 >
                   <Ionicons name="add" size={14} color="#ffffff" />
                 </View>

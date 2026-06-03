@@ -31,7 +31,7 @@ export default function PublicVendorProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Cover */}
-        <View style={{ height: 170, backgroundColor: "#ece6df" }} className="relative">
+        <View style={{ height: 170, backgroundColor: "#f0f0f0" }} className="relative">
           <Image
             source="https://picsum.photos/seed/clean-cover/1200/600"
             style={{ width: "100%", height: "100%" }}
@@ -64,7 +64,7 @@ export default function PublicVendorProfileScreen() {
         <View className="px-5" style={{ marginTop: -34 }}>
           <View
             className="self-start rounded-full overflow-hidden"
-            style={{ borderWidth: 4, borderColor: "#f5f0eb", backgroundColor: "#f5f0eb" }}
+            style={{ borderWidth: 4, borderColor: "#ffffff", backgroundColor: "#ffffff" }}
           >
             <PLAvatar initials={VENDOR.initials} size={72} tone="primary" />
           </View>

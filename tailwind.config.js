@@ -6,10 +6,7 @@
 //   reaching for raw Tailwind palette tokens — keeps every screen one
 //   refactor away from a brand-wide colour change.
 module.exports = {
-  content: [
-    "./app/**/*.{js,jsx,ts,tsx}",
-    "./components/**/*.{js,jsx,ts,tsx}",
-  ],
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
@@ -25,8 +22,11 @@ module.exports = {
           soft: "#f5ead4",
         },
         cream: {
-          DEFAULT: "#f5f0eb",
-          2: "#ece6df",
+          // Page surface flipped from warm cream (#f5f0eb) to white to match
+          // the redesigned home. `2` is the secondary surface (chips, fills) —
+          // now the cool grey used by the home search field. `3` stays warm.
+          DEFAULT: "#ffffff",
+          2: "#f0f0f0",
           3: "#ddd5c9",
         },
         ink: {

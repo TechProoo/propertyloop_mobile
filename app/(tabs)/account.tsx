@@ -23,7 +23,7 @@ const LINE = "#e1dcd3";
 const TONE_BG: Record<UpNextItem["tone"], string> = {
   primary: "#e3efe7",
   accent:  "#f5ead4",
-  neutral: "#ece6df",
+  neutral: "#f0f0f0",
 };
 const TONE_FG: Record<UpNextItem["tone"], string> = {
   primary: PRIMARY_INK,

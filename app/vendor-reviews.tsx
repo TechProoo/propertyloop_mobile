@@ -62,7 +62,7 @@ export default function VendorReviewsScreen() {
                 </Text>
                 <View
                   className="flex-1 rounded-full overflow-hidden"
-                  style={{ height: 5, backgroundColor: "#ece6df" }}
+                  style={{ height: 5, backgroundColor: "#f0f0f0" }}
                 >
                   <View
                     style={{
@@ -145,7 +145,7 @@ function ReviewCard({ review }: { review: Review }) {
       {review.reply ? (
         <View
           className="mt-2.5 rounded-xl px-3 py-2.5"
-          style={{ backgroundColor: "#ece6df", borderLeftWidth: 2, borderLeftColor: PRIMARY }}
+          style={{ backgroundColor: "#f0f0f0", borderLeftWidth: 2, borderLeftColor: PRIMARY }}
         >
           <Text className="text-[10.5px] font-sans-bold text-primary mb-0.5">
             YOUR REPLY
@@ -156,7 +156,7 @@ function ReviewCard({ review }: { review: Review }) {
         <Pressable
           onPress={reply}
           className="mt-2.5 self-start rounded-full px-3.5 py-1.5"
-          style={{ backgroundColor: "#ece6df" }}
+          style={{ backgroundColor: "#f0f0f0" }}
         >
           <Text className="text-[12px] font-sans-bold text-ink">Reply publicly</Text>
         </Pressable>

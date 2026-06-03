@@ -120,7 +120,7 @@ export default function EditProfileScreen() {
               )}
               <View
                 className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary items-center justify-center"
-                style={{ borderWidth: 3, borderColor: "#f5f0eb" }}
+                style={{ borderWidth: 3, borderColor: "#ffffff" }}
               >
                 <Ionicons name="camera" size={15} color="#ffffff" />
               </View>

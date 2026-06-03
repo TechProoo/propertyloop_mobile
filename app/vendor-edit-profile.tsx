@@ -108,7 +108,7 @@ export default function VendorEditProfileScreen() {
               )}
               <View
                 className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full items-center justify-center"
-                style={{ backgroundColor: PRIMARY, borderWidth: 3, borderColor: "#f5f0eb" }}
+                style={{ backgroundColor: PRIMARY, borderWidth: 3, borderColor: "#ffffff" }}
               >
                 <Ionicons name="camera" size={15} color="#ffffff" />
               </View>

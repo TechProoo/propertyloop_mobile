@@ -23,7 +23,7 @@ type UpdateRow = {
 const TONE_BG: Record<UpdateTone, string> = {
   primary: "#e3efe7",
   accent: "#f5ead4",
-  neutral: "#ece6df",
+  neutral: "#f0f0f0",
 };
 const TONE_FG: Record<UpdateTone, string> = {
   primary: PRIMARY_INK,

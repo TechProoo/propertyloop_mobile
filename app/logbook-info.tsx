@@ -158,7 +158,7 @@ export default function LogbookInfoScreen() {
                 width: 10,
                 height: 10,
                 borderRadius: 5,
-                backgroundColor: "#ece6df",
+                backgroundColor: "#f0f0f0",
                 borderWidth: 2,
                 borderColor: "#d3cdc1",
               }}

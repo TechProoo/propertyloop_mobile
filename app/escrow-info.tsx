@@ -95,7 +95,7 @@ export default function EscrowInfoScreen() {
                       width: 44,
                       height: 44,
                       borderRadius: 12,
-                      backgroundColor: active ? PRIMARY : "#ece6df",
+                      backgroundColor: active ? PRIMARY : "#f0f0f0",
                       alignItems: "center",
                       justifyContent: "center",
                     }}

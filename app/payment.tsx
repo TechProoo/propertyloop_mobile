@@ -114,7 +114,7 @@ export default function PaymentScreen() {
               >
                 <View
                   className="w-10 h-10 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: on ? "#ffffff" : "#ece6df" }}
+                  style={{ backgroundColor: on ? "#ffffff" : "#f0f0f0" }}
                 >
                   <Ionicons
                     name={m.icon}
@@ -227,7 +227,7 @@ function Row({
       style={{
         borderBottomWidth: last ? 0 : 0.5,
         borderBottomColor: "#ece6df",
-        backgroundColor: bold ? "#f5f0eb" : "transparent",
+        backgroundColor: bold ? "#f0f0f0" : "transparent",
       }}
     >
       <Text
