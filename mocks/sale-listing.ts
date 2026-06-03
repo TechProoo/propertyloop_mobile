@@ -13,6 +13,8 @@ export type SaleListing = {
   area: string;
   daysOnMarket: number;
   verified: boolean;
+  rating: string;
+  propertyType: string;
   priceNaira: number;
   priceLabel: string;
   pricePerSqm: string;
@@ -39,6 +41,8 @@ export const HIBISCUS_HOUSE: SaleListing = {
   area: "Lekki Phase 1",
   daysOnMarket: 4,
   verified: true,
+  rating: "4.8",
+  propertyType: "Detached",
   priceNaira: 78_000_000,
   priceLabel: "₦78,000,000",
   pricePerSqm: "₦243k/m²",
@@ -53,15 +57,15 @@ export const HIBISCUS_HOUSE: SaleListing = {
     "hibiscus-6",
   ],
   stats: [
-    { icon: "bed-outline",      n: "4",   l: "Bed" },
-    { icon: "water-outline",    n: "4",   l: "Bath" },
-    { icon: "resize-outline",   n: "320", l: "m²" },
-    { icon: "car-outline",      n: "3",   l: "Park" },
+    { icon: "bed-outline",      n: "4",   l: "Beds" },
+    { icon: "water-outline",    n: "4",   l: "Baths" },
+    { icon: "resize-outline",   n: "320", l: "Sq m" },
+    { icon: "car-outline",      n: "3",   l: "Parking" },
   ],
   neighbourhood: [
-    { l: "Schools",   n: "14",   s: "Within 2 km" },
-    { l: "Hospitals", n: "4",    s: "Within 3 km" },
-    { l: "Avg ₦/m²",  n: "258k", s: "Lekki P1" },
+    { l: "Schools",   n: "14", s: "Within 2 km" },
+    { l: "Hospitals", n: "4",  s: "Within 3 km" },
+    { l: "Markets",   n: "6",  s: "Within 2 km" },
   ],
   agent: {
     initials: "EA",

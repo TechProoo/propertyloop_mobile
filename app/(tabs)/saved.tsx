@@ -5,12 +5,19 @@ import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SAVED_LISTINGS, SAVED_TABS, type SavedListing } from "@/mocks/saved";
+import { BUYER_HOME_LISTINGS, type HomeListing } from "@/mocks/home";
+import { toggleSaved, useSavedIds } from "@/lib/favourites";
+
+// Resolve a stored favourite id back to its home card. Only home listings
+// are looked up here; saved vendors/searches would extend this map.
+const LISTING_BY_ID: Record<string, HomeListing> = Object.fromEntries(
+  BUYER_HOME_LISTINGS.map((l) => [l.id, l]),
+);
 
 const PRIMARY = "#1f6f43";
 const ACCENT_INK = "#6b4a16";
 const ACCENT_DOT = "#d18d2f";
 const INK_2 = "#4d524f";
-const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
 
 function picsum(seed: string) {
@@ -20,6 +27,12 @@ function picsum(seed: string) {
 export default function SavedScreen() {
   const [tab, setTab] = useState<(typeof SAVED_TABS)[number]["id"]>("all");
   const [unsaved, setUnsaved] = useState<Set<string>>(new Set());
+
+  const savedIds = useSavedIds();
+  const justSaved = useMemo(
+    () => savedIds.map((id) => LISTING_BY_ID[id]).filter(Boolean) as HomeListing[],
+    [savedIds],
+  );
 
   const list = useMemo(
     () => SAVED_LISTINGS.filter((l) => !unsaved.has(l.id)),
@@ -89,6 +102,24 @@ export default function SavedScreen() {
           })}
         </View>
 
+        {/* Just saved — live favourites tapped anywhere in the app */}
+        {justSaved.length > 0 && (
+          <>
+            <Text className="px-5 pt-4 text-[13px] font-sans-bold text-ink-2">
+              Just saved
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="px-5 pt-2.5 gap-2.5"
+            >
+              {justSaved.map((l) => (
+                <JustSavedCard key={l.id} listing={l} />
+              ))}
+            </ScrollView>
+          </>
+        )}
+
         {/* Saved cards */}
         <View className="px-5 pt-4 gap-3.5">
           {list.map((c) => (
@@ -121,6 +152,51 @@ export default function SavedScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function JustSavedCard({ listing }: { listing: HomeListing }) {
+  return (
+    <Pressable
+      onPress={() => router.push(`/property/${listing.id}` as Href)}
+      className="bg-white rounded-[14px] overflow-hidden active:opacity-90"
+      style={{ width: 168, borderWidth: 0.5, borderColor: LINE }}
+      accessibilityRole="button"
+      accessibilityLabel={`${listing.title}, ${listing.price}`}
+    >
+      <View style={{ height: 104 }} className="relative">
+        <Image
+          source={picsum(listing.imageSeed)}
+          style={{ width: "100%", height: "100%" }}
+          contentFit="cover"
+        />
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            toggleSaved(listing.id);
+          }}
+          hitSlop={10}
+          className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center"
+          style={{ backgroundColor: "rgba(255,255,255,0.94)" }}
+          accessibilityRole="button"
+          accessibilityLabel="Remove from saved"
+        >
+          <Ionicons name="heart" size={16} color="#e0584f" />
+        </Pressable>
+      </View>
+      <View className="px-3 py-2.5">
+        <Text className="font-serif text-[16px] text-ink">{listing.price}</Text>
+        <Text
+          className="text-xs font-sans-semibold text-ink mt-0.5"
+          numberOfLines={1}
+        >
+          {listing.title}
+        </Text>
+        <Text className="text-[10.5px] font-sans-semibold text-ink-3 mt-0.5">
+          {listing.area}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 

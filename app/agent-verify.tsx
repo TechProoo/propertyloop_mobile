@@ -133,7 +133,7 @@ export default function AgentVerifyScreen() {
               >
                 <View
                   className="w-10 h-10 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: licenseFile ? "#e3efe7" : "#ece6df" }}
+                  style={{ backgroundColor: licenseFile ? "#e3efe7" : "#f0f0f0" }}
                 >
                   <Ionicons
                     name={licenseFile ? "document-attach" : "cloud-upload-outline"}

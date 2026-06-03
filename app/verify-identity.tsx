@@ -153,7 +153,7 @@ export default function VerifyIdentityScreen() {
             >
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"
-                style={{ backgroundColor: proof ? "#e3efe7" : "#ece6df" }}
+                style={{ backgroundColor: proof ? "#e3efe7" : "#f0f0f0" }}
               >
                 <Ionicons
                   name={proof ? "document-attach" : "cloud-upload-outline"}

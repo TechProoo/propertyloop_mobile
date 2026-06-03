@@ -78,7 +78,7 @@ export default function VendorSubmittedScreen() {
                 >
                   <View
                     className="w-9 h-9 rounded-xl items-center justify-center"
-                    style={{ backgroundColor: "#ece6df" }}
+                    style={{ backgroundColor: "#f0f0f0" }}
                   >
                     <Ionicons name={w.icon} size={18} color={INK_2} />
                   </View>

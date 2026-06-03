@@ -15,7 +15,7 @@ type Tone = "primary" | "accent" | "neutral";
 const TONE_BG: Record<Tone, string> = {
   primary: "#e3efe7",
   accent: "#f5ead4",
-  neutral: "#ece6df",
+  neutral: "#f0f0f0",
 };
 
 const TONE_FG: Record<Tone, string> = {

@@ -167,7 +167,7 @@ export default function VendorDisputeScreen() {
                 key={m.id}
                 className="self-start rounded-2xl px-3.5 py-2.5"
                 style={{
-                  backgroundColor: "#ece6df",
+                  backgroundColor: "#f0f0f0",
                   maxWidth: "85%",
                   borderBottomLeftRadius: 4,
                 }}

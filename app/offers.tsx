@@ -279,7 +279,7 @@ function PriceTag({
   highlight?: boolean;
   dark?: boolean;
 }) {
-  const bg = highlight ? "#e3efe7" : dark ? "#1a2120" : "#ece6df";
+  const bg = highlight ? "#e3efe7" : dark ? "#1a2120" : "#f0f0f0";
   const fg = dark ? "#ffffff" : highlight ? PRIMARY_INK : "#1a2120";
   const labelColor = dark
     ? "rgba(255,255,255,0.6)"

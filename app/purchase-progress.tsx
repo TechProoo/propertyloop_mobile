@@ -182,7 +182,7 @@ function StepRow({ step, isLast }: { step: PurchaseStep; isLast: boolean }) {
         borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: done ? PRIMARY : active ? "#ffffff" : "#ece6df",
+        backgroundColor: done ? PRIMARY : active ? "#ffffff" : "#f0f0f0",
         borderWidth: active ? 2 : 0,
         borderColor: PRIMARY,
         shadowColor: active ? PRIMARY : undefined,

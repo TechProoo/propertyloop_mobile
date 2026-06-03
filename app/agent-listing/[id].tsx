@@ -24,7 +24,7 @@ export default function AgentListingDetailScreen() {
     meta.tone === "primary" ? "#e3efe7"
     : meta.tone === "accent" ? "#f5ead4"
     : meta.tone === "ink"    ? INK
-    : "#ece6df";
+    : "#f0f0f0";
   const toneFg =
     meta.tone === "primary" ? PRIMARY_INK
     : meta.tone === "accent" ? ACCENT_INK

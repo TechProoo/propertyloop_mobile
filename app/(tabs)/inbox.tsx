@@ -86,7 +86,7 @@ function ConversationRow({ conv }: { conv: Conversation }) {
             style={{
               backgroundColor: ONLINE,
               borderWidth: 2,
-              borderColor: "#f5f0eb",
+              borderColor: "#ffffff",
             }}
           />
         )}

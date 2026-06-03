@@ -141,7 +141,7 @@ function ListingCard({ listing }: { listing: AgentListing }) {
     meta.tone === "primary" ? "#e3efe7"
     : meta.tone === "accent" ? "#f5ead4"
     : meta.tone === "ink"    ? "#1a2120"
-    : "#ece6df";
+    : "#f0f0f0";
   const toneFg =
     meta.tone === "primary" ? PRIMARY_INK
     : meta.tone === "accent" ? ACCENT_INK
@@ -181,7 +181,7 @@ function ListingCard({ listing }: { listing: AgentListing }) {
         <View
           style={{
             width: 70, height: 70, borderRadius: 12,
-            backgroundColor: "#ece6df",
+            backgroundColor: "#f0f0f0",
             alignItems: "center", justifyContent: "center",
           }}
         >

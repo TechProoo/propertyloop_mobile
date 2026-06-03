@@ -145,7 +145,7 @@ function JobCard({ job }: { job: VendorJob }) {
           className="items-center justify-center rounded-xl"
           style={{
             width: 60, paddingVertical: 8,
-            backgroundColor: next ? "#e3efe7" : "#ece6df",
+            backgroundColor: next ? "#e3efe7" : "#f0f0f0",
           }}
         >
           <Text

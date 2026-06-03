@@ -147,7 +147,7 @@ export default function VendorFirstServiceScreen() {
                     onPress={() => setPriceMode(m)}
                     className="flex-1 rounded-xl items-center py-2.5"
                     style={{
-                      backgroundColor: on ? INK : "#ece6df",
+                      backgroundColor: on ? INK : "#f0f0f0",
                       borderWidth: 0,
                     }}
                   >

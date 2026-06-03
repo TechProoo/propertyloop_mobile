@@ -42,7 +42,7 @@ export default function VendorHomeScreen() {
             <Pressable
               onPress={() => setAvailable((a) => !a)}
               className="flex-row items-center gap-1.5 px-2.5 py-1.5 rounded-full"
-              style={{ backgroundColor: available ? "#e3efe7" : "#ece6df" }}
+              style={{ backgroundColor: available ? "#e3efe7" : "#f0f0f0" }}
             >
               <View
                 style={{
@@ -64,7 +64,7 @@ export default function VendorHomeScreen() {
               <Ionicons name="notifications-outline" size={18} color={INK} />
               <View
                 className="absolute top-2 right-2 w-2 h-2 rounded-full"
-                style={{ backgroundColor: "#b9842c", borderWidth: 2, borderColor: "#f5f0eb" }}
+                style={{ backgroundColor: "#b9842c", borderWidth: 2, borderColor: "#ffffff" }}
               />
             </Pressable>
           </View>

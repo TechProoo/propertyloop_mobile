@@ -1,229 +1,249 @@
-import { useState } from "react";
-import {
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { Skeleton } from "@/components/brand/Skeleton";
+import { tapLight, tapSelection } from "@/lib/haptics";
+import { toggleSaved, useIsSaved } from "@/lib/favourites";
 import {
-  AGENTS,
-  CONTACT,
-  FEATURED_ALL,
-  FEATURED_LEKKI,
-  FEATURED_VENDOR,
-  LOCATIONS,
-  LOGBOOK_PREVIEW,
-  MODES,
-  NEARBY_ALL,
-  NEARBY_LEKKI,
-  RECENT_ITEMS,
-  SERVICE_CATEGORIES,
-  SHORTLETS,
-  type Mode,
+  BUYER_HOME_LISTINGS,
+  HOME_CATEGORIES,
+  type HomeCategory,
+  type HomeListing,
 } from "@/mocks/home";
 
-const PRIMARY = "#1f6f43";
-const PRIMARY_INK = "#134a2d";
-const ACCENT = "#b9842c";
+const PRIMARY = "#1f6f43"; // brand green — accent (was blue in the reference)
+const ACCENT = "#b9842c"; // gold — rating stars only
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
-const SURFACE_2 = "#ece6df";
 
-function picsum(seed: string, w = 600, h = 400) {
+function picsum(seed: string, w = 600, h = 500) {
   return `https://picsum.photos/seed/${seed}/${w}/${h}`;
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Screen
+// Buyer home — photo-led 2-up grid, neutral (ink/white/cream) palette.
 // ─────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const [mode, setMode] = useState<Mode>("Rent");
-  const [location, setLocation] = useState("Lekki");
-  const isAll = location === "All";
+  const [category, setCategory] = useState<HomeCategory>("Rental House");
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const featured = isAll ? FEATURED_ALL : FEATURED_LEKKI;
-  const nearby = isAll ? NEARBY_ALL : NEARBY_LEKKI;
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 750);
+    return () => clearTimeout(t);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return BUYER_HOME_LISTINGS.filter((h) => {
+      const byCategory = h.category === category;
+      const byQuery =
+        !q ||
+        h.title.toLowerCase().includes(q) ||
+        h.area.toLowerCase().includes(q);
+      return byCategory && byQuery;
+    });
+  }, [category, query]);
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
       <ScrollView
-        contentContainerClassName="pb-6"
+        contentContainerClassName="pb-8"
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
       >
         <Header />
-        <SearchBar />
-        <ModeSwitcher selected={mode} onSelect={setMode} />
-        <LocationChips selected={location} onSelect={setLocation} />
+        <Heading />
+        <SearchRow query={query} onChange={setQuery} />
+        <CategoryChips active={category} onSelect={setCategory} />
 
-        <SectionHeader
-          title={isAll ? "Featured across Lagos" : `Featured in ${location}`}
-          action={isAll ? "See all 412" : "See all"}
-        />
-        <FeaturedCarousel items={featured} />
+        <Text className="px-5 pt-5 text-[16px] font-sans-bold text-ink tracking-tight">
+          Nearby {category}
+        </Text>
 
-        <MarketPulse location={isAll ? "Lagos market" : `${location} Phase 1`} all={isAll} />
+        {loading ? (
+          <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </View>
+        ) : filtered.length === 0 ? (
+          <EmptyState query={query} category={category} />
+        ) : (
+          <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
+            {filtered.map((h) => (
+              <HomeCard key={h.id} listing={h} />
+            ))}
+          </View>
+        )}
 
-        <SectionHeader title="Pick up where you left off" action="Clear" />
-        <RecentlyViewed />
-
-        <ServiceLoopSection />
-
-        <SectionHeader
-          title={isAll ? "Newest on the market" : "Near your search"}
-          action="Map view"
-        />
-        <NearbyList items={nearby} />
-
-        <ShortletsSection />
-
-        <AgentsSection />
-
-        <LogbookTeaser />
-
-        <ContactCard />
+        <ServiceLoopBanner />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Sections — each kept inline; promote to its own file if reused.
+// Header — location pill + bell + avatar
 // ─────────────────────────────────────────────────────────────────
-
 function Header() {
   return (
     <View className="px-5 pt-1 flex-row items-center justify-between">
-      <View>
-        <Text className="text-ink-3 text-[13px] font-sans-semibold">
-          Good morning,
-        </Text>
-        <Text className="text-ink text-[22px] font-sans-bold mt-0.5 tracking-tight">
-          Adebayo 👋
-        </Text>
-      </View>
-      <View className="flex-row gap-2">
+      <Pressable
+        onPress={tapLight}
+        hitSlop={8}
+        className="flex-row items-center gap-2 active:opacity-70"
+        accessibilityRole="button"
+        accessibilityLabel="Current location, Lekki, Lagos. Tap to change."
+      >
+        <Ionicons name="location-outline" size={22} color={INK} />
+        <View className="flex-row items-center gap-1.5 bg-ink rounded-full pl-3 pr-2.5 py-1.5">
+          <Text className="text-[12.5px] font-sans-bold text-white">
+            Lekki, Lagos
+          </Text>
+          <Ionicons name="chevron-down" size={13} color="#ffffff" />
+        </View>
+      </Pressable>
+
+      <View className="flex-row items-center gap-2.5">
         <Pressable
-          onPress={() => router.push("/notifications" as Href)}
-          className="w-10 h-10 rounded-full bg-cream-2 items-center justify-center"
+          onPress={() => {
+            tapLight();
+            router.push("/notifications" as Href);
+          }}
+          hitSlop={8}
+          className="w-10 h-10 rounded-full bg-cream-2 items-center justify-center active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
         >
-          <Ionicons name="notifications-outline" size={18} color={INK} />
+          <Ionicons name="notifications-outline" size={19} color={INK} />
           <View
-            className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent"
-            style={{ borderWidth: 2, borderColor: "#f5f0eb" }}
+            className="absolute top-2 right-2.5 w-[7px] h-[7px] rounded-full"
+            style={{ backgroundColor: PRIMARY, borderWidth: 2, borderColor: "#ffffff" }}
           />
         </Pressable>
-        <PLAvatar initials="AO" size={40} tone="primary" />
+        <PLAvatar initials="AO" size={40} tone="neutral" />
       </View>
     </View>
   );
 }
 
-function SearchBar() {
+// ─────────────────────────────────────────────────────────────────
+// Heading
+// ─────────────────────────────────────────────────────────────────
+function Heading() {
   return (
-    <View className="px-5 pt-4 pb-2">
-      <View className="bg-cream-2 rounded-full px-4 py-3 flex-row items-center gap-2.5">
-        <Ionicons name="search" size={18} color={INK_2} />
-        <TextInput
-          placeholder="Search address, area, landmark…"
-          placeholderTextColor={INK_3}
-          className="flex-1 text-sm text-ink font-sans-medium"
-          style={{ paddingVertical: 0 }}
-        />
-        <Pressable
-          onPress={() => router.push("/filters" as Href)}
-          hitSlop={6}
-          className="w-7 h-7 rounded-full bg-ink items-center justify-center"
-        >
-          <Ionicons name="options-outline" size={14} color="#ffffff" />
-        </Pressable>
-      </View>
+    <View className="px-5 pt-4">
+      <Text
+        className="font-sans-bold text-ink"
+        style={{ fontSize: 28, lineHeight: 32, letterSpacing: -0.6 }}
+      >
+        Discover{"\n"}your new home
+      </Text>
     </View>
   );
 }
 
-function ModeSwitcher({
-  selected,
-  onSelect,
+// ─────────────────────────────────────────────────────────────────
+// Search + inline filter
+// ─────────────────────────────────────────────────────────────────
+function SearchRow({
+  query,
+  onChange,
 }: {
-  selected: Mode;
-  onSelect: (m: Mode) => void;
+  query: string;
+  onChange: (q: string) => void;
 }) {
   return (
-    <View className="px-5 pb-3">
-      <View className="flex-row bg-cream-2 rounded-full p-1">
-        {MODES.map((m) => {
-          const isOn = selected === m;
-          return (
-            <Pressable
-              key={m}
-              onPress={() => onSelect(m)}
-              className={`flex-1 py-2.5 rounded-full items-center ${
-                isOn ? "bg-white" : "bg-transparent"
-              }`}
-              style={
-                isOn
-                  ? {
-                      shadowColor: "#000",
-                      shadowOpacity: 0.06,
-                      shadowRadius: 2,
-                      shadowOffset: { width: 0, height: 1 },
-                    }
-                  : undefined
-              }
-            >
-              <Text
-                className={`text-[13px] font-sans-bold ${
-                  isOn ? "text-ink" : "text-ink-3"
-                }`}
-              >
-                {m}
-              </Text>
-            </Pressable>
-          );
-        })}
+    <View className="px-5 pt-4">
+      <View
+        className="rounded-2xl px-4 flex-row items-center gap-2.5"
+        style={{ height: 52, backgroundColor: "#f0f0f0" }}
+      >
+        <Ionicons name="search" size={19} color={INK_3} />
+        <TextInput
+          value={query}
+          onChangeText={onChange}
+          placeholder="Search place…"
+          placeholderTextColor={INK_3}
+          className="flex-1 text-[14.5px] text-ink font-sans-medium"
+          style={{ paddingVertical: 0 }}
+          returnKeyType="search"
+          accessibilityLabel="Search place"
+        />
+        {query.length > 0 ? (
+          <Pressable
+            onPress={() => onChange("")}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
+            <Ionicons name="close-circle" size={19} color={INK_3} />
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => {
+              tapLight();
+              router.push("/filters" as Href);
+            }}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Filters"
+          >
+            <Ionicons name="options-outline" size={20} color={INK} />
+          </Pressable>
+        )}
       </View>
     </View>
   );
 }
 
-function LocationChips({
-  selected,
+// ─────────────────────────────────────────────────────────────────
+// Category chips — Rental House / Apartment / Houses / Rooms
+// ─────────────────────────────────────────────────────────────────
+function CategoryChips({
+  active,
   onSelect,
 }: {
-  selected: string;
-  onSelect: (loc: string) => void;
+  active: HomeCategory;
+  onSelect: (c: HomeCategory) => void;
 }) {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerClassName="px-5 pb-4 gap-2"
+      contentContainerClassName="px-5 pt-4 gap-2.5"
     >
-      {LOCATIONS.map((l) => {
-        const isOn = selected === l;
+      {HOME_CATEGORIES.map((c) => {
+        const isOn = active === c;
         return (
           <Pressable
-            key={l}
-            onPress={() => onSelect(l)}
-            className={`px-3.5 py-2 rounded-full ${
+            key={c}
+            onPress={() => {
+              tapSelection();
+              onSelect(c);
+            }}
+            className={`px-[18px] rounded-full items-center justify-center ${
               isOn ? "bg-ink" : "bg-cream-2"
             }`}
+            style={{ height: 40 }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isOn }}
+            accessibilityLabel={c}
           >
             <Text
-              className={`text-[13px] font-sans-semibold ${
-                isOn ? "text-white" : "text-ink-2"
+              className={`text-[13.5px] font-sans-bold ${
+                isOn ? "text-white" : "text-ink-3"
               }`}
             >
-              {l}
+              {c}
             </Text>
           </Pressable>
         );
@@ -232,575 +252,169 @@ function LocationChips({
   );
 }
 
-function SectionHeader({
-  title,
-  italic,
-  action,
-}: {
-  title: string;
-  italic?: string;
-  action?: string;
-}) {
+// ─────────────────────────────────────────────────────────────────
+// Home card — photo with verified badge, price pill, rating overlay
+// ─────────────────────────────────────────────────────────────────
+function HomeCard({ listing }: { listing: HomeListing }) {
+  const saved = useIsSaved(listing.id);
   return (
-    <View className="px-5 pt-5 flex-row items-baseline justify-between">
-      <Text className="text-[17px] font-sans-bold text-ink tracking-tight">
-        {italic ? (
-          <>
-            <Text className="font-serif-italic">{italic}</Text>{" "}
-            {title}
-          </>
-        ) : (
-          title
-        )}
-      </Text>
-      {action && (
-        <Text className="text-[13px] font-sans-semibold text-primary">
-          {action}
-        </Text>
-      )}
-    </View>
-  );
-}
-
-function FeaturedCarousel({
-  items,
-}: {
-  items: (typeof FEATURED_LEKKI)[number][];
-}) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerClassName="px-5 pt-3 gap-3.5"
+    <Pressable
+      onPress={() => {
+        tapLight();
+        router.push(`/property/${listing.id}` as Href);
+      }}
+      className="rounded-[18px] overflow-hidden active:opacity-95"
+      style={{ width: "47.5%" }}
+      accessibilityRole="button"
+      accessibilityLabel={`${listing.title}, ${listing.area}, ${listing.price}${
+        listing.period ?? ""
+      }`}
     >
-      {items.map((c) => (
-        <Pressable
-          key={c.id}
-          onPress={() =>
-            router.push(`/property/${c.id}` as Href)
-          }
-          className="bg-white rounded-[20px] overflow-hidden active:opacity-90"
-          style={{
-            width: 256,
-            shadowColor: "#000",
-            shadowOpacity: 0.05,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 4 },
-          }}
-        >
-          <View style={{ height: 170 }} className="relative">
-            <Image
-              source={picsum(c.imageSeed)}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-            />
-            {c.tag && (
-              <View className="absolute top-3 left-3 bg-white px-2.5 py-1 rounded-full">
-                <Text className="text-[11px] font-sans-bold text-ink tracking-wider">
-                  {c.tag.toUpperCase()}
-                </Text>
-              </View>
-            )}
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                Alert.alert("Saved", `${c.title} added to your shortlist.`);
-              }}
-              className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 items-center justify-center"
-              hitSlop={6}
-            >
-              <Ionicons name="heart-outline" size={16} color={INK} />
-            </Pressable>
-          </View>
-          <View className="px-3.5 py-3">
-            <View className="flex-row items-baseline gap-1.5">
-              <Text className="font-serif text-[20px] text-ink">{c.price}</Text>
-              <Text className="text-xs text-ink-3 font-sans-semibold">
-                {c.period}
-              </Text>
-            </View>
-            <Text
-              className="text-[14px] font-sans-semibold text-ink mt-0.5"
-              numberOfLines={1}
-            >
-              {c.title}
-            </Text>
-            <Text className="text-xs text-ink-3 mt-0.5">{c.area}</Text>
-            <View className="flex-row gap-3 mt-2">
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="bed-outline" size={14} color={INK_2} />
-                <Text className="text-xs font-sans-semibold text-ink-2">
-                  {c.beds}
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="water-outline" size={14} color={INK_2} />
-                <Text className="text-xs font-sans-semibold text-ink-2">
-                  {c.baths}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Pressable>
-      ))}
-    </ScrollView>
-  );
-}
+      <View style={{ height: 168 }} className="relative">
+        <Image
+          source={picsum(listing.imageSeed)}
+          style={{ width: "100%", height: "100%" }}
+          contentFit="cover"
+          transition={200}
+        />
 
-function MarketPulse({ location, all }: { location: string; all: boolean }) {
-  return (
-    <View className="mt-5 mx-4 bg-ink rounded-[18px] px-5 py-4 overflow-hidden">
-      <Text className="text-[10px] font-sans-bold text-white/60 tracking-widest uppercase">
-        Market pulse · {location}
-      </Text>
-      <Text
-        className="font-serif text-[22px] text-white mt-1.5"
-        style={{ lineHeight: 26 }}
-      >
-        What <Text className="font-serif-italic">₦3M / yr</Text> rents this
-        month
-      </Text>
-      {all && (
-        <Text className="text-xs text-white/60 mt-1">
-          Across Lekki, Ikoyi, V.I. &amp; Yaba
-        </Text>
-      )}
-      <View className="flex-row gap-3 mt-4">
-        {[
-          { n: "+8%", l: "YoY rent", color: "#7ad296" },
-          { n: "47", l: "New listings", color: "#ffffff" },
-          { n: "22d", l: "Time to let", color: "#ffffff" },
-        ].map((s) => (
-          <View key={s.l} className="flex-1">
-            <Text className="font-serif text-[20px]" style={{ color: s.color }}>
-              {s.n}
-            </Text>
-            <Text className="text-[10px] font-sans-bold text-white/60 mt-0.5 uppercase tracking-widest">
-              {s.l}
-            </Text>
-          </View>
-        ))}
-      </View>
-      <View className="flex-row items-center gap-1 mt-3.5">
-        <Text
-          className="text-xs font-sans-bold"
-          style={{ color: "#a8e3c0" }}
-        >
-          Read the full report
-        </Text>
-        <Ionicons name="arrow-forward" size={11} color="#a8e3c0" />
-      </View>
-    </View>
-  );
-}
-
-function RecentlyViewed() {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerClassName="px-5 pt-3 gap-2.5"
-    >
-      {RECENT_ITEMS.map((c) => (
-        <Pressable
-          key={c.id}
-          onPress={() => router.push(`/property/${c.id}` as Href)}
-          className="bg-white rounded-[14px] overflow-hidden border-line active:opacity-90"
-          style={{ width: 180, borderWidth: 0.5 }}
-        >
-          <Image
-            source={picsum(c.imageSeed, 360, 200)}
-            style={{ width: "100%", height: 96 }}
-            contentFit="cover"
-          />
-          <View className="px-3 py-2.5">
-            <Text className="font-serif text-[16px] text-ink">{c.price}</Text>
-            <Text
-              className="text-xs font-sans-semibold text-ink mt-0.5"
-              numberOfLines={1}
-            >
-              {c.title}
-            </Text>
-            <Text className="text-[10.5px] font-sans-semibold text-ink-3 mt-0.5">
-              {c.area} · {c.ago}
-            </Text>
-          </View>
-        </Pressable>
-      ))}
-    </ScrollView>
-  );
-}
-
-function ServiceLoopSection() {
-  return (
-    <>
-      <View className="px-5 pt-5 flex-row items-baseline justify-between">
-        <Text className="text-[17px] text-ink tracking-tight">
-          <Text className="font-serif-italic text-[17px]">Service Loop</Text>
-          <Text className="font-sans-bold"> · people who fix things</Text>
-        </Text>
-        <Pressable onPress={() => router.push("/services" as Href)} hitSlop={6}>
-          <Text className="text-[13px] font-sans-semibold text-primary">
-            Browse all
-          </Text>
-        </Pressable>
-      </View>
-      <Text className="px-5 mt-0.5 text-[12.5px] text-ink-3 leading-5">
-        Verified vendors · pay through escrow only when the job's done.
-      </Text>
-
-      {/* Category tiles */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-5 pt-2.5 gap-2.5"
-      >
-        {SERVICE_CATEGORIES.map((c) => (
-          <Pressable
-            key={c.id}
-            onPress={() => router.push("/services" as Href)}
-            className="bg-white rounded-[14px] items-center justify-center gap-1.5 border-line active:opacity-90"
-            style={{
-              width: 76,
-              paddingVertical: 14,
-              borderWidth: 1,
-            }}
-          >
-            <Ionicons name={c.icon} size={22} color={PRIMARY} />
-            <Text className="text-[11.5px] font-sans-bold text-ink">
-              {c.label}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {/* Featured vendor */}
-      <View className="px-4 pt-3">
-        <Pressable
-          onPress={() =>
-            router.push({
-              pathname: "/book-service",
-              params: { vendorId: FEATURED_VENDOR.id },
-            } as Href)
-          }
-          className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line active:opacity-90"
-          style={{ borderWidth: 0.5 }}
-        >
-          <PLAvatar initials={FEATURED_VENDOR.initials} size={48} tone="primary" />
-          <View className="flex-1">
-            <View className="flex-row items-center gap-1.5 flex-wrap">
-              <Text className="text-[14px] font-sans-bold text-ink">
-                {FEATURED_VENDOR.name}
-              </Text>
-              <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />
-              {FEATURED_VENDOR.topRated && (
-                <View className="bg-accent-soft px-1.5 py-0.5 rounded-full">
-                  <Text
-                    className="text-[9.5px] font-sans-bold tracking-widest uppercase"
-                    style={{ color: "#6b4a16" }}
-                  >
-                    Top rated
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Text className="text-xs text-ink-3 mt-0.5">
-              {FEATURED_VENDOR.category} · {FEATURED_VENDOR.area} · ⭐{" "}
-              {FEATURED_VENDOR.rating} · {FEATURED_VENDOR.jobs} jobs
-            </Text>
-            <Text className="text-xs text-primary font-sans-bold mt-1">
-              From {FEATURED_VENDOR.fromPrice} · book today
-            </Text>
-          </View>
-          <View className="w-9 h-9 rounded-full bg-primary items-center justify-center">
-            <Ionicons name="arrow-forward" size={16} color="#ffffff" />
-          </View>
-        </Pressable>
-      </View>
-    </>
-  );
-}
-
-function NearbyList({ items }: { items: typeof NEARBY_LEKKI }) {
-  return (
-    <View className="px-4 pt-2.5 gap-2.5">
-      {items.map((r) => (
-        <Pressable
-          key={r.id}
-          onPress={() => router.push(`/property/${r.id}` as Href)}
-          className="flex-row gap-3 p-3 bg-white rounded-2xl active:opacity-90"
-        >
-          <Image
-            source={picsum(r.imageSeed, 200, 200)}
-            style={{ width: 96, height: 96, borderRadius: 12 }}
-            contentFit="cover"
-          />
-          <View className="flex-1 justify-center">
-            <Text className="text-[11px] font-sans-bold text-primary tracking-wider uppercase">
-              {r.area}
-            </Text>
-            <Text
-              className="text-[14.5px] font-sans-semibold text-ink mt-0.5"
-              numberOfLines={1}
-            >
-              {r.title}
-            </Text>
-            <View className="flex-row gap-2.5 mt-1">
-              <Text className="text-xs font-sans-semibold text-ink-3">
-                {r.beds} bed
-              </Text>
-              <Text className="text-xs font-sans-semibold text-ink-3">
-                {r.baths} bath
-              </Text>
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="star" size={11} color={ACCENT} />
-                <Text className="text-xs font-sans-semibold text-ink-3">
-                  {r.rating}
-                </Text>
-              </View>
-            </View>
-            <View className="flex-row items-baseline gap-1 mt-1.5">
-              <Text className="font-serif text-[17px] text-ink">{r.price}</Text>
-              {r.period ? (
-                <Text className="text-[11px] font-sans-semibold text-ink-3">
-                  {r.period}
-                </Text>
-              ) : null}
-            </View>
-          </View>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-function ShortletsSection() {
-  return (
-    <>
-      <View className="px-5 pt-5 flex-row items-baseline justify-between">
-        <Text className="text-[17px] text-ink tracking-tight">
-          <Text className="font-sans-bold">Weekends in </Text>
-          <Text className="font-serif-italic text-[17px]">Lagos</Text>
-        </Text>
-        <Text className="text-[13px] font-sans-semibold text-primary">
-          All shortlets
-        </Text>
-      </View>
-      <Text className="px-5 mt-0.5 text-[12.5px] text-ink-3 leading-5">
-        Verified hosts · self check-in · from ₦55,000 a night.
-      </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-5 pt-2.5 gap-3.5"
-      >
-        {SHORTLETS.map((s) => (
-          <Pressable
-            key={s.id}
-            onPress={() => router.push(`/shortlet/${s.id}` as Href)}
-            className="bg-white rounded-[18px] overflow-hidden border-line active:opacity-90"
-            style={{ width: 240, borderWidth: 0.5 }}
-          >
-            <View style={{ height: 140 }} className="relative">
-              <Image
-                source={picsum(s.imageSeed, 500, 320)}
-                style={{ width: "100%", height: "100%" }}
-                contentFit="cover"
-              />
-              <View
-                className="absolute top-2.5 left-2.5 px-2 py-1 rounded-full"
-                style={{ backgroundColor: "#3c2d5c" }}
-              >
-                <Text className="text-[10px] font-sans-bold text-white tracking-wider uppercase">
-                  Shortlet
-                </Text>
-              </View>
-              {s.superhost && (
-                <View className="absolute top-2.5 left-[78px] px-2 py-1 rounded-full bg-white/95">
-                  <Text className="text-[10px] font-sans-bold text-ink tracking-wider uppercase">
-                    Superhost
-                  </Text>
-                </View>
-              )}
-              <View className="absolute bottom-2.5 right-2.5 px-1.5 py-0.5 rounded-full bg-black/55 flex-row items-center gap-1">
-                <Ionicons name="star" size={10} color={ACCENT} />
-                <Text className="text-[11px] font-sans-bold text-white">
-                  {s.rating}
-                </Text>
-              </View>
-            </View>
-            <View className="px-3 py-3">
-              <View className="flex-row items-baseline gap-1">
-                <Text className="font-serif text-[18px] text-ink">
-                  {s.price}
-                </Text>
-                <Text className="text-[11px] text-ink-3 font-sans-semibold">
-                  / night
-                </Text>
-              </View>
-              <Text
-                className="text-[13px] font-sans-bold text-ink mt-0.5"
-                numberOfLines={1}
-              >
-                {s.title}
-              </Text>
-              <Text className="text-[11.5px] text-ink-3 mt-0.5">{s.area}</Text>
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </>
-  );
-}
-
-function AgentsSection() {
-  return (
-    <>
-      <View className="px-5 pt-6 flex-row items-baseline justify-between">
-        <Text className="text-[17px] font-sans-bold text-ink tracking-tight">
-          Talk to the listing agent
-        </Text>
-        <Text className="text-[13px] font-sans-semibold text-primary">
-          Browse 38
-        </Text>
-      </View>
-      <Text className="px-5 mt-0.5 text-[12.5px] text-ink-3 leading-5">
-        Every agent on PropertyLoop is KYC-verified. No phone-tree, no chain of brokers.
-      </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-5 pt-2.5 gap-2.5"
-      >
-        {AGENTS.map((a) => (
+        {/* Verified badge (brand green, like the reference's blue) */}
+        {listing.verified && (
           <View
-            key={a.id}
-            className="bg-white rounded-2xl px-3.5 py-3.5 border-line"
-            style={{ width: 168, borderWidth: 0.5 }}
+            className="absolute top-2.5 left-2.5 w-[26px] h-[26px] rounded-lg items-center justify-center"
+            style={{ backgroundColor: PRIMARY }}
+            accessibilityLabel="Verified listing"
           >
-            <View className="flex-row items-center gap-2">
-              <PLAvatar initials={a.initials} size={36} tone={a.tone} />
-              <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
-            </View>
-            <Text className="text-[13.5px] font-sans-bold text-ink mt-2">
-              {a.name}
-            </Text>
-            <Text className="text-[11px] font-sans-semibold text-ink-3 mt-0.5">
-              {a.description}
-            </Text>
-            <View className="flex-row items-center gap-1 mt-1.5">
-              <Ionicons name="star" size={11} color={ACCENT} />
-              <Text className="text-[11px] font-sans-bold text-ink">
-                {a.rating}
-              </Text>
-              <Text className="text-[11px] font-sans-semibold text-ink-3 ml-1">
-                · {a.listings} listings
-              </Text>
-            </View>
+            <Ionicons name="checkmark-sharp" size={16} color="#ffffff" />
           </View>
-        ))}
-      </ScrollView>
-    </>
+        )}
+
+        {/* Price pill */}
+        <View
+          className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full"
+          style={{ backgroundColor: "rgba(26,33,32,0.62)" }}
+        >
+          <Text className="text-[11px] font-sans-bold text-white">
+            {listing.price}
+            {listing.period ?? ""}
+          </Text>
+        </View>
+
+        {/* Save heart (bottom-right) */}
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            toggleSaved(listing.id);
+          }}
+          hitSlop={10}
+          className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full items-center justify-center"
+          style={{ backgroundColor: "rgba(26,33,32,0.45)" }}
+          accessibilityRole="button"
+          accessibilityLabel={saved ? "Remove from saved" : "Save this home"}
+          accessibilityState={{ selected: saved }}
+        >
+          <Ionicons
+            name={saved ? "heart" : "heart-outline"}
+            size={16}
+            color={saved ? "#ff6b66" : "#ffffff"}
+          />
+        </Pressable>
+
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.6)"]}
+          locations={[0.4, 1]}
+          pointerEvents="none"
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+
+        {/* Rating + title + location */}
+        <View className="absolute left-2.5 right-2.5 bottom-2.5">
+          <View className="flex-row items-center gap-1 mb-1">
+            <Ionicons name="star" size={11} color={ACCENT} />
+            <Text className="text-[11px] font-sans-bold text-white">
+              {listing.rating}
+            </Text>
+          </View>
+          <Text
+            className="text-[14px] font-sans-bold text-white tracking-tight"
+            numberOfLines={1}
+          >
+            {listing.title}
+          </Text>
+          <View className="flex-row items-center gap-1 mt-0.5">
+            <Ionicons name="location" size={11} color="rgba(255,255,255,0.85)" />
+            <Text
+              className="text-[11px] font-sans-medium text-white/85"
+              numberOfLines={1}
+            >
+              {listing.area}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
-function LogbookTeaser() {
+// ─────────────────────────────────────────────────────────────────
+// Service Loop — slim neutral entry (preserves the marketplace link)
+// ─────────────────────────────────────────────────────────────────
+function ServiceLoopBanner() {
   return (
-    <View className="mt-6 mx-4 bg-primary-soft rounded-[18px] p-5">
-      <Text className="text-[11px] font-sans-bold text-primary tracking-widest uppercase">
-        Property Logbook
-      </Text>
-      <Text
-        className="font-serif text-[24px] mt-1.5"
-        style={{ color: PRIMARY_INK, lineHeight: 28 }}
-      >
-        Every home, <Text className="font-serif-italic">an honest record</Text>
-      </Text>
-      <Text
-        className="text-[13px] mt-1.5 leading-5"
-        style={{ color: PRIMARY_INK, opacity: 0.78 }}
-      >
-        Repairs, inspections, service receipts — a permanent history that
-        follows the property.
-      </Text>
-
-      {/* Mini-logbook preview */}
+    <View className="px-5 pt-6">
       <Pressable
-        onPress={() => router.push("/logbook/hibiscus-1" as Href)}
-        className="mt-3.5 bg-white rounded-xl px-3 py-2.5 active:opacity-90"
+        onPress={() => {
+          tapLight();
+          router.push("/services" as Href);
+        }}
+        className="bg-primary rounded-2xl flex-row items-center gap-3 px-4 py-3.5 active:opacity-90"
+        accessibilityRole="button"
+        accessibilityLabel="Service Loop — hire verified pros, paid safely via escrow"
       >
-        <View className="flex-row items-center justify-between">
-          <Text className="text-[11px] font-sans-bold text-ink-2">
-            {LOGBOOK_PREVIEW.propertyName}
+        <View className="w-11 h-11 rounded-xl bg-white/15 items-center justify-center">
+          <Text style={{ fontSize: 22 }}>🛠️</Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-[14px] font-sans-bold text-white tracking-tight">
+            Need a plumber or cleaner?
           </Text>
-          <Text className="text-[10px] font-sans-bold text-primary tracking-widest uppercase">
-            {LOGBOOK_PREVIEW.since}
+          <Text className="text-[11.5px] text-white/70 mt-0.5">
+            Service Loop · verified pros, paid safely via escrow
           </Text>
         </View>
-        <View className="mt-2 gap-1">
-          {LOGBOOK_PREVIEW.events.map((e) => (
-            <View key={e.label} className="flex-row items-center gap-2">
-              <View
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: 5,
-                  backgroundColor:
-                    e.tone === "primary"
-                      ? PRIMARY
-                      : e.tone === "accent"
-                        ? ACCENT
-                        : INK_3,
-                }}
-              />
-              <Text className="text-[11.5px] text-ink-2 flex-1">{e.label}</Text>
-              <Text className="text-[11.5px] text-ink-3 font-sans-medium">
-                {e.date}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </Pressable>
-
-      <Pressable
-        onPress={() => router.push("/logbook-info" as Href)}
-        className="mt-3.5 self-start bg-primary rounded-full px-4 py-2.5 flex-row items-center gap-1.5"
-      >
-        <Text className="text-[12.5px] font-sans-bold text-white">
-          How it works
-        </Text>
-        <Ionicons name="arrow-forward" size={12} color="#ffffff" />
+        <Ionicons name="arrow-forward" size={18} color="#ffffff" />
       </Pressable>
     </View>
   );
 }
 
-function ContactCard() {
+// ─────────────────────────────────────────────────────────────────
+// Loading + empty states
+// ─────────────────────────────────────────────────────────────────
+function CardSkeleton() {
+  return <Skeleton style={{ width: "47.5%", height: 168 }} radius={18} />;
+}
+
+function EmptyState({
+  query,
+  category,
+}: {
+  query: string;
+  category: HomeCategory;
+}) {
   return (
-    <View
-      className="mt-6 mx-4 bg-white rounded-[14px] px-4 py-3.5 flex-row items-center gap-3 border-line"
-      style={{ borderWidth: 0.5 }}
-    >
-      <View
-        className="w-[38px] h-[38px] rounded-[10px] items-center justify-center"
-        style={{ backgroundColor: SURFACE_2 }}
-      >
-        <Ionicons name="call-outline" size={18} color={INK_2} />
+    <View className="items-center px-6 py-10">
+      <View className="w-16 h-16 rounded-full bg-cream-2 items-center justify-center">
+        <Ionicons name="home-outline" size={28} color={INK_2} />
       </View>
-      <View className="flex-1">
-        <Text className="text-[13px] font-sans-bold text-ink">
-          {CONTACT.title}
-        </Text>
-        <Text className="text-[11.5px] text-ink-3 mt-0.5">
-          {CONTACT.subtitle}
-        </Text>
-      </View>
-      <Pressable
-        onPress={() => Linking.openURL(`tel:${CONTACT.phone}`)}
-        hitSlop={8}
-      >
-        <Text className="text-xs font-sans-bold text-primary">Call</Text>
-      </Pressable>
+      <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+        No {category.toLowerCase()} here yet
+      </Text>
+      <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+        {query.trim()
+          ? `Nothing matches “${query.trim()}” in this category. Try another area or filter.`
+          : "New verified homes land here every week — check back soon."}
+      </Text>
     </View>
   );
 }

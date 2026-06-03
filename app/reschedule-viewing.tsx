@@ -106,7 +106,7 @@ export default function RescheduleViewingScreen() {
                 style={{
                   width: 64,
                   paddingVertical: 12,
-                  backgroundColor: on ? INK : d.off ? "#ece6df" : "#ffffff",
+                  backgroundColor: on ? INK : d.off ? "#f0f0f0" : "#ffffff",
                   borderWidth: on ? 0 : 1,
                   borderColor: "#e1dcd3",
                   opacity: d.off ? 0.5 : 1,
@@ -151,7 +151,7 @@ export default function RescheduleViewingScreen() {
                 style={{
                   paddingHorizontal: 16,
                   paddingVertical: 10,
-                  backgroundColor: on ? PRIMARY : disabled ? "#ece6df" : "#ffffff",
+                  backgroundColor: on ? PRIMARY : disabled ? "#f0f0f0" : "#ffffff",
                   borderWidth: on ? 0 : 1,
                   borderColor: "#e1dcd3",
                   opacity: disabled ? 0.5 : 1,

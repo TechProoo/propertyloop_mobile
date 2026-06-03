@@ -102,7 +102,7 @@ export default function SettingsScreen() {
                   <View
                     className="w-9 h-9 rounded-xl items-center justify-center"
                     style={{
-                      backgroundColor: l.destructive ? "#fde6e4" : "#ece6df",
+                      backgroundColor: l.destructive ? "#fde6e4" : "#f0f0f0",
                     }}
                   >
                     <Ionicons

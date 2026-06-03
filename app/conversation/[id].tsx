@@ -279,7 +279,7 @@ function BubbleView({ bubble }: { bubble: MsgBubble }) {
           borderRadius: 18,
           borderBottomRightRadius: isMe ? 6 : 18,
           borderBottomLeftRadius: isMe ? 18 : 6,
-          backgroundColor: isMe ? INK : "#ece6df",
+          backgroundColor: isMe ? INK : "#f0f0f0",
           opacity: isSending ? 0.55 : 1,
         }}
       >

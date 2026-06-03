@@ -1,16 +1,16 @@
-import { useState } from "react";
 import { Pressable, ScrollView, Share, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { getSaleListing } from "@/mocks/sale-listing";
+import { tapLight, tapMedium } from "@/lib/haptics";
+import { toggleSaved, useIsSaved } from "@/lib/favourites";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
-const INK = "#1a2120";
+const ACCENT = "#b9842c";
 const INK_2 = "#4d524f";
-const INK_3 = "#7f857f";
 
 function picsum(seed: string, w = 1200, h = 900) {
   return `https://picsum.photos/seed/${seed}/${w}/${h}`;
@@ -19,13 +19,15 @@ function picsum(seed: string, w = 1200, h = 900) {
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const listing = getSaleListing(id);
-  const [saved, setSaved] = useState(false);
+  const saved = useIsSaved(listing.id);
 
-  const handleShare = () =>
+  const handleShare = () => {
+    tapLight();
     Share.share({
       title: listing.title,
       message: `${listing.title} — ${listing.priceLabel} · ${listing.area}`,
     }).catch(() => {});
+  };
 
   return (
     <View className="flex-1 bg-cream">
@@ -74,9 +76,13 @@ export default function ListingDetailScreen() {
                 <Ionicons name="share-outline" size={18} color="#ffffff" />
               </Pressable>
               <Pressable
-                onPress={() => setSaved((s) => !s)}
+                onPress={() => toggleSaved(listing.id)}
+                hitSlop={8}
                 className="w-10 h-10 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
+                accessibilityRole="button"
+                accessibilityLabel={saved ? "Remove from saved" : "Save this home"}
+                accessibilityState={{ selected: saved }}
               >
                 <Ionicons
                   name={saved ? "heart" : "heart-outline"}
@@ -121,16 +127,25 @@ export default function ListingDetailScreen() {
           className="bg-cream px-5 pt-6"
           style={{ marginTop: -24, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
         >
-          {/* Tag row */}
-          <View className="flex-row items-center gap-1.5 mb-2.5">
-            <View className="bg-primary px-2 py-1 rounded-full">
-              <Text className="text-[10px] font-sans-bold text-white tracking-widest uppercase">
-                For sale
+          {/* Tag row — rating · type · verified */}
+          <View className="flex-row items-center gap-2 mb-3">
+            <View className="bg-accent-soft px-2.5 py-1.5 rounded-full flex-row items-center gap-1">
+              <Ionicons name="star" size={12} color={ACCENT} />
+              <Text
+                className="text-[12.5px] font-sans-bold"
+                style={{ color: "#6b4a16" }}
+              >
+                {listing.rating}
+              </Text>
+            </View>
+            <View className="bg-cream-2 px-3 py-1.5 rounded-full">
+              <Text className="text-[12px] font-sans-bold text-ink-2">
+                {listing.propertyType}
               </Text>
             </View>
             {listing.verified && (
-              <View className="bg-primary-soft px-2 py-1 rounded-full flex-row items-center gap-1">
-                <Ionicons name="shield-checkmark" size={10} color={PRIMARY} />
+              <View className="ml-auto bg-primary-soft px-2.5 py-1.5 rounded-full flex-row items-center gap-1">
+                <Ionicons name="shield-checkmark" size={11} color={PRIMARY} />
                 <Text
                   className="text-[10px] font-sans-bold tracking-widest uppercase"
                   style={{ color: PRIMARY_INK }}
@@ -139,9 +154,6 @@ export default function ListingDetailScreen() {
                 </Text>
               </View>
             )}
-            <Text className="ml-auto text-[11px] font-sans-semibold text-ink-3">
-              {listing.daysOnMarket} days on market
-            </Text>
           </View>
 
           {/* Title + address */}
@@ -172,23 +184,29 @@ export default function ListingDetailScreen() {
                 {listing.priceLabel}
               </Text>
               <Text
-                className="text-[11px] font-sans-bold tracking-wider uppercase"
-                style={{ color: PRIMARY_INK }}
+                className="text-[11px] font-sans-semibold"
+                style={{ color: PRIMARY_INK, opacity: 0.7 }}
               >
-                {listing.pricePerSqm}
+                Listed {listing.daysOnMarket} days ago
               </Text>
             </View>
             <View className="mt-1.5 flex-row items-center justify-between">
               <Text
                 className="text-[12.5px]"
-                style={{ color: PRIMARY_INK, opacity: 0.75 }}
+                style={{ color: PRIMARY_INK, opacity: 0.8 }}
               >
-                Open to <Text className="font-sans-bold">offers</Text> · area
-                median {listing.areaMedianPerSqm}
+                😊 Open to <Text className="font-sans-bold">offers</Text> ·
+                fairly priced for the area
               </Text>
               <Pressable
-                onPress={() => router.push(`/comps?id=${id ?? ""}` as Href)}
+                onPress={() => {
+                  tapLight();
+                  router.push(`/comps?id=${id ?? ""}` as Href);
+                }}
+                hitSlop={8}
                 className="flex-row items-center gap-1"
+                accessibilityRole="button"
+                accessibilityLabel="See comparable sales"
               >
                 <Text
                   className="text-[12.5px] font-sans-bold"
@@ -224,8 +242,8 @@ export default function ListingDetailScreen() {
           </View>
 
           {/* Neighbourhood */}
-          <Text className="text-[14px] font-sans-bold text-ink mt-6 mb-2.5">
-            Neighbourhood
+          <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2.5">
+            What&apos;s around 📍
           </Text>
           <View className="flex-row gap-2">
             {listing.neighbourhood.map((c) => (
@@ -290,32 +308,39 @@ export default function ListingDetailScreen() {
       >
         <View className="flex-row gap-2">
           <Pressable
-            onPress={() =>
+            onPress={() => {
+              tapLight();
               router.push({
                 pathname: "/book-viewing",
                 params: { listingId: listing.id },
-              } as Href)
-            }
+              } as Href);
+            }}
             className="flex-1 bg-cream-2 rounded-full items-center active:opacity-80"
             style={{ paddingVertical: 15 }}
+            accessibilityRole="button"
+            accessibilityLabel="Book a viewing"
           >
             <Text className="text-[14px] font-sans-bold text-ink">
-              Book viewing
+              Book a viewing
             </Text>
           </Pressable>
           <Pressable
-            onPress={() =>
+            onPress={() => {
+              tapMedium();
               router.push({
                 pathname: "/make-offer",
                 params: { listingId: listing.id },
-              } as Href)
-            }
-            className="flex-1 bg-primary rounded-full items-center active:opacity-80"
+              } as Href);
+            }}
+            className="flex-1 bg-primary rounded-full flex-row items-center justify-center gap-1.5 active:opacity-80"
             style={{ paddingVertical: 15 }}
+            accessibilityRole="button"
+            accessibilityLabel="Make an offer"
           >
             <Text className="text-[14px] font-sans-bold text-white">
               Make an offer
             </Text>
+            <Ionicons name="arrow-forward" size={15} color="#ffffff" />
           </Pressable>
         </View>
       </View>

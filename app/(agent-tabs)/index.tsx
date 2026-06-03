@@ -22,7 +22,7 @@ const INK_3 = "#7f857f";
 const TONE_BG: Record<DashboardAction["tone"], string> = {
   primary: "#e3efe7",
   accent:  "#f5ead4",
-  neutral: "#ece6df",
+  neutral: "#f0f0f0",
 };
 const TONE_FG: Record<DashboardAction["tone"], string> = {
   primary: PRIMARY_INK,
@@ -233,7 +233,7 @@ function ListingRow({ listing }: { listing: AgentListing }) {
     meta.tone === "primary" ? "#e3efe7"
     : meta.tone === "accent" ? "#f5ead4"
     : meta.tone === "ink"    ? "#1a2120"
-    : "#ece6df";
+    : "#f0f0f0";
   const toneFg =
     meta.tone === "primary" ? PRIMARY_INK
     : meta.tone === "accent" ? ACCENT_INK
@@ -249,7 +249,7 @@ function ListingRow({ listing }: { listing: AgentListing }) {
       <View
         style={{
           width: 56, height: 56, borderRadius: 10,
-          backgroundColor: "#ece6df",
+          backgroundColor: "#f0f0f0",
           alignItems: "center", justifyContent: "center",
         }}
       >

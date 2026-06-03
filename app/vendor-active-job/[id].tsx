@@ -128,7 +128,7 @@ export default function VendorActiveJobScreen() {
                       borderRadius: 15,
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: done ? PRIMARY : active ? "#ffffff" : "#ece6df",
+                      backgroundColor: done ? PRIMARY : active ? "#ffffff" : "#f0f0f0",
                       borderWidth: active ? 2 : 0,
                       borderColor: PRIMARY,
                     }}
@@ -237,7 +237,7 @@ export default function VendorActiveJobScreen() {
           onPress={() => router.push(`/vendor-extra?jobId=${job.id}` as Href)}
           className="mt-3 flex-row items-center gap-3 px-3.5 py-3 rounded-2xl active:opacity-90"
           style={{
-            backgroundColor: "#ece6df",
+            backgroundColor: "#f0f0f0",
             borderWidth: 1,
             borderStyle: "dashed",
             borderColor: "#d3cdc1",

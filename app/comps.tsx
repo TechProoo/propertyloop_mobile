@@ -154,7 +154,7 @@ export default function CompsScreen() {
               </View>
               <View
                 className="flex-row items-center justify-between px-3.5 py-2"
-                style={{ backgroundColor: "#f5f0eb" }}
+                style={{ backgroundColor: "#f0f0f0" }}
               >
                 <View className="flex-row items-center gap-1.5">
                   <Ionicons name="time-outline" size={12} color={ACCENT_INK} />

@@ -162,7 +162,7 @@ export default function AgentProfileTab() {
                 >
                   <View
                     className="w-9 h-9 rounded-xl items-center justify-center"
-                    style={{ backgroundColor: r.destructive ? "#fde6e4" : "#ece6df" }}
+                    style={{ backgroundColor: r.destructive ? "#fde6e4" : "#f0f0f0" }}
                   >
                     <Ionicons
                       name={r.icon}

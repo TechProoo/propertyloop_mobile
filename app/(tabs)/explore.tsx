@@ -145,7 +145,7 @@ export default function ExploreMapScreen() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: "#f5f0eb",
+          backgroundColor: "#ffffff",
           borderTopLeftRadius: 22,
           borderTopRightRadius: 22,
           paddingTop: 8,

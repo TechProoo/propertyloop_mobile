@@ -153,7 +153,7 @@ export default function VendorRequestScreen() {
         {/* Map placeholder */}
         <View
           className="mt-4 rounded-2xl items-center justify-center"
-          style={{ height: 120, backgroundColor: "#ece6df" }}
+          style={{ height: 120, backgroundColor: "#f0f0f0" }}
         >
           <Ionicons name="map-outline" size={26} color={INK_3} />
           <Text className="text-[11.5px] font-sans-bold text-ink-3 mt-1">

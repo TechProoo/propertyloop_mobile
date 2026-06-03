@@ -279,7 +279,7 @@ function VerifyRow({
     >
       <View
         className="w-10 h-10 rounded-xl items-center justify-center"
-        style={{ backgroundColor: done ? PRIMARY : "#ece6df" }}
+        style={{ backgroundColor: done ? PRIMARY : "#f0f0f0" }}
       >
         <Ionicons name={done ? "checkmark" : icon} size={18} color={done ? "#ffffff" : INK_2} />
       </View>
