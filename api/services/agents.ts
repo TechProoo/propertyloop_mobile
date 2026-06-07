@@ -30,6 +30,9 @@ const agentsService = {
   getMe(): Promise<any> {
     return api.get("/agents/me").then((r) => r.data);
   },
+  getPublic(agentId: string): Promise<any> {
+    return api.get(`/agents/${agentId}`).then((r) => r.data);
+  },
   getStats(): Promise<AgentStats> {
     return api.get<AgentStats>("/agents/me/stats").then((r) => r.data);
   },

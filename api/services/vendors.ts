@@ -37,6 +37,15 @@ const vendorsService = {
   addBlackouts(dates: string[], reason?: string): Promise<any> {
     return api.post("/vendors/me/blackouts", { dates, reason }).then((r) => r.data);
   },
+  getPublic(vendorId: string): Promise<any> {
+    return api.get(`/vendors/${vendorId}`).then((r) => r.data);
+  },
+  getPublicServices(vendorId: string): Promise<any[]> {
+    return api.get(`/vendors/${vendorId}/services`).then((r) => {
+      const d = r.data;
+      return Array.isArray(d) ? d : (d?.items ?? []);
+    });
+  },
   getReviews(vendorId: string): Promise<any[]> {
     return api.get(`/vendors/${vendorId}/reviews`).then((r) => r.data);
   },
