@@ -9,12 +9,9 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import { Skeleton } from "@/components/brand/Skeleton";
 import { tapLight, tapSelection } from "@/lib/haptics";
 import { toggleSaved, useIsSaved } from "@/lib/favourites";
-import {
-  BUYER_HOME_LISTINGS,
-  HOME_CATEGORIES,
-  type HomeCategory,
-  type HomeListing,
-} from "@/mocks/home";
+import { MODES, type Mode } from "@/mocks/home";
+import listingsService from "@/api/services/listings";
+import type { Listing, ListingType } from "@/api/types";
 
 const PRIMARY = "#1f6f43"; // brand green — accent (was blue in the reference)
 const ACCENT = "#b9842c"; // gold — rating stars only
@@ -22,34 +19,59 @@ const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-function picsum(seed: string, w = 600, h = 500) {
-  return `https://picsum.photos/seed/${seed}/${w}/${h}`;
-}
+const MODE_TO_TYPE: Record<Mode, ListingType> = {
+  Rent: "RENT",
+  Buy: "SALE",
+  Shortlet: "SHORTLET",
+};
+
+const MODE_HEADING: Record<Mode, string> = {
+  Rent: "Homes for rent",
+  Buy: "Homes for sale",
+  Shortlet: "Shortlet stays",
+};
 
 // ─────────────────────────────────────────────────────────────────
 // Buyer home — photo-led 2-up grid, neutral (ink/white/cream) palette.
 // ─────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const [category, setCategory] = useState<HomeCategory>("Rental House");
+  const [mode, setMode] = useState<Mode>("Rent");
   const [query, setQuery] = useState("");
+  const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 750);
-    return () => clearTimeout(t);
-  }, []);
+    let active = true;
+    setLoading(true);
+    setError(false);
+    listingsService
+      .list({ type: MODE_TO_TYPE[mode], sort: "newest", limit: 20 })
+      .then((res) => {
+        if (active) setItems(res.items);
+      })
+      .catch(() => {
+        if (active) setError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [mode, reloadKey]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return BUYER_HOME_LISTINGS.filter((h) => {
-      const byCategory = h.category === category;
-      const byQuery =
-        !q ||
+    if (!q) return items;
+    return items.filter(
+      (h) =>
         h.title.toLowerCase().includes(q) ||
-        h.area.toLowerCase().includes(q);
-      return byCategory && byQuery;
-    });
-  }, [category, query]);
+        h.location.toLowerCase().includes(q) ||
+        h.address.toLowerCase().includes(q),
+    );
+  }, [items, query]);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
@@ -61,10 +83,10 @@ export default function HomeScreen() {
         <Header />
         <Heading />
         <SearchRow query={query} onChange={setQuery} />
-        <CategoryChips active={category} onSelect={setCategory} />
+        <ModeChips active={mode} onSelect={setMode} />
 
         <Text className="px-5 pt-5 text-[16px] font-sans-bold text-ink tracking-tight">
-          Nearby {category}
+          {MODE_HEADING[mode]}
         </Text>
 
         {loading ? (
@@ -74,8 +96,10 @@ export default function HomeScreen() {
             <CardSkeleton />
             <CardSkeleton />
           </View>
+        ) : error ? (
+          <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />
         ) : filtered.length === 0 ? (
-          <EmptyState query={query} category={category} />
+          <EmptyState query={query} mode={mode} />
         ) : (
           <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
             {filtered.map((h) => (
@@ -208,12 +232,12 @@ function SearchRow({
 // ─────────────────────────────────────────────────────────────────
 // Category chips — Rental House / Apartment / Houses / Rooms
 // ─────────────────────────────────────────────────────────────────
-function CategoryChips({
+function ModeChips({
   active,
   onSelect,
 }: {
-  active: HomeCategory;
-  onSelect: (c: HomeCategory) => void;
+  active: Mode;
+  onSelect: (c: Mode) => void;
 }) {
   return (
     <ScrollView
@@ -221,7 +245,7 @@ function CategoryChips({
       showsHorizontalScrollIndicator={false}
       contentContainerClassName="px-5 pt-4 gap-2.5"
     >
-      {HOME_CATEGORIES.map((c) => {
+      {MODES.map((c) => {
         const isOn = active === c;
         return (
           <Pressable
@@ -255,8 +279,9 @@ function CategoryChips({
 // ─────────────────────────────────────────────────────────────────
 // Home card — photo with verified badge, price pill, rating overlay
 // ─────────────────────────────────────────────────────────────────
-function HomeCard({ listing }: { listing: HomeListing }) {
+function HomeCard({ listing }: { listing: Listing }) {
   const saved = useIsSaved(listing.id);
+  const period = listing.period ?? "";
   return (
     <Pressable
       onPress={() => {
@@ -266,13 +291,11 @@ function HomeCard({ listing }: { listing: HomeListing }) {
       className="rounded-[18px] overflow-hidden active:opacity-95"
       style={{ width: "47.5%" }}
       accessibilityRole="button"
-      accessibilityLabel={`${listing.title}, ${listing.area}, ${listing.price}${
-        listing.period ?? ""
-      }`}
+      accessibilityLabel={`${listing.title}, ${listing.location}, ${listing.priceLabel}${period}`}
     >
       <View style={{ height: 168 }} className="relative">
         <Image
-          source={picsum(listing.imageSeed)}
+          source={listing.coverImage}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
           transition={200}
@@ -295,8 +318,8 @@ function HomeCard({ listing }: { listing: HomeListing }) {
           style={{ backgroundColor: "rgba(26,33,32,0.62)" }}
         >
           <Text className="text-[11px] font-sans-bold text-white">
-            {listing.price}
-            {listing.period ?? ""}
+            {listing.priceLabel}
+            {period}
           </Text>
         </View>
 
@@ -347,7 +370,7 @@ function HomeCard({ listing }: { listing: HomeListing }) {
               className="text-[11px] font-sans-medium text-white/85"
               numberOfLines={1}
             >
-              {listing.area}
+              {listing.location}
             </Text>
           </View>
         </View>
@@ -395,26 +418,46 @@ function CardSkeleton() {
   return <Skeleton style={{ width: "47.5%", height: 168 }} radius={18} />;
 }
 
-function EmptyState({
-  query,
-  category,
-}: {
-  query: string;
-  category: HomeCategory;
-}) {
+function EmptyState({ query, mode }: { query: string; mode: Mode }) {
   return (
     <View className="items-center px-6 py-10">
       <View className="w-16 h-16 rounded-full bg-cream-2 items-center justify-center">
         <Ionicons name="home-outline" size={28} color={INK_2} />
       </View>
       <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
-        No {category.toLowerCase()} here yet
+        {mode === "Buy"
+          ? "No homes for sale yet"
+          : mode === "Shortlet"
+            ? "No shortlets yet"
+            : "No rentals here yet"}
       </Text>
       <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
         {query.trim()
-          ? `Nothing matches “${query.trim()}” in this category. Try another area or filter.`
+          ? `Nothing matches “${query.trim()}” right now. Try another area or filter.`
           : "New verified homes land here every week — check back soon."}
       </Text>
+    </View>
+  );
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <View className="items-center px-6 py-10">
+      <View className="w-16 h-16 rounded-full bg-cream-2 items-center justify-center">
+        <Ionicons name="cloud-offline-outline" size={28} color={INK_2} />
+      </View>
+      <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+        Couldn’t load homes
+      </Text>
+      <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+        Check your connection and try again.
+      </Text>
+      <Pressable
+        onPress={onRetry}
+        className="mt-4 px-5 py-2.5 rounded-full bg-ink active:opacity-80"
+      >
+        <Text className="text-white text-[13px] font-sans-bold">Try again</Text>
+      </Pressable>
     </View>
   );
 }

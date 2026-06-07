@@ -1,33 +1,146 @@
-import { Pressable, ScrollView, Share, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Share,
+  Text,
+  View,
+} from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { getSaleListing } from "@/mocks/sale-listing";
 import { tapLight, tapMedium } from "@/lib/haptics";
 import { toggleSaved, useIsSaved } from "@/lib/favourites";
+import listingsService from "@/api/services/listings";
+import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const ACCENT = "#b9842c";
 const INK_2 = "#4d524f";
+const INK_3 = "#7f857f";
 
-function picsum(seed: string, w = 1200, h = 900) {
-  return `https://picsum.photos/seed/${seed}/${w}/${h}`;
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+function daysAgo(iso: string) {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  return Math.max(0, d);
 }
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const listing = getSaleListing(id);
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    setLoading(true);
+    setError(false);
+    listingsService
+      .getById(id)
+      .then((l) => active && setListing(l))
+      .catch(() => active && setError(true))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-cream items-center justify-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator color={PRIMARY} />
+      </View>
+    );
+  }
+
+  if (error || !listing) {
+    return (
+      <View className="flex-1 bg-cream items-center justify-center px-8">
+        <Stack.Screen options={{ headerShown: false }} />
+        <Ionicons name="home-outline" size={36} color={INK_3} />
+        <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+          This listing isn’t available
+        </Text>
+        <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+          It may have been removed or is no longer active.
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          className="mt-5 px-5 py-2.5 rounded-full bg-ink active:opacity-80"
+        >
+          <Text className="text-white text-[13px] font-sans-bold">Go back</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return <ListingDetail listing={listing} listingId={id!} />;
+}
+
+function ListingDetail({
+  listing,
+  listingId,
+}: {
+  listing: Listing;
+  listingId: string;
+}) {
   const saved = useIsSaved(listing.id);
+  const period = listing.period ?? "";
+  const photoCount = listing.images?.length || 1;
+
+  const stats: { icon: keyof typeof Ionicons.glyphMap; n: string; l: string }[] =
+    [
+      { icon: "bed-outline", n: String(listing.beds), l: "Beds" },
+      { icon: "water-outline", n: String(listing.baths), l: "Baths" },
+      ...(listing.sqft
+        ? [
+            {
+              icon: "resize-outline" as const,
+              n: `${listing.sqft}`,
+              l: "m²",
+            },
+          ]
+        : []),
+      ...(listing.yearBuilt
+        ? [
+            {
+              icon: "calendar-outline" as const,
+              n: `${listing.yearBuilt}`,
+              l: "Built",
+            },
+          ]
+        : []),
+    ];
 
   const handleShare = () => {
     tapLight();
     Share.share({
       title: listing.title,
-      message: `${listing.title} — ${listing.priceLabel} · ${listing.area}`,
+      message: `${listing.title} — ${listing.priceLabel} · ${listing.location}`,
     }).catch(() => {});
   };
+
+  const primaryCta =
+    listing.type === "SALE"
+      ? { label: "Make an offer", pathname: "/make-offer" }
+      : listing.type === "SHORTLET"
+        ? { label: "Book stay", pathname: "/shortlet-request" }
+        : { label: "Apply to rent", pathname: "/rental-application" };
 
   return (
     <View className="flex-1 bg-cream">
@@ -39,11 +152,10 @@ export default function ListingDetailScreen() {
         {/* ── Hero ─────────────────────────────────────────────────── */}
         <View style={{ height: 360 }} className="relative">
           <Image
-            source={picsum(listing.imageSeeds[0])}
+            source={listing.coverImage}
             style={{ width: "100%", height: "100%" }}
             contentFit="cover"
           />
-          {/* gradient overlay so the chrome stays legible against any photo */}
           <View
             style={{
               position: "absolute",
@@ -93,41 +205,29 @@ export default function ListingDetailScreen() {
             </View>
           </View>
 
-          {/* Pagination dots */}
-          <View
-            className="absolute left-4 flex-row gap-1.5"
-            style={{ bottom: 56 }}
-          >
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <View
-                key={i}
-                style={{
-                  width: i === 0 ? 22 : 6,
-                  height: 6,
-                  borderRadius: 100,
-                  backgroundColor:
-                    i === 0 ? "#ffffff" : "rgba(255,255,255,0.5)",
-                }}
-              />
-            ))}
-          </View>
-          {/* Counter */}
-          <View
-            className="absolute right-4 px-2.5 py-1 rounded-full"
-            style={{ bottom: 56, backgroundColor: "rgba(0,0,0,0.55)" }}
-          >
-            <Text className="text-[11px] font-sans-bold text-white">
-              1 / {listing.imageSeeds.length * 4}
-            </Text>
-          </View>
+          {/* Photo counter */}
+          {photoCount > 1 && (
+            <View
+              className="absolute right-4 px-2.5 py-1 rounded-full"
+              style={{ bottom: 56, backgroundColor: "rgba(0,0,0,0.55)" }}
+            >
+              <Text className="text-[11px] font-sans-bold text-white">
+                {photoCount} photos
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* ── Body ─────────────────────────────────────────────────── */}
         <View
           className="bg-cream px-5 pt-6"
-          style={{ marginTop: -24, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+          style={{
+            marginTop: -24,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          }}
         >
-          {/* Tag row — rating · type · verified */}
+          {/* Tag row */}
           <View className="flex-row items-center gap-2 mb-3">
             <View className="bg-accent-soft px-2.5 py-1.5 rounded-full flex-row items-center gap-1">
               <Ionicons name="star" size={12} color={ACCENT} />
@@ -170,58 +270,56 @@ export default function ListingDetailScreen() {
             </Text>
           </View>
 
-          {/* Price stack */}
+          {/* Price */}
           <View className="mt-4 bg-primary-soft rounded-2xl px-4 py-3.5">
             <View className="flex-row items-baseline justify-between">
               <Text
                 className="font-serif"
-                style={{
-                  fontSize: 32,
-                  letterSpacing: -1,
-                  color: PRIMARY_INK,
-                }}
+                style={{ fontSize: 32, letterSpacing: -1, color: PRIMARY_INK }}
               >
                 {listing.priceLabel}
+                <Text style={{ fontSize: 15 }}>{period}</Text>
               </Text>
               <Text
                 className="text-[11px] font-sans-semibold"
                 style={{ color: PRIMARY_INK, opacity: 0.7 }}
               >
-                Listed {listing.daysOnMarket} days ago
+                Listed {daysAgo(listing.createdAt)} days ago
               </Text>
             </View>
-            <View className="mt-1.5 flex-row items-center justify-between">
-              <Text
-                className="text-[12.5px]"
-                style={{ color: PRIMARY_INK, opacity: 0.8 }}
-              >
-                😊 Open to <Text className="font-sans-bold">offers</Text> ·
-                fairly priced for the area
-              </Text>
-              <Pressable
-                onPress={() => {
-                  tapLight();
-                  router.push(`/comps?id=${id ?? ""}` as Href);
-                }}
-                hitSlop={8}
-                className="flex-row items-center gap-1"
-                accessibilityRole="button"
-                accessibilityLabel="See comparable sales"
-              >
+            {listing.type === "SALE" && (
+              <View className="mt-1.5 flex-row items-center justify-between">
                 <Text
-                  className="text-[12.5px] font-sans-bold"
-                  style={{ color: PRIMARY_INK }}
+                  className="text-[12.5px]"
+                  style={{ color: PRIMARY_INK, opacity: 0.8 }}
                 >
-                  Comps
+                  Open to <Text className="font-sans-bold">offers</Text>
                 </Text>
-                <Ionicons name="arrow-forward" size={11} color={PRIMARY_INK} />
-              </Pressable>
-            </View>
+                <Pressable
+                  onPress={() => {
+                    tapLight();
+                    router.push(`/comps?id=${listingId}` as Href);
+                  }}
+                  hitSlop={8}
+                  className="flex-row items-center gap-1"
+                  accessibilityRole="button"
+                  accessibilityLabel="See comparable sales"
+                >
+                  <Text
+                    className="text-[12.5px] font-sans-bold"
+                    style={{ color: PRIMARY_INK }}
+                  >
+                    Comps
+                  </Text>
+                  <Ionicons name="arrow-forward" size={11} color={PRIMARY_INK} />
+                </Pressable>
+              </View>
+            )}
           </View>
 
           {/* Stats grid */}
           <View className="flex-row gap-2 mt-3.5">
-            {listing.stats.map((s) => (
+            {stats.map((s) => (
               <View
                 key={s.l}
                 className="flex-1 bg-cream-2 rounded-xl items-center"
@@ -241,58 +339,77 @@ export default function ListingDetailScreen() {
             ))}
           </View>
 
-          {/* Neighbourhood */}
-          <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2.5">
-            What&apos;s around 📍
-          </Text>
-          <View className="flex-row gap-2">
-            {listing.neighbourhood.map((c) => (
-              <View
-                key={c.l}
-                className="flex-1 bg-cream-2 rounded-xl px-3 py-3"
-              >
-                <Text className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase">
-                  {c.l}
-                </Text>
-                <Text
-                  className="font-serif text-ink mt-0.5"
-                  style={{ fontSize: 18 }}
-                >
-                  {c.n}
-                </Text>
-                <Text className="text-[11px] font-sans-medium text-ink-3 mt-0.5">
-                  {c.s}
-                </Text>
+          {/* Description */}
+          {!!listing.description && (
+            <>
+              <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2">
+                About this home
+              </Text>
+              <Text className="text-[13.5px] text-ink-2 leading-6">
+                {listing.description}
+              </Text>
+            </>
+          )}
+
+          {/* Features */}
+          {listing.features?.length > 0 && (
+            <>
+              <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2.5">
+                Features
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {listing.features.map((f) => (
+                  <View
+                    key={f}
+                    className="bg-cream-2 px-3 py-2 rounded-full flex-row items-center gap-1.5"
+                  >
+                    <Ionicons name="checkmark-circle" size={13} color={PRIMARY} />
+                    <Text className="text-[12.5px] font-sans-medium text-ink-2">
+                      {f}
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            </>
+          )}
 
           {/* Listed by */}
-          <Text className="text-[14px] font-sans-bold text-ink mt-6 mb-2.5">
-            Listed by
-          </Text>
-          <View
-            className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line"
-            style={{ borderWidth: 1 }}
-          >
-            <PLAvatar
-              initials={listing.agent.initials}
-              size={46}
-              tone={listing.agent.tone}
-            />
-            <View className="flex-1">
-              <View className="flex-row items-center gap-1.5">
-                <Text className="text-[14px] font-sans-bold text-ink">
-                  {listing.agent.name}
-                </Text>
-                <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
-              </View>
-              <Text className="text-xs font-sans-semibold text-ink-3 mt-0.5">
-                {listing.agent.agency} · {listing.agent.sales} sales · ⭐{" "}
-                {listing.agent.rating}
+          {listing.agent && (
+            <>
+              <Text className="text-[14px] font-sans-bold text-ink mt-6 mb-2.5">
+                Listed by
               </Text>
-            </View>
-          </View>
+              <Pressable
+                onPress={() =>
+                  router.push(`/agent-profile/${listing.agent!.id}` as Href)
+                }
+                className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line active:opacity-90"
+                style={{ borderWidth: 1 }}
+              >
+                <PLAvatar initials={initialsOf(listing.agent.name)} size={46} tone="primary" />
+                <View className="flex-1">
+                  <View className="flex-row items-center gap-1.5">
+                    <Text className="text-[14px] font-sans-bold text-ink">
+                      {listing.agent.name}
+                    </Text>
+                    {listing.agent.verified && (
+                      <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
+                    )}
+                  </View>
+                  <Text className="text-xs font-sans-semibold text-ink-3 mt-0.5">
+                    {[
+                      listing.agent.agency,
+                      `${listing.agent.soldRentedCount} deals`,
+                      `⭐ ${listing.agent.rating}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={INK_3} />
+              </Pressable>
+            </>
+          )}
         </View>
       </ScrollView>
 
@@ -328,17 +445,17 @@ export default function ListingDetailScreen() {
             onPress={() => {
               tapMedium();
               router.push({
-                pathname: "/make-offer",
+                pathname: primaryCta.pathname,
                 params: { listingId: listing.id },
               } as Href);
             }}
             className="flex-1 bg-primary rounded-full flex-row items-center justify-center gap-1.5 active:opacity-80"
             style={{ paddingVertical: 15 }}
             accessibilityRole="button"
-            accessibilityLabel="Make an offer"
+            accessibilityLabel={primaryCta.label}
           >
             <Text className="text-[14px] font-sans-bold text-white">
-              Make an offer
+              {primaryCta.label}
             </Text>
             <Ionicons name="arrow-forward" size={15} color="#ffffff" />
           </Pressable>
