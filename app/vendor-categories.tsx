@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VENDOR_CATEGORIES } from "@/mocks/vendor";
+import vendorsService from "@/api/services/vendors";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
@@ -27,6 +28,7 @@ export default function VendorCategoriesScreen() {
   const [skillDone, setSkillDone]   = useState(false);
   const [selfieDone, setSelfieDone] = useState(false);
   const [samples, setSamples]       = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const toggle = (id: string) =>
     setCats((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]));
@@ -68,7 +70,7 @@ export default function VendorCategoriesScreen() {
   const canSaveManage = cats.length > 0;
   const canContinue = isManage ? canSaveManage : canContinueOnboarding;
 
-  const onContinue = () => {
+  const onContinue = async () => {
     if (!canContinue) {
       Alert.alert(
         "Almost there",
@@ -78,13 +80,31 @@ export default function VendorCategoriesScreen() {
       );
       return;
     }
-    if (isManage) {
-      Alert.alert("Categories saved", `Your service categories are now: ${cats.length} active.`, [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-      return;
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const primary = VENDOR_CATEGORIES.find((c) => c.id === cats[0])?.label ?? cats[0];
+      let portfolio: string[] | undefined;
+      if (samples.length) {
+        portfolio = await Promise.all(samples.map((u) => vendorsService.uploadImage(u)));
+      }
+      await vendorsService.updateMe({
+        serviceCategory: primary,
+        serviceArea: area,
+        ...(portfolio ? { portfolioImages: portfolio } : {}),
+      });
+      if (isManage) {
+        Alert.alert("Categories saved", "Your service category has been updated.", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+      } else {
+        router.push("/vendor-first-service" as Href);
+      }
+    } catch (e: any) {
+      Alert.alert("Couldn't save", e?.response?.data?.message ?? "Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    router.push("/vendor-first-service" as Href);
   };
 
   return (
@@ -238,8 +258,8 @@ export default function VendorCategoriesScreen() {
           style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
         >
           <OnboardingCta
-            label={isManage ? "Save categories" : "Continue"}
-            ready={canContinue}
+            label={submitting ? "Saving…" : isManage ? "Save categories" : "Continue"}
+            ready={canContinue && !submitting}
             onPress={onContinue}
             getMissing={() =>
               isManage
