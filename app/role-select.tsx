@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 
 type Role = "BUYER" | "AGENT" | "VENDOR";
 
@@ -87,8 +88,8 @@ export default function RoleSelectScreen() {
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
-        {/* Top bar — back left, step counter right */}
-        <View className="flex-row items-center justify-between px-5 pt-2">
+        {/* Top bar + progress */}
+        <View className="flex-row items-center px-5 pt-2">
           <Pressable
             onPress={() => router.back()}
             hitSlop={12}
@@ -96,8 +97,8 @@ export default function RoleSelectScreen() {
           >
             <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
-          <Text className="text-ink-3 text-sm font-sans-medium">Step 1 of 3</Text>
         </View>
+        <OnboardingProgress step={1} total={3} className="px-5 mt-3" />
 
         <ScrollView
           contentContainerClassName="px-5 pb-32"

@@ -13,6 +13,8 @@ import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
 const SPECIALTIES = [
   "Sales",
@@ -139,10 +141,9 @@ export default function AgentSetupScreen() {
             <Text className="text-ink font-sans-semibold text-sm">
               Agent setup
             </Text>
-            <Text className="text-ink-3 text-xs font-sans-medium w-12 text-right">
-              Step 1 of 4
-            </Text>
+            <View className="w-9" />
           </View>
+          <OnboardingProgress step={1} total={4} className="px-5 mt-3" />
 
           <ScrollView
             contentContainerClassName="px-5 pb-32"
@@ -318,15 +319,20 @@ export default function AgentSetupScreen() {
 
           {/* Sticky CTA */}
           <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
-            <Pressable
+            <OnboardingCta
+              label="Continue to verification"
+              ready={!!canContinue}
               onPress={handleContinue}
-              disabled={!canContinue}
-              className="bg-primary rounded-full py-4 items-center active:opacity-80 disabled:opacity-50"
-            >
-              <Text className="text-white font-sans-semibold text-base">
-                Continue to verification
-              </Text>
-            </Pressable>
+              getMissing={() =>
+                [
+                  !agencyName.trim() && "your agency name",
+                  !licenseNumber.trim() && "your licence number",
+                  !businessAddress.trim() && "your business address",
+                  !yearsExperience.trim() && "years of experience",
+                  specialties.length === 0 && "at least one specialty",
+                ].filter(Boolean) as string[]
+              }
+            />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

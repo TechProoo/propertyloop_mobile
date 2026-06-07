@@ -4,6 +4,8 @@ import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
 type Intent = "RENTING" | "BUYING" | "BROWSING";
 
@@ -102,6 +104,7 @@ export default function BuyerPreferencesScreen() {
             <Text className="text-ink-2 text-sm font-sans-medium">Skip</Text>
           </Pressable>
         </View>
+        <OnboardingProgress step={2} total={3} className="px-5 mt-3" />
 
         <ScrollView
           contentContainerClassName="px-5 pb-32"
@@ -221,15 +224,12 @@ export default function BuyerPreferencesScreen() {
 
         {/* Sticky bottom CTA */}
         <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
-          <Pressable
+          <OnboardingCta
+            label="Show me homes"
+            ready={canContinue}
             onPress={handleContinue}
-            disabled={!canContinue}
-            className="bg-primary rounded-full py-4 items-center active:opacity-80 disabled:opacity-50"
-          >
-            <Text className="text-white font-sans-semibold text-base">
-              Show me homes
-            </Text>
-          </Pressable>
+            getMissing={() => ["at least one area you like"]}
+          />
         </View>
       </SafeAreaView>
     </View>

@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -77,14 +79,12 @@ export default function AgentVerifyScreen() {
             >
               <Text className="text-ink-2 text-xl">‹</Text>
             </Pressable>
-            <View className="items-center">
-              <Text className="text-ink font-sans-semibold text-sm">
-                Verify your practice
-              </Text>
-              <Text className="text-ink-3 text-xs mt-0.5">Step 2 of 4</Text>
-            </View>
+            <Text className="text-ink font-sans-semibold text-sm">
+              Verify your practice
+            </Text>
             <View style={{ width: 36 }} />
           </View>
+          <OnboardingProgress step={2} total={4} className="px-5 mt-3" />
 
           <ScrollView
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }}
@@ -209,16 +209,18 @@ export default function AgentVerifyScreen() {
               paddingBottom: 28,
             }}
           >
-            <Pressable
+            <OnboardingCta
+              label="Submit & continue"
+              ready={!!canContinue}
               onPress={onContinue}
-              disabled={!canContinue}
-              className="bg-primary rounded-full items-center active:opacity-80 disabled:opacity-50"
-              style={{ paddingVertical: 16 }}
-            >
-              <Text className="text-white font-sans-bold text-[15px]">
-                Submit & continue
-              </Text>
-            </Pressable>
+              getMissing={() =>
+                [
+                  !ninValid && "your 11-digit NIN",
+                  !licenseFile && "your licence document",
+                  !selfieUri && "a headshot selfie",
+                ].filter(Boolean) as string[]
+              }
+            />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

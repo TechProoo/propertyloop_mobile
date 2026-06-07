@@ -12,6 +12,8 @@ import {
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -80,12 +82,10 @@ export default function VendorPayoutSetupScreen() {
             >
               <Text className="text-ink-2 text-xl">‹</Text>
             </Pressable>
-            <View className="items-center">
-              <Text className="text-ink font-sans-bold text-sm">Payout account</Text>
-              <Text className="text-ink-3 text-xs mt-0.5">Step 4 of 4</Text>
-            </View>
+            <Text className="text-ink font-sans-bold text-sm">Payout account</Text>
             <View style={{ width: 36 }} />
           </View>
+          <OnboardingProgress step={4} total={4} className="px-5 mt-3" />
 
           <ScrollView
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 130 }}
@@ -204,16 +204,18 @@ export default function VendorPayoutSetupScreen() {
             className="absolute left-0 right-0 bottom-0 bg-cream border-line"
             style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
           >
-            <Pressable
+            <OnboardingCta
+              label="Finish & submit for review"
+              ready={canContinue}
               onPress={onFinish}
-              disabled={!canContinue}
-              className="bg-primary rounded-full items-center active:opacity-80 disabled:opacity-50"
-              style={{ paddingVertical: 17 }}
-            >
-              <Text className="text-white font-sans-bold text-[15px]">
-                Finish & submit for review
-              </Text>
-            </Pressable>
+              getMissing={() =>
+                [
+                  !bank && "your bank",
+                  !acctValid && "a 10-digit account number",
+                  bank && acctValid && !verified && "account confirmation",
+                ].filter(Boolean) as string[]
+              }
+            />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

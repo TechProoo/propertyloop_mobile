@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 
 type Tier = "FOUNDING" | "STANDARD" | "PRO";
 
@@ -96,14 +97,12 @@ export default function AgentPlanScreen() {
           >
             <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
-          <View className="items-center">
-            <Text className="text-ink font-sans-semibold text-sm">
-              Pick your plan
-            </Text>
-            <Text className="text-ink-3 text-xs mt-0.5">Step 3 of 4</Text>
-          </View>
+          <Text className="text-ink font-sans-semibold text-sm">
+            Pick your plan
+          </Text>
           <View style={{ width: 36 }} />
         </View>
+        <OnboardingProgress step={3} total={4} className="px-5 mt-3" />
 
         <ScrollView
           contentContainerClassName="px-5 pb-32"

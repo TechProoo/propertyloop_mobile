@@ -13,6 +13,8 @@ import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VENDOR_DURATIONS, VENDOR_SERVICES } from "@/mocks/vendor";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -82,14 +84,12 @@ export default function VendorFirstServiceScreen() {
             >
               <Text className="text-ink-2 text-xl">‹</Text>
             </Pressable>
-            <View className="items-center">
-              <Text className="text-ink font-sans-bold text-sm">{title}</Text>
-              {mode === "onboarding" && (
-                <Text className="text-ink-3 text-xs mt-0.5">Step 3 of 4</Text>
-              )}
-            </View>
+            <Text className="text-ink font-sans-bold text-sm">{title}</Text>
             <View style={{ width: 36 }} />
           </View>
+          {mode === "onboarding" && (
+            <OnboardingProgress step={3} total={4} className="px-5 mt-3" />
+          )}
 
           <ScrollView
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 130 }}
@@ -224,14 +224,19 @@ export default function VendorFirstServiceScreen() {
             className="absolute left-0 right-0 bottom-0 bg-cream border-line"
             style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
           >
-            <Pressable
+            <OnboardingCta
+              label={ctaLabel}
+              ready={canContinue}
               onPress={onContinue}
-              disabled={!canContinue}
-              className="bg-primary rounded-full items-center active:opacity-80 disabled:opacity-50"
-              style={{ paddingVertical: 17 }}
-            >
-              <Text className="text-white font-sans-bold text-[15px]">{ctaLabel}</Text>
-            </Pressable>
+              getMissing={() =>
+                [
+                  name.trim().length <= 2 && "a service name",
+                  included.trim().length <= 10 &&
+                    "a short description of what's included",
+                  priceNum <= 0 && "a price",
+                ].filter(Boolean) as string[]
+              }
+            />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
