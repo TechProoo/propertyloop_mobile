@@ -13,46 +13,40 @@ import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { useAuth, roleHome } from "@/context/auth";
 
-const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-// Mock returning-user — in real wiring this comes from the last
-// stored session in expo-secure-store. Falling back to "fresh"
-// signup if no session exists is a future concern.
-const KNOWN_USER = {
-  initials: "AO",
-  firstName: "Adebayo",
-  lastName: "Okafor",
-  phoneMasked: "+234 80 •••• 5678",
-};
-
-type Role = "buyer" | "agent" | "vendor";
-
 export default function LoginScreen() {
+  const { signIn } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [role, setRole] = useState<Role>("buyer");
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
-    if (password.length < 1) {
-      Alert.alert("Password required", "Enter your password to sign in.");
+    if (!email.trim() || password.length < 1) {
+      setError("Enter your email and password to sign in.");
       return;
     }
+    setError(null);
     setSubmitting(true);
-    // Demo mode — fake delay then route by selected role. Buyers see the
-    // "Welcome back" landing; agents drop straight into the agent tabs.
-    // Backend wiring goes here:  await authService.login({ phone, password });
-    await new Promise((r) => setTimeout(r, 500));
-    if (role === "agent") {
-      router.replace("/(agent-tabs)" as Href);
-    } else if (role === "vendor") {
-      router.replace("/(vendor-tabs)" as Href);
-    } else {
-      router.replace("/welcome-back" as Href);
+    try {
+      const user = await signIn({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      router.replace(roleHome(user.role) as Href);
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message ??
+        "Couldn't sign you in. Check your details and try again.";
+      setError(Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -74,27 +68,23 @@ export default function LoginScreen() {
           >
             <Ionicons name="chevron-back" size={18} color={INK_2} />
           </Pressable>
-          <Pressable onPress={() => stub("Help")} hitSlop={8}>
+          <Pressable onPress={() => router.push("/help" as Href)} hitSlop={8}>
             <Text className="text-[13px] font-sans-bold text-ink-3">Help</Text>
           </Pressable>
         </View>
 
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 36, paddingBottom: 24 }}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingTop: 36,
+            paddingBottom: 24,
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Returning-user header */}
+          {/* Header */}
           <View className="flex-row items-center gap-3.5">
-            <View className="relative">
-              <PLAvatar initials={KNOWN_USER.initials} size={64} tone="primary" />
-              <View
-                className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-primary items-center justify-center"
-                style={{ borderWidth: 3, borderColor: "#ffffff" }}
-              >
-                <Ionicons name="checkmark" size={12} color="#ffffff" />
-              </View>
-            </View>
+            <PLAvatar initials="PL" size={60} tone="primary" />
             <View className="flex-1">
               <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
                 Welcome back
@@ -103,76 +93,43 @@ export default function LoginScreen() {
                 className="font-serif text-ink mt-0.5"
                 style={{ fontSize: 28, letterSpacing: -0.6, lineHeight: 30 }}
               >
-                <Text className="font-serif-italic">{KNOWN_USER.firstName}</Text>{" "}
-                {KNOWN_USER.lastName}
+                Sign <Text className="font-serif-italic">in</Text>
               </Text>
             </View>
           </View>
 
-          <Text className="text-[13.5px] text-ink-2 mt-5 leading-5">
-            Not you?{" "}
-            <Text
-              className="text-primary font-sans-bold"
-              onPress={() => router.replace("/role-select" as Href)}
-            >
-              Switch account
-            </Text>
-          </Text>
-
-          {/* Phone (locked / pre-filled) */}
-          <Text className="text-xs font-sans-bold text-ink-2 mt-6">
-            Phone number
-          </Text>
+          {/* Email */}
+          <Text className="text-xs font-sans-bold text-ink-2 mt-7">Email</Text>
           <View
-            className="mt-2 bg-cream-2 border-line rounded-2xl px-3.5 flex-row items-center gap-2.5"
-            style={{ borderWidth: 1, height: 52 }}
+            className="mt-2 bg-white rounded-2xl px-3.5 flex-row items-center"
+            style={{ borderWidth: 1, borderColor: "#e1dcd3", height: 52 }}
           >
-            <Text className="text-lg">🇳🇬</Text>
-            <Text className="text-[15px] font-sans-bold text-ink">
-              {KNOWN_USER.phoneMasked}
-            </Text>
-            <Pressable className="ml-auto" onPress={() => stub("Change phone")}>
-              <Text className="text-[13px] font-sans-bold text-primary">
-                Change
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Role toggle */}
-          <Text className="text-xs font-sans-bold text-ink-2 mt-4">
-            Sign in as
-          </Text>
-          <View className="flex-row gap-2 mt-2">
-            {(["buyer", "agent", "vendor"] as Role[]).map((r) => {
-              const on = role === r;
-              const label =
-                r === "buyer" ? "Buyer" : r === "agent" ? "Agent" : "Vendor";
-              return (
-                <Pressable
-                  key={r}
-                  onPress={() => setRole(r)}
-                  className="flex-1 rounded-full items-center py-2.5"
-                  style={{
-                    backgroundColor: on ? INK : "#ffffff",
-                    borderWidth: on ? 0 : 1,
-                    borderColor: "#e1dcd3",
-                  }}
-                >
-                  <Text
-                    className="text-[13px] font-sans-bold"
-                    style={{ color: on ? "#ffffff" : INK_2 }}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+            <Ionicons name="mail-outline" size={18} color={INK_3} />
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              placeholderTextColor={INK_3}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              className="flex-1 text-ink ml-2.5"
+              style={{ fontFamily: "Inter_600SemiBold", fontSize: 15 }}
+            />
           </View>
 
           {/* Password */}
-          <View className="flex-row items-center justify-between mt-4.5" style={{ marginTop: 18 }}>
+          <View
+            className="flex-row items-center justify-between"
+            style={{ marginTop: 18 }}
+          >
             <Text className="text-xs font-sans-bold text-ink-2">Password</Text>
-            <Pressable onPress={() => router.push("/forgot-password" as Href)} hitSlop={6}>
+            <Pressable
+              onPress={() => router.push("/forgot-password" as Href)}
+              hitSlop={6}
+            >
               <Text className="text-xs font-sans-bold text-primary">Forgot?</Text>
             </Pressable>
           </View>
@@ -189,11 +146,12 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoComplete="password"
               textContentType="password"
+              onSubmitEditing={handleSignIn}
+              returnKeyType="go"
               className="flex-1 text-ink"
               style={{
                 fontFamily: "Inter_600SemiBold",
                 fontSize: 16,
-                letterSpacing: showPassword ? 0 : 4,
                 paddingVertical: 0,
               }}
             />
@@ -209,6 +167,10 @@ export default function LoginScreen() {
               />
             </Pressable>
           </View>
+
+          {error && (
+            <Text className="text-red-600 text-xs mt-3">{error}</Text>
+          )}
 
           {/* Sign in CTA */}
           <Pressable
@@ -232,34 +194,6 @@ export default function LoginScreen() {
             <Text className="text-ink font-sans-bold text-[14px]">
               Use Face ID
             </Text>
-          </Pressable>
-
-          {/* Divider */}
-          <View className="flex-row items-center gap-3 mt-6 mb-4">
-            <View className="flex-1 bg-line" style={{ height: 0.5 }} />
-            <Text className="text-[11px] font-sans-semibold text-ink-3 tracking-widest uppercase">
-              or use a one-time code
-            </Text>
-            <View className="flex-1 bg-line" style={{ height: 0.5 }} />
-          </View>
-
-          {/* SMS code card */}
-          <Pressable
-            onPress={() => stub("SMS one-time code")}
-            className="bg-cream-2 rounded-2xl px-4 py-3.5 flex-row items-center gap-3 active:opacity-90"
-          >
-            <View className="w-8 h-8 rounded-[10px] bg-white items-center justify-center">
-              <Ionicons name="chatbox-outline" size={16} color={PRIMARY} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[13.5px] font-sans-bold text-ink">
-                Send SMS code to {KNOWN_USER.phoneMasked}
-              </Text>
-              <Text className="text-[11.5px] text-ink-3 mt-0.5">
-                No password needed
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color={INK_3} />
           </Pressable>
         </ScrollView>
 

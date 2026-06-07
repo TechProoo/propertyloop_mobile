@@ -17,10 +17,8 @@ import {
   type Href,
 } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-// Backend wiring intentionally disabled. The signup submit below fakes a
-// short delay and navigates. Restore by importing authService and calling
-// authService.signup(payload) inside handleSignup.
-// import authService, { type SignupPayload } from "@/api/services/auth";
+import { useAuth } from "@/context/auth";
+import { type SignupPayload } from "@/api/services/auth";
 
 type Role = "BUYER" | "AGENT" | "VENDOR";
 
@@ -77,6 +75,7 @@ export default function SignupScreen() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { signUp } = useAuth();
 
   const validate = (): string | null => {
     if (!name.trim()) return "Please enter your full name.";
@@ -110,21 +109,42 @@ export default function SignupScreen() {
     setError(null);
     setSubmitting(true);
 
-    // Demo mode: skip the real signup call and pretend it succeeded after
-    // a brief delay so the "Creating account…" state still surfaces. When
-    // re-wiring, build the payload from the local state above + call
-    // authService.signup(payload) — see the bottom of this file for the
-    // shape that's expected.
+    const payload: SignupPayload = {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+      phone: phone.trim() || undefined,
+      role,
+      ...(role === "BUYER" && preferredLocations
+        ? { buyer: { preferredLocations } }
+        : {}),
+      ...(role === "AGENT"
+        ? {
+            agent: {
+              agencyName: agencyName.trim(),
+              licenseNumber: licenseNumber.trim(),
+              businessAddress: businessAddress.trim(),
+            },
+          }
+        : {}),
+      ...(role === "VENDOR"
+        ? {
+            vendor: {
+              serviceCategory: serviceCategory.trim(),
+              yearsExperience: yearsExperience.trim(),
+              serviceArea: serviceArea.trim(),
+            },
+          }
+        : {}),
+    };
 
     try {
-      await new Promise((r) => setTimeout(r, 600));
-      // Agents finish onboarding via plan + payment; everyone else lands
-      // straight in the app.
+      await signUp(payload);
+      // Agents finish onboarding via verification → plan → payment; vendors
+      // continue the 4-step wizard; buyers land straight in the app.
       if (role === "AGENT") {
-        // Step 2 of the agent chain — identity + licence verification.
         router.replace("/agent-verify" as Href);
       } else if (role === "VENDOR") {
-        // Vendors go straight into the 4-step vendor onboarding wizard.
         router.replace("/vendor-setup" as Href);
       } else {
         router.replace("/(tabs)" as Href);

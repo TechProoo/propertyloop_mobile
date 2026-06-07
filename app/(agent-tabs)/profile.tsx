@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { AGENT } from "@/mocks/agent";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -66,6 +67,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
 ];
 
 export default function AgentProfileTab() {
+  const { signOut } = useAuth();
   const onLink = (l: LinkRow) => {
     if (l.id === "out") {
       Alert.alert("Sign out?", "You'll need your email and password to come back.", [
@@ -73,7 +75,10 @@ export default function AgentProfileTab() {
         {
           text: "Sign out",
           style: "destructive",
-          onPress: () => router.replace("/welcome" as Href),
+          onPress: async () => {
+            await signOut();
+            router.replace("/welcome" as Href);
+          },
         },
       ]);
       return;

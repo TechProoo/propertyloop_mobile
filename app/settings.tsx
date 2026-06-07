@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { SETTINGS_GROUPS, SETTINGS_PROFILE, type SettingsLink } from "@/mocks/buyer-extra";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
@@ -11,13 +12,17 @@ const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
 
 export default function SettingsScreen() {
+  const { signOut } = useAuth();
   const onSignOut = () =>
     Alert.alert("Sign out?", "You'll need your email and password to come back.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Sign out",
         style: "destructive",
-        onPress: () => router.replace("/welcome" as Href),
+        onPress: async () => {
+          await signOut();
+          router.replace("/welcome" as Href);
+        },
       },
     ]);
 
