@@ -11,6 +11,7 @@ import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import offersService, { type Offer } from "@/api/services/offers";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -27,6 +28,7 @@ function fmt(value: string) {
 
 export default function OfferActionScreen() {
   const { offerId } = useLocalSearchParams<{ offerId?: string }>();
+  const { user } = useAuth();
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
   const [counter, setCounter] = useState("");
@@ -91,6 +93,9 @@ export default function OfferActionScreen() {
     );
   }
 
+  const isAgent = !!user && offer.agentId === user.id;
+  const otherParty =
+    (isAgent ? offer.buyer?.name : offer.agent?.name) ?? "The other party";
   const theirCounter = offer.currentAmountLabel;
   const counterAmount = Number(counter.replace(/,/g, "")) || 0;
 
@@ -129,7 +134,7 @@ export default function OfferActionScreen() {
           {offer.listing?.title ?? "Property"}
         </Text>
         <Text className="text-[11.5px] text-ink-3 mt-0.5">
-          {offer.agent?.name ?? "The agent"} countered at {theirCounter}
+          {otherParty} is at {theirCounter}
         </Text>
 
         {/* Counter input */}
@@ -174,9 +179,9 @@ export default function OfferActionScreen() {
         {/* Ladder */}
         <View className="mt-4 bg-white rounded-2xl px-4 py-3 border-line" style={{ borderWidth: 0.5 }}>
           <LadderRow label="Asking" value={offer.listing?.priceLabel ?? "—"} />
-          <LadderRow label="Their counter" value={theirCounter} />
+          <LadderRow label="On the table" value={theirCounter} />
           <LadderRow label="Your counter" value={`₦${counter || "0"}`} highlight />
-          <LadderRow label="Your first offer" value={offer.amountLabel} muted last />
+          <LadderRow label="Opening offer" value={offer.amountLabel} muted last />
         </View>
 
         {/* Actions */}
