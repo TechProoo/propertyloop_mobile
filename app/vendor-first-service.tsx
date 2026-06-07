@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,7 +12,8 @@ import {
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { VENDOR_DURATIONS, VENDOR_SERVICES } from "@/mocks/vendor";
+import { VENDOR_DURATIONS } from "@/mocks/vendor";
+import vendorServicesService from "@/api/services/vendorServices";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
@@ -26,40 +27,78 @@ const FEE_RATE = 0.1;
 
 export default function VendorFirstServiceScreen() {
   const params = useLocalSearchParams<{ mode?: string; id?: string }>();
-  const editing = params.id ? VENDOR_SERVICES.find((s) => s.id === params.id) ?? null : null;
   // Modes: onboarding (default first-time, advances to payout) | add | edit
   const mode: "onboarding" | "add" | "edit" =
-    editing ? "edit" : params.mode === "add" ? "add" : "onboarding";
+    params.id ? "edit" : params.mode === "add" ? "add" : "onboarding";
 
-  const editingFromIsFrom = editing?.price?.startsWith("from") ?? false;
-  const editingPriceDigits = editing ? editing.price.replace(/[^0-9]/g, "") : "";
+  const [name, setName]           = useState("");
+  const [included, setIncluded]   = useState("");
+  const [priceMode, setPriceMode] = useState<"fixed" | "from">("fixed");
+  const [price, setPrice]         = useState("");
+  const [duration, setDuration]   = useState(VENDOR_DURATIONS[1]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [name, setName]           = useState(editing?.name ?? "");
-  const [included, setIncluded]   = useState(editing?.description ?? "");
-  const [priceMode, setPriceMode] = useState<"fixed" | "from">(editingFromIsFrom ? "from" : "fixed");
-  const [price, setPrice]         = useState(editingPriceDigits);
-  const [duration, setDuration]   = useState(editing?.duration ?? VENDOR_DURATIONS[1]);
+  // Editing: load the real service and prefill.
+  useEffect(() => {
+    if (!params.id) return;
+    let on = true;
+    vendorServicesService
+      .list()
+      .then((all) => {
+        const s = all.find((x) => x.id === params.id);
+        if (!on || !s) return;
+        setName(s.name);
+        setIncluded(s.description);
+        setPriceMode(s.priceMode === "FROM" ? "from" : "fixed");
+        setPrice(String(s.priceNaira));
+        if (s.duration) setDuration(s.duration);
+      })
+      .catch(() => {});
+    return () => {
+      on = false;
+    };
+  }, [params.id]);
 
   const priceNum = Number(price) || 0;
   const net = useMemo(() => Math.round(priceNum * (1 - FEE_RATE)), [priceNum]);
   const canContinue = name.trim().length > 2 && included.trim().length > 10 && priceNum > 0;
 
-  const onContinue = () => {
-    if (!canContinue) {
-      Alert.alert("Almost there", "Service name, what's included, and a price are required.");
+  const onContinue = async () => {
+    if (!canContinue || submitting) {
+      if (!canContinue) {
+        Alert.alert("Almost there", "Service name, what's included, and a price are required.");
+      }
       return;
     }
-    if (mode === "onboarding") {
-      router.push("/vendor-payout-setup" as Href);
-      return;
+    setSubmitting(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        description: included.trim(),
+        priceNaira: priceNum,
+        priceMode: (priceMode === "from" ? "FROM" : "FIXED") as "FROM" | "FIXED",
+        duration,
+      };
+      if (params.id) {
+        await vendorServicesService.update(params.id, payload);
+      } else {
+        await vendorServicesService.create(payload);
+      }
+      if (mode === "onboarding") {
+        router.push("/vendor-payout-setup" as Href);
+      } else {
+        Alert.alert(
+          mode === "edit" ? "Changes saved" : "Service added",
+          mode === "edit" ? `"${name.trim()}" updated.` : `"${name.trim()}" is now in your menu.`,
+          [{ text: "OK", onPress: () => router.back() }],
+        );
+      }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Couldn't save. Please try again.";
+      Alert.alert("Save failed", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSubmitting(false);
     }
-    Alert.alert(
-      mode === "edit" ? "Changes saved" : "Service added",
-      mode === "edit"
-        ? `"${name.trim()}" updated.`
-        : `"${name.trim()}" is now in your menu.`,
-      [{ text: "OK", onPress: () => router.back() }],
-    );
   };
 
   const title =
@@ -225,8 +264,8 @@ export default function VendorFirstServiceScreen() {
             style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
           >
             <OnboardingCta
-              label={ctaLabel}
-              ready={canContinue}
+              label={submitting ? "Saving…" : ctaLabel}
+              ready={canContinue && !submitting}
               onPress={onContinue}
               getMissing={() =>
                 [
