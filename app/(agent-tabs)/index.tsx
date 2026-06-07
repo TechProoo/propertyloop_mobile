@@ -14,6 +14,7 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import agentsService, { type AgentStats } from "@/api/services/agents";
 import listingsService from "@/api/services/listings";
+import offersService from "@/api/services/offers";
 import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
@@ -44,16 +45,25 @@ export default function AgentHomeScreen() {
   const { user } = useAuth();
   const [stats, setStats] = useState<AgentStats | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [offersToReview, setOffersToReview] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const [s, l] = await Promise.all([
+      const [s, l, offers] = await Promise.all([
         agentsService.getStats(),
         listingsService.listMine({ limit: 5 }),
+        offersService.listReceived().catch(() => ({ items: [] as any[] })),
       ]);
       setStats(s);
       setListings(l.items);
+      setOffersToReview(
+        offers.items.filter(
+          (o: any) =>
+            (o.status === "PENDING" || o.status === "COUNTERED") &&
+            o.lastActor === "BUYER",
+        ).length,
+      );
     } catch {
       /* leave empty */
     } finally {
@@ -74,6 +84,13 @@ export default function AgentHomeScreen() {
   const firstName = user?.name?.split(/\s+/)[0] ?? "there";
 
   const upNext: { tag: string; title: string; href: Href }[] = [];
+  if (offersToReview) {
+    upNext.push({
+      tag: "Offers",
+      title: `${offersToReview} offer${offersToReview === 1 ? "" : "s"} to review`,
+      href: "/agent-offers" as Href,
+    });
+  }
   if (stats?.leads.new) {
     upNext.push({
       tag: "Leads",
@@ -184,9 +201,9 @@ export default function AgentHomeScreen() {
                 onPress={() => router.push("/(agent-tabs)/leads" as Href)}
               />
               <QuickAction
-                icon="albums-outline"
-                label="Listings"
-                onPress={() => router.push("/(agent-tabs)/listings" as Href)}
+                icon="pricetags-outline"
+                label="Offers"
+                onPress={() => router.push("/agent-offers" as Href)}
               />
             </View>
 
