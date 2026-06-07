@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   Switch,
@@ -8,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
+import agentsService from "@/api/services/agents";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
@@ -55,12 +57,13 @@ export default function AgentPayScreen() {
 
   const [method, setMethod] = useState<PayMethod>("CARD");
   const [autoRenew, setAutoRenew] = useState(true);
+  const [paying, setPaying] = useState(false);
 
   const renewalDate = useMemo(() => nextRenewalLabel(), []);
 
-  const handlePay = () => {
-    // In real life this calls agentsService.initializeSubscriptionCheckout
-    // and opens Paystack's hosted checkout in a WebView. Stubbed for now.
+  const handlePay = async () => {
+    if (paying) return;
+    // Founding members are free — nothing to charge, go straight in.
     if (isFree) {
       Alert.alert(
         "Founding tier activated",
@@ -69,11 +72,24 @@ export default function AgentPayScreen() {
       );
       return;
     }
-    Alert.alert(
-      "Paystack checkout",
-      "This will open Paystack's secure checkout in a moment.",
-      [{ text: "OK", onPress: () => router.replace("/(agent-tabs)" as Href) }],
-    );
+    // Paid tiers: get a Paystack checkout URL and open it in the browser.
+    setPaying(true);
+    try {
+      const { paymentUrl } = await agentsService.initCheckout(
+        tier as "STANDARD" | "PRO",
+      );
+      await Linking.openURL(paymentUrl);
+      Alert.alert(
+        "Complete payment",
+        "Finish checkout in your browser. Your plan activates once payment is confirmed.",
+        [{ text: "Done", onPress: () => router.replace("/(agent-tabs)" as Href) }],
+      );
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Couldn't start checkout. Try again.";
+      Alert.alert("Checkout failed", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setPaying(false);
+    }
   };
 
   return (
@@ -197,10 +213,16 @@ export default function AgentPayScreen() {
         <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
           <Pressable
             onPress={handlePay}
+            disabled={paying}
             className="bg-primary rounded-full py-4 items-center active:opacity-80"
+            style={{ opacity: paying ? 0.6 : 1 }}
           >
             <Text className="text-white font-sans-semibold text-base">
-              {isFree ? "Activate Founding tier" : `Pay ${naira(total)} & activate`}
+              {paying
+                ? "Starting checkout…"
+                : isFree
+                  ? "Activate Founding tier"
+                  : `Pay ${naira(total)} & activate`}
             </Text>
           </Pressable>
         </View>

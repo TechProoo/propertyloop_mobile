@@ -16,6 +16,8 @@ import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
+import listingsService from "@/api/services/listings";
+import kycService from "@/api/services/kyc";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -25,8 +27,9 @@ const INK_3 = "#7f857f";
 
 export default function AgentVerifyScreen() {
   const [nin, setNin]         = useState("");
-  const [licenseFile, setLicenseFile] = useState<{ name: string } | null>(null);
+  const [licenseFile, setLicenseFile] = useState<{ name: string; uri: string; type?: string } | null>(null);
   const [selfieUri, setSelfieUri]     = useState<string | null>(null);
+  const [submitting, setSubmitting]   = useState(false);
 
   const ninValid = /^[0-9]{11}$/.test(nin);
   const canContinue = ninValid && licenseFile && selfieUri;
@@ -36,7 +39,10 @@ export default function AgentVerifyScreen() {
       type: ["application/pdf", "image/*"],
       copyToCacheDirectory: true,
     });
-    if (!r.canceled && r.assets[0]) setLicenseFile({ name: r.assets[0].name });
+    if (!r.canceled && r.assets[0]) {
+      const a = r.assets[0];
+      setLicenseFile({ name: a.name, uri: a.uri, type: a.mimeType });
+    }
   };
 
   const takeSelfie = async () => {
@@ -54,12 +60,35 @@ export default function AgentVerifyScreen() {
     if (!r.canceled && r.assets[0]) setSelfieUri(r.assets[0].uri);
   };
 
-  const onContinue = () => {
-    if (!canContinue) {
-      Alert.alert("Almost there", "Complete all three documents to continue.");
+  const onContinue = async () => {
+    if (!canContinue || submitting) {
+      if (!canContinue) {
+        Alert.alert("Almost there", "Complete all three documents to continue.");
+      }
       return;
     }
-    router.push("/agent-plan" as Href);
+    setSubmitting(true);
+    try {
+      const [licenseUrl, selfieUrl] = await Promise.all([
+        listingsService.uploadPhoto(licenseFile!.uri, {
+          name: licenseFile!.name,
+          type: licenseFile!.type ?? "image/jpeg",
+        }),
+        listingsService.uploadPhoto(selfieUri!, { name: "selfie.jpg", type: "image/jpeg" }),
+      ]);
+      await kycService.submit({
+        documentType: "NIN",
+        documentNumber: nin,
+        documentUrls: [licenseUrl],
+        selfieUrl,
+      });
+      router.push("/agent-plan" as Href);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Couldn't submit. Please try again.";
+      Alert.alert("Submission failed", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -210,8 +239,8 @@ export default function AgentVerifyScreen() {
             }}
           >
             <OnboardingCta
-              label="Submit & continue"
-              ready={!!canContinue}
+              label={submitting ? "Submitting…" : "Submit & continue"}
+              ready={!!canContinue && !submitting}
               onPress={onContinue}
               getMissing={() =>
                 [
