@@ -12,11 +12,8 @@ import {
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { PLAvatar } from "@/components/brand/PLAvatar";
-import { VENDOR_REVIEWS } from "@/mocks/vendor";
+import vendorsService from "@/api/services/vendors";
 
-const PRIMARY = "#1f6f43";
-const ACCENT = "#b9842c";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
@@ -28,19 +25,25 @@ const SUGGESTIONS = [
 
 export default function VendorReplyScreen() {
   const params = useLocalSearchParams<{ reviewId?: string }>();
-  const review =
-    VENDOR_REVIEWS.find((r) => r.id === params.reviewId) ?? VENDOR_REVIEWS[0];
+  const [reply, setReply] = useState("");
+  const [posting, setPosting] = useState(false);
 
-  const [reply, setReply] = useState(review.reply ?? "");
-
-  const onPost = () => {
+  const onPost = async () => {
     if (reply.trim().length < 4) {
       Alert.alert("Too short", "Write a few words before posting.");
       return;
     }
-    Alert.alert("Reply posted", "Your public reply is now visible under this review.", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+    if (!params.reviewId || posting) return;
+    setPosting(true);
+    try {
+      await vendorsService.replyToReview(params.reviewId, reply.trim());
+      Alert.alert("Reply posted", "Your public reply is now visible under this review.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (e: any) {
+      Alert.alert("Failed", e?.response?.data?.message ?? "Please try again.");
+      setPosting(false);
+    }
   };
 
   return (
@@ -61,8 +64,8 @@ export default function VendorReplyScreen() {
             <Text className="text-[13px] font-sans-bold text-ink-2">Cancel</Text>
           </Pressable>
           <Text className="text-[15px] font-sans-bold text-ink">Reply publicly</Text>
-          <Pressable onPress={onPost} hitSlop={8}>
-            <Text className="text-[13px] font-sans-bold text-primary">Post</Text>
+          <Pressable onPress={onPost} hitSlop={8} disabled={posting}>
+            <Text className="text-[13px] font-sans-bold text-primary">{posting ? "Posting…" : "Post"}</Text>
           </Pressable>
         </View>
 
@@ -71,41 +74,8 @@ export default function VendorReplyScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Review preview */}
-          <View
-            className="bg-white rounded-2xl p-3.5 border-line"
-            style={{ borderWidth: 0.5 }}
-          >
-            <View className="flex-row items-center gap-2.5">
-              <PLAvatar
-                initials={review.customer.initials}
-                size={34}
-                tone={review.customer.tone}
-              />
-              <View className="flex-1">
-                <Text className="text-[13px] font-sans-bold text-ink">
-                  {review.customer.name}
-                </Text>
-                <Text className="text-[10.5px] font-sans-semibold text-ink-3">
-                  {review.when}
-                </Text>
-              </View>
-              <View className="flex-row gap-0.5">
-                {Array.from({ length: review.rating }).map((_, i) => (
-                  <Ionicons key={i} name="star" size={12} color={ACCENT} />
-                ))}
-              </View>
-            </View>
-            <Text
-              className="font-serif-italic text-ink-2 mt-2.5"
-              style={{ fontSize: 14, lineHeight: 21 }}
-            >
-              "{review.body}"
-            </Text>
-          </View>
-
           {/* Quick suggestions */}
-          <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-5 mb-2">
+          <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-2 mb-2">
             Suggestions
           </Text>
           <View className="flex-row flex-wrap gap-2">
@@ -150,5 +120,3 @@ export default function VendorReplyScreen() {
     </SafeAreaView>
   );
 }
-
-void PRIMARY;

@@ -37,6 +37,14 @@ const vendorsService = {
   addBlackouts(dates: string[], reason?: string): Promise<any> {
     return api.post("/vendors/me/blackouts", { dates, reason }).then((r) => r.data);
   },
+  getReviews(vendorId: string): Promise<any[]> {
+    return api.get(`/vendors/${vendorId}/reviews`).then((r) => r.data);
+  },
+  replyToReview(reviewId: string, reply: string): Promise<any> {
+    return api
+      .post(`/vendors/me/reviews/${reviewId}/reply`, { reply })
+      .then((r) => r.data);
+  },
 
   /** Presign + PUT one image to storage; returns the public URL. */
   async uploadImage(uri: string): Promise<string> {
