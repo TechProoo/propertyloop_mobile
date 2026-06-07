@@ -26,6 +26,18 @@ const listingsService = {
     return data;
   },
 
+  /** The signed-in agent's own listings (any status). */
+  async listMine(params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<Paginated<Listing>> {
+    const { data } = await api.get<Paginated<Listing>>("/listings/me/all", {
+      params: params ?? {},
+    });
+    return data;
+  },
+
   async getBySlug(slug: string): Promise<Listing> {
     const { data } = await api.get<Listing>(`/listings/slug/${slug}`);
     return data;

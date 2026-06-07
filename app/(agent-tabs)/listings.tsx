@@ -1,46 +1,80 @@
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { router, type Href } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { Image } from "expo-image";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  AGENT_LISTINGS,
-  STATUS_META,
-  type AgentListing,
-  type ListingStatus,
-} from "@/mocks/agent";
+import listingsService from "@/api/services/listings";
+import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
-const ACCENT_INK = "#6b4a16";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
 
-const TABS: { id: "all" | ListingStatus; label: string }[] = [
-  { id: "all",         label: "All" },
-  { id: "live",        label: "Live" },
-  { id: "under_offer", label: "Under offer" },
-  { id: "draft",       label: "Drafts" },
-  { id: "let",         label: "Closed" },
+const STATUS_UI: Record<string, { label: string; bg: string; fg: string }> = {
+  ACTIVE: { label: "Live", bg: "#e3efe7", fg: PRIMARY_INK },
+  PENDING_REVIEW: { label: "In review", bg: "#f5ead4", fg: "#6b4a16" },
+  PAUSED: { label: "Paused", bg: "#f0f0f0", fg: INK_2 },
+  SOLD: { label: "Sold", bg: "#1a2120", fg: "#ffffff" },
+  RENTED: { label: "Rented", bg: "#1a2120", fg: "#ffffff" },
+  ARCHIVED: { label: "Archived", bg: "#f0f0f0", fg: INK_3 },
+};
+
+type TabId = "all" | "ACTIVE" | "PENDING_REVIEW" | "PAUSED" | "closed";
+const CLOSED = ["SOLD", "RENTED", "ARCHIVED"];
+const TABS: { id: TabId; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "ACTIVE", label: "Live" },
+  { id: "PENDING_REVIEW", label: "In review" },
+  { id: "PAUSED", label: "Paused" },
+  { id: "closed", label: "Closed" },
 ];
 
 export default function AgentListingsScreen() {
-  const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("all");
+  const [tab, setTab] = useState<TabId>("all");
+  const [items, setItems] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await listingsService.listMine({ limit: 100 });
+      setItems(res.items);
+    } catch {
+      /* leave empty */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: AGENT_LISTINGS.length };
-    TABS.forEach((t) => {
-      if (t.id === "all") return;
-      c[t.id] = AGENT_LISTINGS.filter((l) => l.status === t.id).length;
-    });
+    const c: Record<string, number> = { all: items.length };
+    c.ACTIVE = items.filter((l) => l.status === "ACTIVE").length;
+    c.PENDING_REVIEW = items.filter((l) => l.status === "PENDING_REVIEW").length;
+    c.PAUSED = items.filter((l) => l.status === "PAUSED").length;
+    c.closed = items.filter((l) => CLOSED.includes(l.status)).length;
     return c;
-  }, []);
+  }, [items]);
 
   const filtered =
     tab === "all"
-      ? AGENT_LISTINGS
-      : AGENT_LISTINGS.filter((l) => l.status === tab);
+      ? items
+      : tab === "closed"
+        ? items.filter((l) => CLOSED.includes(l.status))
+        : items.filter((l) => l.status === tab);
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -72,11 +106,8 @@ export default function AgentListingsScreen() {
           </View>
         </View>
 
-        {/* Sticky tab strip */}
-        <View
-          className="bg-cream"
-          style={{ borderBottomWidth: 0.5, borderBottomColor: LINE }}
-        >
+        {/* Sticky tabs */}
+        <View className="bg-cream" style={{ borderBottomWidth: 0.5, borderBottomColor: LINE }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -96,11 +127,7 @@ export default function AgentListingsScreen() {
                   }}
                 >
                   <Text
-                    className={`text-[13px] ${
-                      on
-                        ? "font-sans-bold text-ink"
-                        : "font-sans-semibold text-ink-3"
-                    }`}
+                    className={`text-[13px] ${on ? "font-sans-bold text-ink" : "font-sans-semibold text-ink-3"}`}
                   >
                     {t.label} · {counts[t.id] ?? 0}
                   </Text>
@@ -111,43 +138,40 @@ export default function AgentListingsScreen() {
         </View>
 
         {/* List */}
-        <View className="px-4 pt-3 gap-3">
-          {filtered.map((l) => (
-            <ListingCard key={l.id} listing={l} />
-          ))}
-          {filtered.length === 0 && (
-            <View
-              className="bg-white rounded-2xl py-12 items-center border-line"
-              style={{ borderWidth: 0.5 }}
-            >
-              <Ionicons name="albums-outline" size={28} color={INK_3} />
-              <Text className="text-[13px] font-sans-bold text-ink mt-2">
-                Nothing here yet
-              </Text>
-              <Text className="text-[11.5px] text-ink-3 mt-1">
-                Add a listing to fill this view.
-              </Text>
-            </View>
-          )}
-        </View>
+        {loading ? (
+          <View className="py-16 items-center">
+            <ActivityIndicator color={PRIMARY} />
+          </View>
+        ) : (
+          <View className="px-4 pt-3 gap-3">
+            {filtered.map((l) => (
+              <ListingCard key={l.id} listing={l} />
+            ))}
+            {filtered.length === 0 && (
+              <View
+                className="bg-white rounded-2xl py-12 items-center border-line"
+                style={{ borderWidth: 0.5 }}
+              >
+                <Ionicons name="albums-outline" size={28} color={INK_3} />
+                <Text className="text-[13px] font-sans-bold text-ink mt-2">
+                  {items.length === 0 ? "No listings yet" : "Nothing here"}
+                </Text>
+                <Text className="text-[11.5px] text-ink-3 mt-1 text-center px-8">
+                  {items.length === 0
+                    ? "Tap + to create your first listing."
+                    : "No listings in this tab."}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function ListingCard({ listing }: { listing: AgentListing }) {
-  const meta = STATUS_META[listing.status];
-  const toneBg =
-    meta.tone === "primary" ? "#e3efe7"
-    : meta.tone === "accent" ? "#f5ead4"
-    : meta.tone === "ink"    ? "#1a2120"
-    : "#f0f0f0";
-  const toneFg =
-    meta.tone === "primary" ? PRIMARY_INK
-    : meta.tone === "accent" ? ACCENT_INK
-    : meta.tone === "ink"    ? "#ffffff"
-    : INK_2;
-
+function ListingCard({ listing }: { listing: Listing }) {
+  const meta = STATUS_UI[listing.status] ?? STATUS_UI.PAUSED;
   return (
     <Pressable
       onPress={() => router.push(`/agent-listing/${listing.id}` as Href)}
@@ -157,53 +181,47 @@ function ListingCard({ listing }: { listing: AgentListing }) {
       {/* Status header */}
       <View
         className="flex-row items-center justify-between px-3.5 py-2"
-        style={{ backgroundColor: toneBg }}
+        style={{ backgroundColor: meta.bg }}
       >
         <Text
           className="text-[10.5px] font-sans-bold tracking-widest uppercase"
-          style={{ color: toneFg }}
+          style={{ color: meta.fg }}
         >
           {meta.label}
-          {listing.featured ? " · Featured" : ""}
         </Text>
-        {listing.daysLive > 0 && (
-          <Text
-            className="text-[10.5px] font-sans-bold tracking-wider"
-            style={{ color: toneFg, opacity: 0.85 }}
-          >
-            {listing.daysLive}d live
-          </Text>
-        )}
+        <Text
+          className="text-[10.5px] font-sans-bold tracking-wider"
+          style={{ color: meta.fg, opacity: 0.85 }}
+        >
+          {listing.viewsCount} views
+        </Text>
       </View>
 
       {/* Body */}
       <View className="flex-row gap-3 p-3">
-        <View
-          style={{
-            width: 70, height: 70, borderRadius: 12,
-            backgroundColor: "#f0f0f0",
-            alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <Ionicons name="image-outline" size={22} color={INK_3} />
-        </View>
+        <Image
+          source={listing.coverImage}
+          style={{ width: 70, height: 70, borderRadius: 12 }}
+          contentFit="cover"
+        />
         <View className="flex-1">
           <View className="flex-row items-baseline justify-between">
-            <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={1}>
+            <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={1} style={{ flex: 1 }}>
               {listing.title}
             </Text>
-            <Text
-              className="font-serif text-ink"
-              style={{ fontSize: 17, letterSpacing: -0.3 }}
-            >
-              {listing.price}
+            <Text className="font-serif text-ink ml-2" style={{ fontSize: 16, letterSpacing: -0.3 }}>
+              {listing.priceLabel}
             </Text>
           </View>
-          <Text className="text-[11.5px] text-ink-3 mt-0.5">{listing.area}</Text>
+          <Text className="text-[11.5px] text-ink-3 mt-0.5" numberOfLines={1}>
+            {listing.location}
+          </Text>
           <View className="flex-row gap-3 mt-2">
-            <MetricChip icon="eye-outline"          value={`${listing.views}`}      label="views" />
-            <MetricChip icon="heart-outline"        value={`${listing.saves}`}      label="saves" />
-            <MetricChip icon="chatbubble-outline"   value={`${listing.inquiries}`}  label="leads" />
+            <MetricChip icon="bed-outline" value={`${listing.beds}`} label="bed" />
+            <MetricChip icon="water-outline" value={`${listing.baths}`} label="bath" />
+            {!!listing.sqft && (
+              <MetricChip icon="resize-outline" value={`${listing.sqft}`} label="m²" />
+            )}
           </View>
         </View>
       </View>
@@ -212,7 +230,9 @@ function ListingCard({ listing }: { listing: AgentListing }) {
 }
 
 function MetricChip({
-  icon, value, label,
+  icon,
+  value,
+  label,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   value: string;
