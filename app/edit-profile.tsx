@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -15,20 +15,51 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { SETTINGS_PROFILE } from "@/mocks/buyer-extra";
+import { useAuth } from "@/context/auth";
+import usersService from "@/api/services/users";
 
 const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
 export default function EditProfileScreen() {
-  const [name, setName]   = useState(SETTINGS_PROFILE.name);
-  const [email, setEmail] = useState(SETTINGS_PROFILE.email);
-  const [phone, setPhone] = useState(SETTINGS_PROFILE.phone);
-  const [bio, setBio]     = useState(
-    "Relocating from Ikoyi to Lekki — looking for a 3-bed family home near good schools.",
-  );
+  const { user, refreshUser } = useAuth();
+  const [name, setName]   = useState(user?.name ?? "");
+  const [email] = useState(user?.email ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [location, setLocation] = useState("");
+  const [bio, setBio]     = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Bio / location aren't on the lightweight auth user — pull the full profile.
+  useEffect(() => {
+    let active = true;
+    usersService
+      .getProfile()
+      .then((p) => {
+        if (!active) return;
+        if (p?.name) setName(p.name);
+        if (p?.phone) setPhone(p.phone);
+        if (p?.location) setLocation(p.location);
+        if (p?.bio) setBio(p.bio);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const pickAvatar = () =>
     Alert.alert("Profile photo", "Choose a source", [
@@ -68,14 +99,29 @@ export default function EditProfileScreen() {
     if (!r.canceled && r.assets[0]) setAvatarUri(r.assets[0].uri);
   };
 
-  const onSave = () => {
-    if (!name.trim() || !email.trim()) {
-      Alert.alert("Missing info", "Name and email are required.");
+  const onSave = async () => {
+    if (!name.trim()) {
+      Alert.alert("Missing info", "Your name is required.");
       return;
     }
-    Alert.alert("Saved", "Your profile has been updated.", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+    setSaving(true);
+    try {
+      await usersService.updateProfile({
+        name: name.trim(),
+        phone: phone.trim() || undefined,
+        location: location.trim() || undefined,
+        bio: bio.trim() || undefined,
+      });
+      await refreshUser();
+      Alert.alert("Saved", "Your profile has been updated.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Couldn't save. Please try again.";
+      Alert.alert("Save failed", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -96,8 +142,10 @@ export default function EditProfileScreen() {
           <Text className="text-[15px] font-sans-bold text-ink">
             Edit profile
           </Text>
-          <Pressable onPress={onSave} hitSlop={8}>
-            <Text className="text-[13px] font-sans-bold text-primary">Save</Text>
+          <Pressable onPress={onSave} hitSlop={8} disabled={saving}>
+            <Text className="text-[13px] font-sans-bold text-primary">
+              {saving ? "Saving…" : "Save"}
+            </Text>
           </Pressable>
         </View>
 
@@ -116,7 +164,7 @@ export default function EditProfileScreen() {
                   contentFit="cover"
                 />
               ) : (
-                <PLAvatar initials={SETTINGS_PROFILE.initials} size={88} tone="primary" />
+                <PLAvatar initials={initialsOf(name)} size={88} tone="primary" />
               )}
               <View
                 className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary items-center justify-center"
@@ -133,8 +181,16 @@ export default function EditProfileScreen() {
           {/* Form */}
           <View className="mt-6 gap-4">
             <Field label="Full name" value={name} onChangeValue={setName} autoCapitalize="words" />
-            <Field label="Email" value={email} onChangeValue={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            <View>
+              <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-1.5">
+                Email
+              </Text>
+              <View className="bg-cream-2 border border-line rounded-2xl px-4 py-3.5">
+                <Text className="text-ink text-[15px]">{email || "—"}</Text>
+              </View>
+            </View>
             <Field label="Phone" value={phone} onChangeValue={setPhone} keyboardType="phone-pad" />
+            <Field label="Location" value={location} onChangeValue={setLocation} placeholder="e.g. Lekki, Lagos" autoCapitalize="words" />
 
             <View>
               <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-1.5">
@@ -183,10 +239,13 @@ export default function EditProfileScreen() {
         >
           <Pressable
             onPress={onSave}
+            disabled={saving}
             className="bg-primary rounded-full items-center active:opacity-80"
-            style={{ paddingVertical: 16 }}
+            style={{ paddingVertical: 16, opacity: saving ? 0.6 : 1 }}
           >
-            <Text className="text-white font-sans-bold text-[15px]">Save changes</Text>
+            <Text className="text-white font-sans-bold text-[15px]">
+              {saving ? "Saving…" : "Save changes"}
+            </Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
