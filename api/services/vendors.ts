@@ -22,6 +22,23 @@ const vendorsService = {
   updateMe(payload: Record<string, unknown>): Promise<any> {
     return api.patch("/vendors/me", payload).then((r) => r.data);
   },
+
+  /** Presign + PUT one image to storage; returns the public URL. */
+  async uploadImage(uri: string): Promise<string> {
+    const contentType = "image/jpeg";
+    const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
+      "/vendors/me/portfolio/presign",
+      { filename: `upload-${Date.now()}.jpg`, contentType, kind: "portfolio" },
+    );
+    const fileRes = await fetch(uri);
+    const blob = await fileRes.blob();
+    await fetch(data.uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": contentType },
+    });
+    return data.fileUrl;
+  },
 };
 
 export default vendorsService;
