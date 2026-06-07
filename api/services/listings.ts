@@ -86,6 +86,19 @@ const listingsService = {
     const { data } = await api.post<Listing>("/listings", payload);
     return data;
   },
+
+  async update(
+    id: string,
+    payload: Partial<CreateListingPayload> & { status?: string },
+  ): Promise<Listing> {
+    const { data } = await api.patch<Listing>(`/listings/${id}`, payload);
+    return data;
+  },
+
+  async remove(id: string): Promise<{ success: boolean }> {
+    const { data } = await api.delete<{ success: boolean }>(`/listings/${id}`);
+    return data;
+  },
 };
 
 export interface Comp {

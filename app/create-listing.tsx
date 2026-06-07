@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -15,12 +16,17 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  AGENT_LISTINGS,
   CREATE_LISTING_AMENITIES,
   CREATE_LISTING_TYPES,
 } from "@/mocks/agent";
 import listingsService from "@/api/services/listings";
 import type { ListingType } from "@/api/types";
+
+const TYPE_TO_ID: Record<string, string> = {
+  SALE: "sale",
+  RENT: "rent",
+  SHORTLET: "shortlet",
+};
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -54,39 +60,57 @@ const PERIOD_MAP: Record<string, string | undefined> = {
 
 export default function CreateListingScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const editing = AGENT_LISTINGS.find((l) => l.id === id) ?? null;
-  const isEdit = !!editing;
+  const isEdit = !!id;
+  const [loadingEdit, setLoadingEdit] = useState(!!id);
 
   const [step, setStep] = useState<Step>("Basics");
-
-  // Basics — prefilled when editing
-  const [type, setType]     = useState(
-    editing
-      ? editing.price.includes("/yr") || editing.price.includes("/night")
-        ? "rent" : "sale"
-      : "sale",
-  );
-  const [title, setTitle]   = useState(editing?.title ?? "");
+  const [type, setType] = useState("sale");
+  const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("Apartment");
-  const [area, setArea]     = useState(editing?.area ?? "");
+  const [area, setArea] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [price, setPrice]   = useState(
-    editing ? String(editing.price.replace(/[^0-9]/g, "")) : "",
-  );
-
-  // Photos — for edits, we don't have real URIs in the mock so start empty.
+  const [price, setPrice] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
-
-  // Details
-  const [beds, setBeds]     = useState(editing ? String(editing.beds) : "3");
-  const [baths, setBaths]   = useState(editing ? String(editing.baths) : "3");
-  const [sqm, setSqm]       = useState("");
+  const [beds, setBeds] = useState("3");
+  const [baths, setBaths] = useState("3");
+  const [sqm, setSqm] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
-  const [description, setDescription] = useState(
-    editing
-      ? `Spacious ${editing.beds}-bedroom home in ${editing.area}. Currently ${editing.views > 0 ? `${editing.views} views` : "new"}.`
-      : "",
-  );
+  const [description, setDescription] = useState("");
+
+  // Editing: load the real listing and prefill every field.
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    listingsService
+      .getById(id)
+      .then((l) => {
+        if (!active) return;
+        setType(TYPE_TO_ID[l.type] ?? "sale");
+        setTitle(l.title);
+        setPropertyType(l.propertyType || "Apartment");
+        setArea(l.location);
+        setPrice(String(l.priceNaira));
+        setBeds(String(l.beds));
+        setBaths(String(l.baths));
+        setSqm(l.sqft ?? "");
+        setAmenities(l.features ?? []);
+        setDescription(l.description ?? "");
+        setPhotos(l.images?.length ? l.images : l.coverImage ? [l.coverImage] : []);
+      })
+      .catch(() => {})
+      .finally(() => active && setLoadingEdit(false));
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  // Upload only newly-picked (local) photos; keep already-hosted URLs as-is.
+  const resolvePhotos = () =>
+    Promise.all(
+      photos.map((u) =>
+        u.startsWith("http") ? Promise.resolve(u) : listingsService.uploadPhoto(u),
+      ),
+    );
 
   const stepIdx = STEPS.indexOf(step);
   const progress = (stepIdx + 1) / STEPS.length;
@@ -100,15 +124,8 @@ export default function CreateListingScreen() {
   };
   const goNext = () => {
     if (stepIdx === STEPS.length - 1) {
-      if (isEdit) {
-        Alert.alert(
-          "Editing coming soon",
-          "Editing an existing listing isn't wired yet.",
-          [{ text: "OK", onPress: () => router.back() }],
-        );
-      } else {
-        void publish();
-      }
+      if (isEdit) void saveEdit();
+      else void publish();
       return;
     }
     setStep(STEPS[stepIdx + 1]);
@@ -145,27 +162,28 @@ export default function CreateListingScreen() {
           ? !!beds && !!baths && !!sqm.trim() && description.trim().length >= 20
           : true;
 
+  const buildPayload = (urls: string[]) => ({
+    title: title.trim(),
+    type: TYPE_MAP[type] ?? "SALE",
+    propertyType,
+    priceNaira: Number(price) || 0,
+    period: PERIOD_MAP[type],
+    address: area.trim(),
+    location: area.trim(),
+    beds: Number(beds) || 0,
+    baths: Number(baths) || 0,
+    sqft: sqm.trim(),
+    description: description.trim(),
+    features: amenities,
+    coverImage: urls[0],
+    images: urls,
+  });
+
   const publish = async () => {
     setSubmitting(true);
     try {
-      // Upload photos, then create the listing.
-      const urls = await Promise.all(photos.map((u) => listingsService.uploadPhoto(u)));
-      await listingsService.create({
-        title: title.trim(),
-        type: TYPE_MAP[type] ?? "SALE",
-        propertyType,
-        priceNaira: Number(price) || 0,
-        period: PERIOD_MAP[type],
-        address: area.trim(),
-        location: area.trim(),
-        beds: Number(beds) || 0,
-        baths: Number(baths) || 0,
-        sqft: sqm.trim(),
-        description: description.trim(),
-        features: amenities,
-        coverImage: urls[0],
-        images: urls,
-      });
+      const urls = await resolvePhotos();
+      await listingsService.create(buildPayload(urls));
       Alert.alert(
         "Listing published",
         "Your listing is now live for buyers in matching searches.",
@@ -178,6 +196,32 @@ export default function CreateListingScreen() {
       setSubmitting(false);
     }
   };
+
+  const saveEdit = async () => {
+    if (!id) return;
+    setSubmitting(true);
+    try {
+      const urls = await resolvePhotos();
+      await listingsService.update(id, buildPayload(urls));
+      Alert.alert("Changes saved", "Your listing has been updated.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Couldn't save. Please try again.";
+      Alert.alert("Save failed", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loadingEdit) {
+    return (
+      <View className="flex-1 bg-cream items-center justify-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator color={PRIMARY} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
