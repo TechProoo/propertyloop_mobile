@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { LANGUAGES } from "@/mocks/vendor";
+import vendorsService from "@/api/services/vendors";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
@@ -32,6 +33,7 @@ export default function VendorSetupScreen() {
   const [years, setYears]       = useState("");
   const [crew, setCrew]         = useState("");
   const [langs, setLangs]       = useState<string[]>(["English", "Pidgin"]);
+  const [submitting, setSubmitting] = useState(false);
 
   const initials = name
     ? name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase()
@@ -73,8 +75,24 @@ export default function VendorSetupScreen() {
 
   const canContinue = name.trim().length > 1 && about.trim().length > 10 && langs.length > 0;
 
-  const onContinue = () => {
-    router.push("/vendor-categories" as Href);
+  const onContinue = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      let avatar: string | undefined;
+      if (photoUri) avatar = await vendorsService.uploadImage(photoUri);
+      await vendorsService.updateMe({
+        name: name.trim(),
+        bio: about.trim(),
+        yearsExperience: years.trim() || undefined,
+        ...(avatar ? { avatarUrl: avatar } : {}),
+      });
+      router.push("/vendor-categories" as Href);
+    } catch (e: any) {
+      Alert.alert("Couldn't save", e?.response?.data?.message ?? "Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const missing = () =>
@@ -227,8 +245,8 @@ export default function VendorSetupScreen() {
             style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
           >
             <OnboardingCta
-              label="Continue"
-              ready={canContinue}
+              label={submitting ? "Saving…" : "Continue"}
+              ready={canContinue && !submitting}
               onPress={onContinue}
               getMissing={missing}
             />
