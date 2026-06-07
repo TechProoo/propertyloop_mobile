@@ -5,26 +5,19 @@ import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, type MapType } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  MAP_CARDS,
-  MAP_LOCATION,
-  MAP_PINS,
-  MAP_REGION,
-} from "@/mocks/map";
+import { MAP_LOCATION, MAP_PINS, MAP_REGION } from "@/mocks/map";
+import { useListings } from "@/api/hooks/useListings";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-function picsum(seed: string) {
-  return `https://picsum.photos/seed/${seed}/360/240`;
-}
-
 export default function ExploreMapScreen() {
   const [selectedPin, setSelectedPin] = useState("p1");
   const [mapType, setMapType] = useState<MapType>("standard");
   const mapRef = useRef<MapView | null>(null);
+  const { items } = useListings({ sort: "newest", limit: 12 });
 
   const recenter = () => {
     mapRef.current?.animateToRegion(MAP_REGION, 600);
@@ -171,11 +164,11 @@ export default function ExploreMapScreen() {
 
         <View className="px-5 flex-row items-baseline justify-between">
           <Text className="text-[16px] font-sans-bold text-ink tracking-tight">
-            {MAP_LOCATION.count} in this area
+            Latest homes
           </Text>
-          <Text className="text-xs font-sans-bold text-primary">
-            Sort: Price ↑
-          </Text>
+          <Pressable onPress={() => router.push("/search-results" as Href)}>
+            <Text className="text-xs font-sans-bold text-primary">See all</Text>
+          </Pressable>
         </View>
 
         <ScrollView
@@ -183,65 +176,52 @@ export default function ExploreMapScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: 12, paddingHorizontal: 18, paddingTop: 12 }}
         >
-          {MAP_CARDS.map((c) => {
-            const isOn = selectedPin === c.pinId;
-            return (
-              <Pressable
-                key={c.id}
-                onPress={() => {
-                  setSelectedPin(c.pinId);
-                  router.push(`/property/${c.id}` as Href);
-                }}
-                className="bg-white rounded-2xl overflow-hidden active:opacity-90"
-                style={{
-                  width: 220,
-                  shadowColor: "#000",
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                  shadowOffset: { width: 0, height: 1 },
-                }}
-              >
-                <View style={{ height: 110 }}>
-                  <Image
-                    source={picsum(c.imageSeed)}
-                    style={{ width: "100%", height: "100%" }}
-                    contentFit="cover"
-                  />
-                  {isOn && (
-                    <View
-                      className="absolute top-2 left-2 bg-ink px-2 py-1 rounded-full"
-                    >
-                      <Text className="text-[10px] font-sans-bold text-white tracking-widest uppercase">
-                        Selected
-                      </Text>
-                    </View>
+          {items.map((c) => (
+            <Pressable
+              key={c.id}
+              onPress={() => router.push(`/property/${c.id}` as Href)}
+              className="bg-white rounded-2xl overflow-hidden active:opacity-90"
+              style={{
+                width: 220,
+                shadowColor: "#000",
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                shadowOffset: { width: 0, height: 1 },
+              }}
+            >
+              <View style={{ height: 110 }}>
+                <Image
+                  source={c.coverImage}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="cover"
+                />
+              </View>
+              <View className="px-3 py-3">
+                <View className="flex-row items-baseline gap-1">
+                  <Text
+                    className="font-serif text-ink"
+                    style={{ fontSize: 17, letterSpacing: -0.3 }}
+                  >
+                    {c.priceLabel}
+                  </Text>
+                  {!!c.period && (
+                    <Text className="text-[11px] font-sans-semibold text-ink-3">
+                      {c.period}
+                    </Text>
                   )}
                 </View>
-                <View className="px-3 py-3">
-                  <View className="flex-row items-baseline gap-1">
-                    <Text
-                      className="font-serif text-ink"
-                      style={{ fontSize: 17, letterSpacing: -0.3 }}
-                    >
-                      {c.price}
-                    </Text>
-                    <Text className="text-[11px] font-sans-semibold text-ink-3">
-                      /yr
-                    </Text>
-                  </View>
-                  <Text
-                    className="text-[13px] font-sans-semibold text-ink mt-0.5"
-                    numberOfLines={1}
-                  >
-                    {c.title}
-                  </Text>
-                  <Text className="text-[11px] text-ink-3 mt-0.5">
-                    {c.area} · {c.beds}B / {c.baths}Ba
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
+                <Text
+                  className="text-[13px] font-sans-semibold text-ink mt-0.5"
+                  numberOfLines={1}
+                >
+                  {c.title}
+                </Text>
+                <Text className="text-[11px] text-ink-3 mt-0.5" numberOfLines={1}>
+                  {c.location} · {c.beds}B / {c.baths}Ba
+                </Text>
+              </View>
+            </Pressable>
+          ))}
         </ScrollView>
       </View>
     </View>

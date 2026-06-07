@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -49,6 +49,18 @@ export default function FiltersScreen() {
     setMaxPrice("");
     setAmenities([]);
     setTrust([]);
+  };
+
+  const apply = () => {
+    // Only the backend-supported filters are forwarded. Amenities + trust
+    // signals aren't filterable server-side yet.
+    const q: Record<string, string> = {};
+    if (type !== "Any") q.propertyType = type;
+    if (beds !== "Any") q.minBeds = String(parseInt(beds, 10));
+    if (baths !== "Any") q.minBaths = String(parseInt(baths, 10));
+    if (minPrice) q.minPrice = minPrice;
+    if (maxPrice) q.maxPrice = maxPrice;
+    router.replace({ pathname: "/search-results", params: q } as Href);
   };
 
   return (
@@ -149,12 +161,12 @@ export default function FiltersScreen() {
         }}
       >
         <Pressable
-          onPress={() => router.back()}
+          onPress={apply}
           className="bg-primary rounded-full items-center active:opacity-80"
           style={{ paddingVertical: 16 }}
         >
           <Text className="text-white font-sans-bold text-[15px]">
-            Show 142 homes
+            Show homes
           </Text>
         </Pressable>
       </View>
