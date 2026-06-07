@@ -1,15 +1,17 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { Stack, router, type Href } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
-const INK_2 = "#4d524f";
 
 const ESCROW_STEPS = ["Done", "Awaiting confirm", "Paid"];
 
 export default function VendorJobDoneScreen() {
+  const { amount } = useLocalSearchParams<{ amount?: string }>();
+  const fee = Number(amount) || 0;
+  const feeLabel = fee ? `₦${fee.toLocaleString("en-NG")}` : "your share";
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -59,7 +61,7 @@ export default function VendorJobDoneScreen() {
         </Text>
         <Text className="text-[13.5px] text-ink-2 mt-2 leading-5">
           We've asked the customer to confirm. Once they do,{" "}
-          <Text className="font-sans-bold text-ink">₦16,200</Text> lands in your GTBank account
+          <Text className="font-sans-bold text-ink">{feeLabel}</Text> lands in your payout account
           — usually within 24 hours.
         </Text>
 
@@ -71,7 +73,7 @@ export default function VendorJobDoneScreen() {
               <Text className="text-[12px] font-sans-bold text-white">In escrow</Text>
             </View>
             <Text className="font-serif text-white" style={{ fontSize: 20 }}>
-              ₦16,200
+              {fee ? `₦${fee.toLocaleString("en-NG")}` : "—"}
             </Text>
           </View>
           <View className="mt-3 flex-row items-center">
@@ -126,16 +128,7 @@ export default function VendorJobDoneScreen() {
         >
           <Text className="text-white font-sans-bold text-[15px]">Back to jobs</Text>
         </Pressable>
-        <Pressable
-          onPress={() => router.push("/conversation/chinwe" as Href)}
-          className="rounded-full items-center active:opacity-80"
-          style={{ paddingVertical: 15 }}
-        >
-          <Text className="text-[14px] font-sans-bold text-ink-2">Message customer</Text>
-        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
-
-void INK_2;

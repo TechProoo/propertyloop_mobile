@@ -17,6 +17,7 @@ import messagesService, {
   type Conversation,
   type Message,
 } from "@/api/services/messages";
+import { getChatSocket } from "@/api/socket";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -64,6 +65,26 @@ export default function ConversationScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Realtime: join the conversation room and append incoming messages live.
+  useEffect(() => {
+    if (!id) return;
+    const socket = getChatSocket();
+    const join = () => socket.emit("join_conversation", { conversationId: id });
+    if (socket.connected) join();
+    socket.on("connect", join);
+
+    const onNew = (msg: Message & { conversationId: string }) => {
+      if (msg.conversationId !== id) return;
+      setMessages((arr) => (arr.some((m) => m.id === msg.id) ? arr : [...arr, msg]));
+    };
+    socket.on("new_message", onNew);
+
+    return () => {
+      socket.off("new_message", onNew);
+      socket.off("connect", join);
+    };
+  }, [id]);
 
   useEffect(() => {
     const t = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 80);

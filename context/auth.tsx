@@ -13,6 +13,7 @@ import authService, {
 } from "@/api/services/auth";
 import { refreshSession, setOnSessionExpired } from "@/api/client";
 import { syncSavedFromServer, clearSaved } from "@/lib/favourites";
+import { getChatSocket, disconnectChatSocket } from "@/api/socket";
 
 type Status = "loading" | "authed" | "guest";
 
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(me);
           setStatus("authed");
           void syncSavedFromServer();
+          getChatSocket();
         }
       } catch {
         if (mounted) setStatus("guest");
@@ -71,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
     setStatus("authed");
     void syncSavedFromServer();
+    getChatSocket();
     return res.user;
   }, []);
 
@@ -78,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await authService.signup(payload);
     setUser(res.user);
     setStatus("authed");
+    getChatSocket();
     return res.user;
   }, []);
 
@@ -86,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setStatus("guest");
     clearSaved();
+    disconnectChatSocket();
   }, []);
 
   const refreshUser = useCallback(async () => {
