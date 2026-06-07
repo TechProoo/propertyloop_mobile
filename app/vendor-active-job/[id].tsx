@@ -115,7 +115,7 @@ export default function VendorActiveJobScreen() {
                 completionNotes: note.trim() || undefined,
                 completionProofImages: urls.length ? urls : undefined,
               });
-              router.replace("/vendor-job-done" as Href);
+              router.replace(`/vendor-job-done?amount=${job?.vendorFee ?? 0}` as Href);
             } catch (e: any) {
               Alert.alert("Failed", e?.response?.data?.message ?? "Please try again.");
               setBusy(false);
