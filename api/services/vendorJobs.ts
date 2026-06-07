@@ -52,7 +52,23 @@ export interface ListJobsParams {
   limit?: number;
 }
 
+export interface CreateBookingPayload {
+  vendorId: string;
+  title: string;
+  description: string;
+  address: string;
+  category?: string;
+  vendorFee: number;
+  scheduledFor: string; // ISO
+  clientName: string;
+  clientPhone: string;
+  clientEmail?: string;
+}
+
 const vendorJobsService = {
+  createBooking(payload: CreateBookingPayload): Promise<VendorJob> {
+    return api.post<VendorJob>("/vendor-jobs", payload).then((r) => r.data);
+  },
   list(params?: ListJobsParams): Promise<Paginated<VendorJob>> {
     return api
       .get<Paginated<VendorJob>>("/vendor-jobs", { params: params ?? {} })
