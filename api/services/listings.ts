@@ -66,13 +66,16 @@ const listingsService = {
     return data;
   },
 
-  /** Upload one listing photo (multipart). Returns the stored URL. */
-  async uploadPhoto(uri: string): Promise<string> {
+  /** Upload one file (multipart) via the listings uploader. Returns the URL. */
+  async uploadPhoto(
+    uri: string,
+    opts?: { name?: string; type?: string },
+  ): Promise<string> {
     const form = new FormData();
     form.append("file", {
       uri,
-      name: `photo-${Date.now()}.jpg`,
-      type: "image/jpeg",
+      name: opts?.name ?? `photo-${Date.now()}.jpg`,
+      type: opts?.type ?? "image/jpeg",
     } as any);
     const { data } = await api.post<{ fileUrl: string }>(
       "/listings/upload/photo",

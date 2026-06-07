@@ -33,6 +33,16 @@ const agentsService = {
   getStats(): Promise<AgentStats> {
     return api.get<AgentStats>("/agents/me/stats").then((r) => r.data);
   },
+  getSubscription(): Promise<any> {
+    return api.get("/agents/me/subscription").then((r) => r.data);
+  },
+  initCheckout(
+    tier: "STANDARD" | "PRO",
+  ): Promise<{ paymentUrl: string; reference: string }> {
+    return api
+      .post("/agents/me/subscription/checkout", { tier })
+      .then((r) => r.data);
+  },
 };
 
 export default agentsService;
