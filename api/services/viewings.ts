@@ -50,6 +50,12 @@ interface Paginated<T> {
   pages: number;
 }
 
+export interface UpdateViewingPayload {
+  status?: ViewingStatus;
+  scheduledFor?: string; // ISO
+  notes?: string;
+}
+
 const viewingsService = {
   create(payload: CreateViewingPayload): Promise<Viewing> {
     return api.post<Viewing>("/viewings", payload).then((r) => r.data);
@@ -63,6 +69,29 @@ const viewingsService = {
   },
   cancelMine(id: string): Promise<Viewing> {
     return api.post<Viewing>(`/viewings/me/${id}/cancel`, {}).then((r) => r.data);
+  },
+
+  // ─── Agent endpoints ──────────────────────────────────────────────
+  listForAgent(params?: {
+    status?: ViewingStatus;
+    upcoming?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<Paginated<Viewing>> {
+    return api
+      .get<Paginated<Viewing>>("/viewings", { params: params ?? {} })
+      .then((r) => r.data);
+  },
+  update(id: string, payload: UpdateViewingPayload): Promise<Viewing> {
+    return api.patch<Viewing>(`/viewings/${id}`, payload).then((r) => r.data);
+  },
+  confirm(id: string): Promise<Viewing> {
+    return api
+      .patch<Viewing>(`/viewings/${id}`, { status: "CONFIRMED" })
+      .then((r) => r.data);
+  },
+  cancel(id: string): Promise<Viewing> {
+    return api.post<Viewing>(`/viewings/${id}/cancel`, {}).then((r) => r.data);
   },
 };
 
