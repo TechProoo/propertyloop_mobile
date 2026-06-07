@@ -1,25 +1,41 @@
-import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import {
-  CLEANING_VENDORS,
-  SERVICE_CATEGORIES_GRID,
-  type Vendor,
-} from "@/mocks/services";
+import { SERVICE_CATEGORIES_GRID } from "@/mocks/services";
+import vendorsService from "@/api/services/vendors";
 
 const PRIMARY = "#1f6f43";
 const ACCENT = "#b9842c";
-const ACCENT_INK = "#6b4a16";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+}
+
 export default function ServicesScreen() {
-  // Cleaning is the default selected category to match the design — gives
-  // us a populated vendor list out of the gate.
-  const [selected, setSelected] = useState("cleaning");
+  const [selected, setSelected] = useState(SERVICE_CATEGORIES_GRID[0]?.id ?? "");
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const selectedCat = SERVICE_CATEGORIES_GRID.find((c) => c.id === selected);
+
+  useEffect(() => {
+    let on = true;
+    setLoading(true);
+    vendorsService
+      .list({ category: selectedCat?.label, limit: 30 })
+      .then((res) => on && setVendors(res.items))
+      .catch(() => on && setVendors([]))
+      .finally(() => on && setLoading(false));
+    return () => { on = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -108,17 +124,26 @@ export default function ServicesScreen() {
         {/* Vendors header */}
         <View className="px-5 pt-4 flex-row items-baseline justify-between">
           <Text className="text-[14px] font-sans-bold text-ink tracking-tight">
-            Cleaning · top rated in Lekki
+            {selectedCat?.label ?? "Vendors"} · top rated
           </Text>
-          <Text className="text-xs font-sans-bold text-primary">See all 38</Text>
         </View>
 
         {/* Vendor rows */}
-        <View className="px-4 pt-2.5 gap-2.5">
-          {CLEANING_VENDORS.map((v) => (
-            <VendorRow key={v.id} vendor={v} />
-          ))}
-        </View>
+        {loading ? (
+          <View className="py-10 items-center">
+            <ActivityIndicator color={PRIMARY} />
+          </View>
+        ) : vendors.length === 0 ? (
+          <Text className="px-5 pt-3 text-[12.5px] text-ink-3">
+            No {selectedCat?.label?.toLowerCase() ?? "vendors"} available yet.
+          </Text>
+        ) : (
+          <View className="px-4 pt-2.5 gap-2.5">
+            {vendors.map((v) => (
+              <VendorRow key={v.id} vendor={v} />
+            ))}
+          </View>
+        )}
 
         {/* Escrow trust strip */}
         <Pressable
@@ -149,52 +174,33 @@ export default function ServicesScreen() {
   );
 }
 
-function VendorRow({ vendor }: { vendor: Vendor }) {
+function VendorRow({ vendor }: { vendor: any }) {
   return (
     <Pressable
-      onPress={() =>
-        router.push({
-          pathname: "/book-service",
-          params: { vendorId: vendor.id },
-        } as Href)
-      }
+      onPress={() => router.push(`/vendor/${vendor.id}` as Href)}
       className="flex-row gap-3 p-3 bg-white rounded-2xl border-line active:opacity-90"
       style={{ borderWidth: 0.5 }}
     >
-      <PLAvatar initials={vendor.initials} size={52} tone={vendor.tone} />
+      {vendor.avatarUrl ? (
+        <Image source={vendor.avatarUrl} style={{ width: 52, height: 52, borderRadius: 26 }} contentFit="cover" />
+      ) : (
+        <PLAvatar initials={initialsOf(vendor.name)} size={52} tone="primary" />
+      )}
       <View className="flex-1">
         <View className="flex-row items-center gap-1.5 flex-wrap">
-          <Text className="text-[14px] font-sans-bold text-ink">
-            {vendor.name}
-          </Text>
-          {vendor.verified && (
-            <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />
-          )}
-          {vendor.tag && (
-            <View className="bg-accent-soft px-1.5 py-0.5 rounded-full">
-              <Text
-                className="text-[9.5px] font-sans-bold tracking-widest uppercase"
-                style={{ color: ACCENT_INK }}
-              >
-                {vendor.tag}
-              </Text>
-            </View>
-          )}
+          <Text className="text-[14px] font-sans-bold text-ink">{vendor.name}</Text>
+          {vendor.verified && <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />}
         </View>
-        <Text className="text-xs text-ink-3 mt-0.5">{vendor.category}</Text>
+        <Text className="text-xs text-ink-3 mt-0.5">{vendor.category ?? "Service"}</Text>
         <View className="flex-row items-center gap-3 mt-1.5">
           <View className="flex-row items-center gap-1">
             <Ionicons name="star" size={11} color={ACCENT} />
-            <Text className="text-[11.5px] font-sans-semibold text-ink">
-              {vendor.rating}
-            </Text>
+            <Text className="text-[11.5px] font-sans-semibold text-ink">{vendor.rating ?? 0}</Text>
           </View>
-          <Text className="text-[11.5px] font-sans-semibold text-ink-3">
-            {vendor.jobs} jobs
-          </Text>
-          <Text className="ml-auto text-[11.5px] font-sans-bold text-primary">
-            {vendor.price}
-          </Text>
+          <Text className="text-[11.5px] font-sans-semibold text-ink-3">{vendor.jobsCount ?? 0} jobs</Text>
+          {!!vendor.serviceArea && (
+            <Text className="ml-auto text-[11.5px] font-sans-semibold text-ink-3" numberOfLines={1}>{vendor.serviceArea}</Text>
+          )}
         </View>
       </View>
     </Pressable>

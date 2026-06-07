@@ -94,6 +94,15 @@ const vendorJobsService = {
       .patch<VendorJob>(`/vendor-jobs/${id}/complete`, payload)
       .then((r) => r.data);
   },
+  // ─── Buyer-side ──────────────────────────────────────────────────────────
+  confirm(id: string): Promise<VendorJob> {
+    return api.post<VendorJob>(`/vendor-jobs/${id}/confirm`, {}).then((r) => r.data);
+  },
+  dispute(id: string, disputeReason: string): Promise<VendorJob> {
+    return api
+      .post<VendorJob>(`/vendor-jobs/${id}/dispute`, { disputeReason })
+      .then((r) => r.data);
+  },
 };
 
 export default vendorJobsService;
