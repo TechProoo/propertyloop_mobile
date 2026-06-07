@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,16 +11,18 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import listingsService from "@/api/services/listings";
+import offersService from "@/api/services/offers";
+import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
 
-const ASKING = 78_000_000;
 const QUICK_ADJUSTMENTS = [
   { label: "-₦1M", delta: -1_000_000 },
   { label: "-₦5M", delta: -5_000_000 },
@@ -32,15 +36,40 @@ function formatNaira(n: number): string {
 }
 
 export default function MakeOfferScreen() {
-  useLocalSearchParams<{ listingId?: string }>(); // wire-up only
-  const [amount, setAmount] = useState(72_500_000);
+  const { listingId } = useLocalSearchParams<{ listingId?: string }>();
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [loadingListing, setLoadingListing] = useState(true);
+  const [amount, setAmount] = useState(0);
   const [financing, setFinancing] = useState<Financing>("cash");
   const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!listingId) {
+      setLoadingListing(false);
+      return;
+    }
+    let active = true;
+    listingsService
+      .getById(listingId)
+      .then((l) => {
+        if (!active) return;
+        setListing(l);
+        setAmount(l.priceNaira); // start at asking
+      })
+      .catch(() => {})
+      .finally(() => active && setLoadingListing(false));
+    return () => {
+      active = false;
+    };
+  }, [listingId]);
+
+  const asking = listing?.priceNaira ?? 0;
 
   const pctOff = useMemo(() => {
-    const diff = (ASKING - amount) / ASKING;
-    return Math.round(diff * 100);
-  }, [amount]);
+    if (!asking) return 0;
+    return Math.round(((asking - amount) / asking) * 100);
+  }, [amount, asking]);
 
   const offerLabel =
     pctOff > 0
@@ -50,6 +79,34 @@ export default function MakeOfferScreen() {
         : "Matching asking";
 
   const offerColor = pctOff > 0 ? "#a8421a" : pctOff < 0 ? PRIMARY : INK_2;
+
+  const submit = async () => {
+    if (!listingId || amount <= 0) {
+      Alert.alert("Enter an amount", "Set your offer amount to continue.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await offersService.create({
+        listingId,
+        amountNaira: amount,
+        financing: financing === "cash" ? "CASH" : "OWN_FINANCING",
+        note: note.trim() || undefined,
+      });
+      Alert.alert(
+        "Offer sent",
+        "The agent has been notified. You can track it in your offers.",
+        [{ text: "View offers", onPress: () => router.replace("/offers" as Href) }],
+      );
+    } catch (e: any) {
+      const msg =
+        e?.response?.data?.message ??
+        "Couldn't send your offer. Please try again.";
+      Alert.alert("Offer failed", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -78,20 +135,32 @@ export default function MakeOfferScreen() {
         >
           {/* Property pin */}
           <View className="flex-row gap-3 p-2.5 bg-cream-2 rounded-2xl">
-            <Image
-              source="https://picsum.photos/seed/hibiscus-1/200/200"
-              style={{ width: 60, height: 60, borderRadius: 10 }}
-              contentFit="cover"
-            />
+            {loadingListing ? (
+              <View
+                className="items-center justify-center"
+                style={{ width: 60, height: 60, borderRadius: 10 }}
+              >
+                <ActivityIndicator color={PRIMARY} />
+              </View>
+            ) : (
+              <Image
+                source={listing?.coverImage}
+                style={{ width: 60, height: 60, borderRadius: 10 }}
+                contentFit="cover"
+              />
+            )}
             <View className="flex-1">
               <Text className="text-[11px] font-sans-bold text-primary tracking-widest uppercase">
                 For sale
               </Text>
-              <Text className="text-[14px] font-sans-bold text-ink mt-0.5">
-                Hibiscus House · 4-bed
+              <Text
+                className="text-[14px] font-sans-bold text-ink mt-0.5"
+                numberOfLines={1}
+              >
+                {listing?.title ?? "Loading…"}
               </Text>
-              <Text className="text-xs text-ink-3">
-                Asking ₦78,000,000 · Lekki P1
+              <Text className="text-xs text-ink-3" numberOfLines={1}>
+                {listing ? `Asking ${listing.priceLabel} · ${listing.location}` : ""}
               </Text>
             </View>
           </View>
@@ -101,7 +170,7 @@ export default function MakeOfferScreen() {
             Your offer
           </Text>
           <View
-            className="bg-white rounded-2xl px-4.5 py-5"
+            className="bg-white rounded-2xl"
             style={{
               borderWidth: 1.5,
               borderColor: "#1a2120",
@@ -121,7 +190,7 @@ export default function MakeOfferScreen() {
             <View className="mt-2.5 flex-row items-center justify-between">
               <Text className="text-xs font-sans-semibold text-ink-3">
                 <Text style={{ color: offerColor, fontFamily: "Inter_700Bold" }}>
-                  {offerLabel}
+                  {asking ? offerLabel : "Set your amount"}
                 </Text>
               </Text>
               <View className="flex-row gap-1.5">
@@ -140,27 +209,27 @@ export default function MakeOfferScreen() {
             </View>
           </View>
 
-          {/* Histogram */}
-          <View className="mt-2.5 bg-cream-2 rounded-2xl px-3.5 py-3">
-            <View className="flex-row items-baseline justify-between">
-              <Text className="text-[11px] font-sans-semibold text-ink-3">
-                Where your offer lands
-              </Text>
-              <Text className="text-[11px] font-sans-bold text-ink">
-                vs. 8 recent offers in Lekki P1
-              </Text>
-            </View>
-            <Histogram pctOff={pctOff} />
-            <View className="flex-row justify-between mt-1">
-              <Text className="text-[10px] font-sans-semibold text-ink-3">-15%</Text>
-              <Text className="text-[10px] font-sans-semibold text-ink-3">Asking</Text>
-              <Text className="text-[10px] font-sans-semibold text-ink-3">+10%</Text>
-            </View>
+          {/* Manual amount entry */}
+          <View
+            className="mt-2.5 bg-white rounded-2xl px-3.5 border-line"
+            style={{ borderWidth: 1 }}
+          >
+            <TextInput
+              value={amount ? String(amount) : ""}
+              onChangeText={(t) =>
+                setAmount(Number(t.replace(/[^0-9]/g, "")) || 0)
+              }
+              keyboardType="number-pad"
+              placeholder="Enter exact amount"
+              placeholderTextColor={INK_3}
+              className="text-ink text-[14px] font-sans-semibold"
+              style={{ paddingVertical: 12 }}
+            />
           </View>
 
           {/* Financing */}
           <Text className="text-[13px] font-sans-bold text-ink-2 tracking-wider uppercase mt-5 mb-2">
-            How you'll pay the seller
+            How you&apos;ll pay the seller
           </Text>
           <View className="gap-2">
             <FinancingOption
@@ -179,18 +248,6 @@ export default function MakeOfferScreen() {
             />
           </View>
 
-          {/* Terms */}
-          <Text className="text-[13px] font-sans-bold text-ink-2 tracking-wider uppercase mt-5 mb-2">
-            Terms
-          </Text>
-          <View
-            className="bg-white rounded-2xl overflow-hidden border-line"
-            style={{ borderWidth: 1 }}
-          >
-            <TermsRow label="Close date" value="On or before 30 Aug 2026" />
-            <TermsRow label="Subject to inspection" value="Yes" isLast />
-          </View>
-
           {/* Note */}
           <View className="flex-row items-baseline gap-1 mt-5 mb-2">
             <Text className="text-[13px] font-sans-bold text-ink-2 tracking-wider uppercase">
@@ -204,7 +261,7 @@ export default function MakeOfferScreen() {
             value={note}
             onChangeText={setNote}
             multiline
-            placeholder='"Looking to relocate from Ikoyi by August — happy to be flexible on close date if it helps."'
+            placeholder='"Looking to relocate by August — happy to be flexible on close date."'
             placeholderTextColor={INK_3}
             className="bg-cream-2 rounded-2xl px-3.5 py-3 text-ink-2 text-[14px]"
             style={{
@@ -227,12 +284,16 @@ export default function MakeOfferScreen() {
           }}
         >
           <Pressable
+            disabled={submitting || loadingListing}
             className="bg-primary rounded-full items-center active:opacity-80"
-            style={{ paddingVertical: 17 }}
-            onPress={() => router.back()}
+            style={{
+              paddingVertical: 17,
+              opacity: submitting || loadingListing ? 0.6 : 1,
+            }}
+            onPress={submit}
           >
             <Text className="text-white font-sans-bold text-[15px]">
-              Send offer to agent
+              {submitting ? "Sending…" : "Send offer to agent"}
             </Text>
           </Pressable>
           <Text className="text-center text-[11px] text-ink-3 mt-1.5">
@@ -241,34 +302,6 @@ export default function MakeOfferScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-// ─── Histogram (10 bars, position 3 is your offer) ───────────────
-function Histogram({ pctOff }: { pctOff: number }) {
-  // 10 bars roughly bell-shaped around "Asking" (center)
-  const heights = [6, 9, 14, 22, 28, 24, 18, 12, 8, 5];
-  // Map pctOff (-15..+10) to bar index 0..9 — your offer slot.
-  // -15% → 0, asking (0%) → midway (~4-5), +10% → 9.
-  const clamped = Math.max(-15, Math.min(10, pctOff));
-  const yourIdx = Math.round(((-clamped + 15) / 25) * 9);
-  return (
-    <View
-      className="flex-row items-end mt-2"
-      style={{ height: 40, gap: 4 }}
-    >
-      {heights.map((h, i) => (
-        <View
-          key={i}
-          style={{
-            flex: 1,
-            height: h * 1.3,
-            backgroundColor: i === yourIdx ? PRIMARY : LINE,
-            borderRadius: 2,
-          }}
-        />
-      ))}
-    </View>
   );
 }
 
@@ -301,11 +334,7 @@ function FinancingOption({
           selected ? "bg-white" : "bg-cream-2"
         }`}
       >
-        <Ionicons
-          name={icon}
-          size={20}
-          color={selected ? PRIMARY : INK_2}
-        />
+        <Ionicons name={icon} size={20} color={selected ? PRIMARY : INK_2} />
       </View>
       <View className="flex-1">
         <Text className="text-[13.5px] font-sans-bold text-ink">{label}</Text>
@@ -331,31 +360,5 @@ function FinancingOption({
         )}
       </View>
     </Pressable>
-  );
-}
-
-function TermsRow({
-  label,
-  value,
-  isLast,
-}: {
-  label: string;
-  value: string;
-  isLast?: boolean;
-}) {
-  return (
-    <View
-      className="flex-row items-center justify-between px-3.5 py-3.5"
-      style={{
-        borderBottomWidth: isLast ? 0 : 0.5,
-        borderBottomColor: "#ece6df",
-      }}
-    >
-      <Text className="text-[13px] text-ink-2">{label}</Text>
-      <View className="flex-row items-center gap-1.5">
-        <Text className="text-[13px] font-sans-bold text-ink">{value}</Text>
-        <Ionicons name="chevron-forward" size={12} color={INK_3} />
-      </View>
-    </View>
   );
 }

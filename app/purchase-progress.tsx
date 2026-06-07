@@ -1,21 +1,96 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { PURCHASE, type PurchaseStep } from "@/mocks/buyer-dashboard";
+import offersService, {
+  type PropertyPurchase,
+  type PurchaseStep,
+} from "@/api/services/offers";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-function picsum(seed: string) {
-  return `https://picsum.photos/seed/${seed}/200/200`;
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 }
 
 export default function PurchaseProgressScreen() {
+  const [purchase, setPurchase] = useState<PropertyPurchase | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    offersService
+      .listPurchases()
+      .then((list) => {
+        if (!active) return;
+        // Prefer an in-progress purchase, else the most recent.
+        const pick =
+          list.find((p) => p.status === "IN_PROGRESS") ?? list[0] ?? null;
+        setPurchase(pick);
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-cream items-center justify-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator color={PRIMARY} />
+      </View>
+    );
+  }
+
+  if (!purchase) {
+    return (
+      <SafeAreaView className="flex-1 bg-cream items-center justify-center px-8" edges={["top"]}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <Ionicons name="home-outline" size={36} color={INK_3} />
+        <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+          No active purchase
+        </Text>
+        <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+          When an offer is accepted, your purchase journey shows up here.
+        </Text>
+        <Pressable
+          onPress={() => router.replace("/offers" as Href)}
+          className="mt-5 px-5 py-2.5 rounded-full bg-ink active:opacity-80"
+        >
+          <Text className="text-white text-[13px] font-sans-bold">Your offers</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  const steps = purchase.steps ?? [];
+  const doneCount = steps.filter((s) => s.state === "DONE").length;
+  const activeStep = steps.find((s) => s.state === "ACTIVE");
+  const stepNumber = activeStep ? activeStep.order : doneCount;
+  const totalSteps = steps.length || 5;
+  const progressPct = totalSteps ? doneCount / totalSteps : 0;
+
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -43,19 +118,19 @@ export default function PurchaseProgressScreen() {
           style={{ borderWidth: 0.5 }}
         >
           <Image
-            source={picsum(PURCHASE.property.imageSeed)}
+            source={purchase.listing?.coverImage}
             style={{ width: 56, height: 56, borderRadius: 10 }}
             contentFit="cover"
           />
           <View className="flex-1">
             <Text className="text-[11px] font-sans-bold text-primary tracking-widest uppercase">
-              {PURCHASE.property.status}
+              {purchase.status === "COMPLETED" ? "Completed" : "In progress"}
             </Text>
-            <Text className="text-[14px] font-sans-bold text-ink mt-0.5">
-              {PURCHASE.property.name}
+            <Text className="text-[14px] font-sans-bold text-ink mt-0.5" numberOfLines={1}>
+              {purchase.listing?.title ?? "Your purchase"}
             </Text>
-            <Text className="text-[11.5px] font-sans-semibold text-ink-3">
-              {PURCHASE.property.area}
+            <Text className="text-[11.5px] font-sans-semibold text-ink-3" numberOfLines={1}>
+              {purchase.listing?.location} · {purchase.agreedAmountLabel}
             </Text>
           </View>
         </View>
@@ -67,23 +142,20 @@ export default function PurchaseProgressScreen() {
         >
           Step{" "}
           <Text className="font-serif-italic">
-            {PURCHASE.stepNumber} of {PURCHASE.totalSteps}
+            {Math.max(1, stepNumber)} of {totalSteps}
           </Text>
         </Text>
-        <Text className="text-[13.5px] text-ink-2 mt-1 leading-5">
-          {PURCHASE.blurb.split("14 days")[0]}
-          <Text className="font-sans-bold text-ink">14 days</Text>
-          {PURCHASE.blurb.split("14 days")[1]}
-        </Text>
+        {activeStep && (
+          <Text className="text-[13.5px] text-ink-2 mt-1 leading-5">
+            {activeStep.detail}
+          </Text>
+        )}
 
         {/* Overall progress bar */}
-        <View
-          className="mt-4 bg-line rounded-full overflow-hidden"
-          style={{ height: 8 }}
-        >
+        <View className="mt-4 bg-line rounded-full overflow-hidden" style={{ height: 8 }}>
           <View
             className="bg-primary rounded-full"
-            style={{ height: 8, width: `${PURCHASE.progressPct * 100}%` }}
+            style={{ height: 8, width: `${Math.round(progressPct * 100)}%` }}
           />
         </View>
         <View className="mt-1.5 flex-row justify-between">
@@ -97,83 +169,50 @@ export default function PurchaseProgressScreen() {
 
         {/* Step rows */}
         <View className="mt-6">
-          {PURCHASE.steps.map((step, i) => (
-            <StepRow
-              key={step.n}
-              step={step}
-              isLast={i === PURCHASE.steps.length - 1}
-            />
+          {steps.map((step, i) => (
+            <StepRow key={step.id} step={step} isLast={i === steps.length - 1} />
           ))}
-        </View>
-
-        {/* Pending-action card */}
-        <View
-          className="mt-3 bg-primary-soft rounded-2xl px-4 py-3.5 flex-row items-center gap-3"
-        >
-          <View className="w-10 h-10 rounded-xl bg-primary items-center justify-center">
-            <Ionicons name="document-text-outline" size={18} color="#ffffff" />
-          </View>
-          <View className="flex-1">
-            <Text
-              className="text-[13.5px] font-sans-bold"
-              style={{ color: PRIMARY_INK }}
-            >
-              {PURCHASE.pendingAction.title}
-            </Text>
-            <Text
-              className="text-[11.5px] mt-0.5"
-              style={{ color: PRIMARY_INK, opacity: 0.7 }}
-            >
-              {PURCHASE.pendingAction.detail}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => router.push("/sign-document" as Href)}
-            className="bg-primary rounded-full px-3.5 py-2.5 active:opacity-80"
-          >
-            <Text className="text-[12px] font-sans-bold text-white">Sign</Text>
-          </Pressable>
         </View>
 
         {/* Team */}
-        <Text className="text-[13px] font-sans-bold text-ink-2 tracking-wider uppercase mt-6 mb-2.5">
-          Your team
-        </Text>
-        <View className="gap-2">
-          {PURCHASE.team.map((p) => (
+        {purchase.agent && (
+          <>
+            <Text className="text-[13px] font-sans-bold text-ink-2 tracking-wider uppercase mt-6 mb-2.5">
+              Your agent
+            </Text>
             <View
-              key={p.name}
               className="flex-row items-center gap-3 p-3 bg-white rounded-2xl border-line"
               style={{ borderWidth: 0.5 }}
             >
-              <PLAvatar initials={p.initials} size={38} tone={p.tone} />
+              <PLAvatar initials={initialsOf(purchase.agent.name)} size={38} tone="primary" />
               <View className="flex-1">
                 <Text className="text-[13.5px] font-sans-bold text-ink">
-                  {p.name}
+                  {purchase.agent.name}
                 </Text>
                 <Text className="text-[11.5px] font-sans-semibold text-ink-3">
-                  {p.role}
+                  Listing agent
                 </Text>
               </View>
               <Pressable
-                onPress={() => router.push("/conversation/chinwe" as Href)}
+                onPress={() =>
+                  router.push(`/agent-profile/${purchase.agentId}` as Href)
+                }
                 className="w-[34px] h-[34px] rounded-full bg-cream-2 items-center justify-center"
               >
-                <Ionicons name="chatbubble-outline" size={16} color={INK_2} />
+                <Ionicons name="person-outline" size={16} color={INK_2} />
               </Pressable>
             </View>
-          ))}
-        </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 function StepRow({ step, isLast }: { step: PurchaseStep; isLast: boolean }) {
-  const done = step.state === "done";
-  const active = step.state === "active";
+  const done = step.state === "DONE";
+  const active = step.state === "ACTIVE";
 
-  // Marker tile (circle on the timeline rail)
   const marker = (
     <View
       style={{
@@ -185,9 +224,6 @@ function StepRow({ step, isLast }: { step: PurchaseStep; isLast: boolean }) {
         backgroundColor: done ? PRIMARY : active ? "#ffffff" : "#f0f0f0",
         borderWidth: active ? 2 : 0,
         borderColor: PRIMARY,
-        shadowColor: active ? PRIMARY : undefined,
-        shadowOpacity: active ? 0.18 : 0,
-        shadowRadius: active ? 6 : 0,
       }}
     >
       {done ? (
@@ -195,12 +231,9 @@ function StepRow({ step, isLast }: { step: PurchaseStep; isLast: boolean }) {
       ) : (
         <Text
           className="font-sans-bold"
-          style={{
-            fontSize: 12,
-            color: active ? PRIMARY : INK_3,
-          }}
+          style={{ fontSize: 12, color: active ? PRIMARY : INK_3 }}
         >
-          {step.n}
+          {step.order}
         </Text>
       )}
     </View>
@@ -208,7 +241,6 @@ function StepRow({ step, isLast }: { step: PurchaseStep; isLast: boolean }) {
 
   return (
     <View className="flex-row" style={{ alignItems: "stretch" }}>
-      {/* Marker + rail */}
       <View style={{ alignItems: "center", width: 32 }}>
         {marker}
         {!isLast && (
@@ -224,7 +256,6 @@ function StepRow({ step, isLast }: { step: PurchaseStep; isLast: boolean }) {
         )}
       </View>
 
-      {/* Content */}
       <View style={{ flex: 1, paddingLeft: 14, paddingBottom: 18 }}>
         <View className="flex-row items-center gap-2">
           <Text
