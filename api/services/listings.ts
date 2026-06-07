@@ -5,10 +5,12 @@ export interface ListListingsParams {
   page?: number;
   limit?: number;
   type?: ListingType;
+  propertyType?: string;
   location?: string;
   minPrice?: number;
   maxPrice?: number;
   minBeds?: number;
+  minBaths?: number;
   search?: string;
   sort?: "newest" | "price_asc" | "price_desc" | "top_rated";
 }
