@@ -19,6 +19,8 @@ import {
   CREATE_LISTING_AMENITIES,
   CREATE_LISTING_TYPES,
 } from "@/mocks/agent";
+import listingsService from "@/api/services/listings";
+import type { ListingType } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -27,6 +29,28 @@ const INK_3 = "#7f857f";
 
 const STEPS = ["Basics", "Photos", "Details", "Publish"] as const;
 type Step = (typeof STEPS)[number];
+
+const PROPERTY_TYPES = [
+  "Apartment",
+  "House",
+  "Duplex",
+  "Bungalow",
+  "Terrace",
+  "Penthouse",
+  "Studio",
+  "Land",
+];
+
+const TYPE_MAP: Record<string, ListingType> = {
+  sale: "SALE",
+  rent: "RENT",
+  shortlet: "SHORTLET",
+};
+const PERIOD_MAP: Record<string, string | undefined> = {
+  sale: undefined,
+  rent: "/yr",
+  shortlet: "/night",
+};
 
 export default function CreateListingScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -43,7 +67,9 @@ export default function CreateListingScreen() {
       : "sale",
   );
   const [title, setTitle]   = useState(editing?.title ?? "");
+  const [propertyType, setPropertyType] = useState("Apartment");
   const [area, setArea]     = useState(editing?.area ?? "");
+  const [submitting, setSubmitting] = useState(false);
   const [price, setPrice]   = useState(
     editing ? String(editing.price.replace(/[^0-9]/g, "")) : "",
   );
@@ -76,16 +102,12 @@ export default function CreateListingScreen() {
     if (stepIdx === STEPS.length - 1) {
       if (isEdit) {
         Alert.alert(
-          "Changes saved",
-          "Your listing has been updated.",
+          "Editing coming soon",
+          "Editing an existing listing isn't wired yet.",
           [{ text: "OK", onPress: () => router.back() }],
         );
       } else {
-        Alert.alert(
-          "Listing published",
-          "Your listing is live and visible to buyers in matching searches.",
-          [{ text: "OK", onPress: () => router.replace("/(agent-tabs)/listings" as Href) }],
-        );
+        void publish();
       }
       return;
     }
@@ -116,12 +138,46 @@ export default function CreateListingScreen() {
 
   const canNext =
     step === "Basics"
-      ? !!type && !!title.trim() && !!area.trim() && !!price.trim()
+      ? !!type && !!propertyType && !!title.trim() && !!area.trim() && !!price.trim()
       : step === "Photos"
         ? photos.length >= 1
         : step === "Details"
-          ? !!beds && !!baths && description.trim().length >= 20
+          ? !!beds && !!baths && !!sqm.trim() && description.trim().length >= 20
           : true;
+
+  const publish = async () => {
+    setSubmitting(true);
+    try {
+      // Upload photos, then create the listing.
+      const urls = await Promise.all(photos.map((u) => listingsService.uploadPhoto(u)));
+      await listingsService.create({
+        title: title.trim(),
+        type: TYPE_MAP[type] ?? "SALE",
+        propertyType,
+        priceNaira: Number(price) || 0,
+        period: PERIOD_MAP[type],
+        address: area.trim(),
+        location: area.trim(),
+        beds: Number(beds) || 0,
+        baths: Number(baths) || 0,
+        sqft: sqm.trim(),
+        description: description.trim(),
+        features: amenities,
+        coverImage: urls[0],
+        images: urls,
+      });
+      Alert.alert(
+        "Listing published",
+        "Your listing is now live for buyers in matching searches.",
+        [{ text: "OK", onPress: () => router.replace("/(agent-tabs)/listings" as Href) }],
+      );
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Couldn't publish. Please try again.";
+      Alert.alert("Publish failed", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -190,6 +246,32 @@ export default function CreateListingScreen() {
                         style={{ color: on ? "#ffffff" : INK_2 }}
                       >
                         {t.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Label className="mt-5">Property type</Label>
+              <View className="flex-row flex-wrap gap-2">
+                {PROPERTY_TYPES.map((p) => {
+                  const on = propertyType === p;
+                  return (
+                    <Pressable
+                      key={p}
+                      onPress={() => setPropertyType(p)}
+                      className="px-3.5 py-2 rounded-full"
+                      style={{
+                        backgroundColor: on ? "#e3efe7" : "#ffffff",
+                        borderWidth: 1,
+                        borderColor: on ? PRIMARY : "#e1dcd3",
+                      }}
+                    >
+                      <Text
+                        className="text-[12.5px] font-sans-bold"
+                        style={{ color: on ? "#134a2d" : INK_2 }}
+                      >
+                        {p}
                       </Text>
                     </Pressable>
                   );
@@ -285,7 +367,7 @@ export default function CreateListingScreen() {
                 <Stepper label="Bathrooms" value={baths} setValue={setBaths} />
               </View>
 
-              <Label className="mt-5">Area (m²) · optional</Label>
+              <Label className="mt-5">Area (m²)</Label>
               <Field
                 value={sqm}
                 onChangeText={(t) => setSqm(t.replace(/[^0-9]/g, ""))}
@@ -382,13 +464,17 @@ export default function CreateListingScreen() {
         >
           <Pressable
             onPress={goNext}
-            disabled={!canNext}
+            disabled={!canNext || submitting}
             className="bg-primary rounded-full items-center active:opacity-80 disabled:opacity-50"
             style={{ paddingVertical: 16 }}
           >
             <Text className="text-white font-sans-bold text-[15px]">
               {step === "Publish"
-                ? (isEdit ? "Save changes" : "Publish listing")
+                ? submitting
+                  ? "Publishing…"
+                  : isEdit
+                    ? "Save changes"
+                    : "Publish listing"
                 : "Continue"}
             </Text>
           </Pressable>

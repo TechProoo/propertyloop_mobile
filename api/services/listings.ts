@@ -1,6 +1,24 @@
 import api from "../client";
 import type { Listing, ListingType, Paginated } from "../types";
 
+export interface CreateListingPayload {
+  title: string;
+  type: ListingType;
+  propertyType: string;
+  priceNaira: number;
+  period?: string;
+  address: string;
+  location: string;
+  beds: number;
+  baths: number;
+  sqft: string;
+  yearBuilt?: string;
+  description: string;
+  features: string[];
+  coverImage: string;
+  images: string[];
+}
+
 export interface ListListingsParams {
   page?: number;
   limit?: number;
@@ -45,6 +63,27 @@ const listingsService = {
 
   async getComps(id: string): Promise<CompsResponse> {
     const { data } = await api.get<CompsResponse>(`/listings/${id}/comps`);
+    return data;
+  },
+
+  /** Upload one listing photo (multipart). Returns the stored URL. */
+  async uploadPhoto(uri: string): Promise<string> {
+    const form = new FormData();
+    form.append("file", {
+      uri,
+      name: `photo-${Date.now()}.jpg`,
+      type: "image/jpeg",
+    } as any);
+    const { data } = await api.post<{ fileUrl: string }>(
+      "/listings/upload/photo",
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return data.fileUrl;
+  },
+
+  async create(payload: CreateListingPayload): Promise<Listing> {
+    const { data } = await api.post<Listing>("/listings", payload);
     return data;
   },
 };
