@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,74 +9,83 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { getThread, type Bubble as MsgBubble } from "@/mocks/inbox";
+import messagesService, {
+  type Conversation,
+  type Message,
+} from "@/api/services/messages";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
-const ONLINE = "#3aa365";
 const LINE = "#e1dcd3";
 
-function picsum(seed: string, size = 200) {
-  return `https://picsum.photos/seed/${seed}/${size}/${size}`;
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 }
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const thread = getThread(id);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [conv, setConv] = useState<Conversation | null>(null);
+  const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef<ScrollView | null>(null);
 
-  // Mock attach handlers — would fire off an upload + chat-bubble insert.
-  const pickPhoto = async () => {
-    const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!lib.granted) {
-      Alert.alert("Photo library", "Allow library access in Settings to attach photos.");
-      return;
+  const load = useCallback(async () => {
+    if (!id) return;
+    try {
+      const [msgs, convos] = await Promise.all([
+        messagesService.getMessages(id),
+        messagesService.listConversations(),
+      ]);
+      setMessages(msgs);
+      setConv(convos.items.find((c) => c.id === id) ?? null);
+    } catch {
+      /* leave empty */
+    } finally {
+      setLoading(false);
     }
-    const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-    if (!r.canceled && r.assets[0]) {
-      Alert.alert("Photo attached", "Upload would be sent on next message.");
+  }, [id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const t = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 80);
+    return () => clearTimeout(t);
+  }, [messages.length]);
+
+  const send = async () => {
+    const text = draft.trim();
+    if (!text || !id || sending) return;
+    setDraft("");
+    setSending(true);
+    try {
+      const msg = await messagesService.sendMessage(id, text);
+      setMessages((arr) => [...arr, msg]);
+    } catch {
+      setDraft(text); // restore on failure
+    } finally {
+      setSending(false);
     }
   };
 
-  const takePhoto = async () => {
-    const cam = await ImagePicker.requestCameraPermissionsAsync();
-    if (!cam.granted) {
-      Alert.alert("Camera", "Allow camera access in Settings to take photos.");
-      return;
-    }
-    const r = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-    if (!r.canceled && r.assets[0]) {
-      Alert.alert("Photo attached", "Upload would be sent on next message.");
-    }
-  };
-
-  const pickDocument = async () => {
-    const r = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      copyToCacheDirectory: true,
-    });
-    if (!r.canceled && r.assets[0]) {
-      Alert.alert("Document attached", `${r.assets[0].name} ready to send.`);
-    }
-  };
+  const title = conv?.name ?? "Conversation";
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -96,162 +105,91 @@ export default function ConversationScreen() {
           >
             <Ionicons name="chevron-back" size={20} color={INK} />
           </Pressable>
-          <PLAvatar initials={thread.initials} size={38} tone={thread.tone} />
+          <PLAvatar initials={initialsOf(title)} size={38} tone="primary" />
           <View className="flex-1">
             <View className="flex-row items-center gap-1">
-              <Text className="text-[14.5px] font-sans-bold text-ink">
-                {thread.name}
+              <Text className="text-[14.5px] font-sans-bold text-ink" numberOfLines={1}>
+                {title}
               </Text>
-              {thread.verified && (
+              {conv?.role === "AGENT" || conv?.role === "VENDOR" ? (
                 <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />
-              )}
+              ) : null}
             </View>
-            <View className="flex-row items-center gap-1 mt-0.5">
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 6,
-                  backgroundColor: ONLINE,
-                }}
-              />
-              <Text className="text-[11px] font-sans-semibold text-ink-3">
-                {thread.presence}
+            {conv?.role ? (
+              <Text className="text-[11px] font-sans-semibold text-ink-3 mt-0.5">
+                {conv.role.charAt(0) + conv.role.slice(1).toLowerCase()}
               </Text>
-            </View>
+            ) : null}
           </View>
-          <Pressable
-            onPress={() =>
-              Alert.alert(thread.name, "Conversation options", [
-                {
-                  text: "Mute notifications",
-                  onPress: () =>
-                    Alert.alert("Muted", `You won't be notified about new messages from ${thread.name}.`),
-                },
-                {
-                  text: "Block",
-                  style: "destructive",
-                  onPress: () =>
-                    Alert.alert("Blocked", `${thread.name} can no longer message you.`),
-                },
-                {
-                  text: "Report",
-                  style: "destructive",
-                  onPress: () =>
-                    Alert.alert("Reported", "Our team will review this conversation within 24 hours."),
-                },
-                { text: "Cancel", style: "cancel" },
-              ])
-            }
-            className="w-9 h-9 items-center justify-center"
-          >
-            <Ionicons name="ellipsis-horizontal" size={18} color={INK_2} />
-          </Pressable>
         </View>
 
-        {/* Pinned listing card */}
-        <View className="px-4 pt-2.5">
-          <Pressable
-            onPress={() => router.push(`/property/${thread.id}` as Href)}
-            className="flex-row items-center gap-2.5 p-2.5 bg-primary-soft rounded-2xl active:opacity-90"
-          >
-            <Image
-              source={picsum(thread.pinned.imageSeed)}
-              style={{ width: 52, height: 52, borderRadius: 10 }}
-              contentFit="cover"
-            />
-            <View className="flex-1">
+        {/* Pinned listing */}
+        {conv?.listingId ? (
+          <View className="px-4 pt-2.5">
+            <Pressable
+              onPress={() => router.push(`/property/${conv.listingId}` as Href)}
+              className="flex-row items-center gap-2.5 p-2.5 bg-primary-soft rounded-2xl active:opacity-90"
+            >
+              <View className="w-9 h-9 rounded-xl bg-white items-center justify-center">
+                <Ionicons name="home" size={16} color={PRIMARY} />
+              </View>
               <Text
-                className="text-[11px] font-sans-bold tracking-wider uppercase"
+                className="flex-1 text-[12.5px] font-sans-bold"
                 style={{ color: PRIMARY_INK }}
               >
-                {thread.pinned.label}
+                View the property in this chat
               </Text>
-              <Text
-                className="text-[13px] font-sans-bold text-ink mt-0.5"
-                numberOfLines={1}
-              >
-                {thread.pinned.title}
-              </Text>
-              <Text className="text-[11.5px] font-sans-semibold text-ink-2">
-                {thread.pinned.detail}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color={INK_3} />
-          </Pressable>
-        </View>
-
-        {/* Conversation */}
-        <ScrollView
-          contentContainerStyle={{ padding: 16, gap: 8 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <DateSeparator label="Today" />
-          {thread.bubbles.map((b, i) => (
-            <BubbleView key={i} bubble={b} />
-          ))}
-          <Text className="text-[11px] font-sans-semibold text-ink-3 text-right -mt-0.5">
-            {thread.lastReceipt}
-          </Text>
-        </ScrollView>
-
-        {/* Suggested replies */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 2, paddingBottom: 8, gap: 6 }}
-        >
-          {thread.suggestedReplies.map((s) => (
-            <Pressable
-              key={s}
-              onPress={() => setDraft(s)}
-              className="rounded-full px-3.5 py-1.5 bg-transparent active:opacity-80"
-              style={{ borderWidth: 1, borderColor: LINE }}
-            >
-              <Text className="text-[13px] font-sans-semibold text-ink-2">
-                {s}
-              </Text>
+              <Ionicons name="chevron-forward" size={14} color={PRIMARY_INK} />
             </Pressable>
-          ))}
-        </ScrollView>
+          </View>
+        ) : null}
+
+        {/* Messages */}
+        {loading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator color={PRIMARY} />
+          </View>
+        ) : (
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={{ padding: 16, gap: 8 }}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() =>
+              scrollRef.current?.scrollToEnd({ animated: false })
+            }
+          >
+            {messages.length === 0 ? (
+              <Text className="text-center text-[12.5px] text-ink-3 mt-10">
+                Say hello — your messages will appear here.
+              </Text>
+            ) : (
+              messages.map((m) => <Bubble key={m.id} message={m} />)
+            )}
+          </ScrollView>
+        )}
 
         {/* Composer */}
         <View
           className="px-3.5 pt-2 pb-6 flex-row items-center gap-2 bg-cream"
           style={{ borderTopWidth: 0.5, borderTopColor: LINE }}
         >
-          <Pressable
-            onPress={() =>
-              Alert.alert("Attach", "What would you like to attach?", [
-                { text: "Photo from library", onPress: pickPhoto },
-                { text: "Take a photo", onPress: takePhoto },
-                { text: "Document", onPress: pickDocument },
-                { text: "Cancel", style: "cancel" },
-              ])
-            }
-            className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"
-          >
-            <Ionicons name="add" size={18} color={INK_2} />
-          </Pressable>
           <View className="flex-1 bg-cream-2 rounded-full px-4 py-2.5">
             <TextInput
               value={draft}
               onChangeText={setDraft}
-              placeholder="Message Chinwe…"
+              placeholder={`Message ${conv?.name ?? ""}…`}
               placeholderTextColor={INK_3}
               className="text-[14px] text-ink"
-              style={{
-                fontFamily: "Inter_500Medium",
-                paddingVertical: 0,
-                minHeight: 20,
-              }}
+              style={{ fontFamily: "Inter_500Medium", paddingVertical: 0, minHeight: 20 }}
+              multiline
+              onSubmitEditing={send}
             />
           </View>
           <Pressable
             className="w-9 h-9 rounded-full bg-primary items-center justify-center active:opacity-80"
-            onPress={() => setDraft("")}
-            disabled={draft.length === 0}
-            style={{ opacity: draft.length === 0 ? 0.5 : 1 }}
+            onPress={send}
+            disabled={draft.trim().length === 0 || sending}
+            style={{ opacity: draft.trim().length === 0 || sending ? 0.5 : 1 }}
           >
             <Ionicons name="send" size={15} color="#ffffff" />
           </Pressable>
@@ -261,29 +199,24 @@ export default function ConversationScreen() {
   );
 }
 
-function BubbleView({ bubble }: { bubble: MsgBubble }) {
-  const isMe = bubble.side === "me";
-  const isSending = bubble.kind === "text" && bubble.status === "sending";
+function Bubble({ message }: { message: Message }) {
+  const isMe = message.isYou;
   return (
     <View
-      style={{
-        flexDirection: "row",
-        justifyContent: isMe ? "flex-end" : "flex-start",
-      }}
+      style={{ flexDirection: "row", justifyContent: isMe ? "flex-end" : "flex-start" }}
     >
       <View
         style={{
           maxWidth: "78%",
-          paddingHorizontal: bubble.kind === "attachment" ? 12 : 13,
-          paddingVertical: bubble.kind === "attachment" ? 10 : 9,
+          paddingHorizontal: 13,
+          paddingVertical: 9,
           borderRadius: 18,
           borderBottomRightRadius: isMe ? 6 : 18,
           borderBottomLeftRadius: isMe ? 18 : 6,
           backgroundColor: isMe ? INK : "#f0f0f0",
-          opacity: isSending ? 0.55 : 1,
         }}
       >
-        {bubble.kind === "text" ? (
+        {message.text ? (
           <Text
             style={{
               fontFamily: "Inter_500Medium",
@@ -292,53 +225,23 @@ function BubbleView({ bubble }: { bubble: MsgBubble }) {
               color: isMe ? "#ffffff" : INK,
             }}
           >
-            {bubble.text}
+            {message.text}
           </Text>
-        ) : (
-          <View className="flex-row items-center gap-2.5">
-            <View
-              className="w-12 h-12 rounded-[10px] items-center justify-center"
-              style={{
-                backgroundColor: isMe ? "rgba(255,255,255,0.12)" : "#ddd5c9",
-              }}
-            >
-              <Ionicons
-                name="document-text"
-                size={20}
-                color={isMe ? "#ffffff" : INK_2}
-              />
-            </View>
-            <View className="flex-1">
-              <Text
-                className="text-[12px] font-sans-bold"
-                style={{ color: isMe ? "#ffffff" : INK }}
-              >
-                {bubble.filename}
-              </Text>
-              <Text
-                className="text-[11px] mt-0.5"
-                style={{
-                  color: isMe ? "rgba(255,255,255,0.7)" : INK_3,
-                }}
-              >
-                {bubble.meta}
-              </Text>
-            </View>
-          </View>
+        ) : null}
+        {message.attachmentUrls?.length > 0 && (
+          <Text
+            style={{
+              fontFamily: "Inter_500Medium",
+              fontSize: 12,
+              marginTop: message.text ? 4 : 0,
+              color: isMe ? "rgba(255,255,255,0.8)" : INK_2,
+            }}
+          >
+            📎 {message.attachmentUrls.length} attachment
+            {message.attachmentUrls.length === 1 ? "" : "s"}
+          </Text>
         )}
       </View>
-    </View>
-  );
-}
-
-function DateSeparator({ label }: { label: string }) {
-  return (
-    <View className="flex-row items-center justify-center gap-2.5 my-2">
-      <View className="flex-1 bg-line" style={{ height: 0.5 }} />
-      <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
-        {label}
-      </Text>
-      <View className="flex-1 bg-line" style={{ height: 0.5 }} />
     </View>
   );
 }
