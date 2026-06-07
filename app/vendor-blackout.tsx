@@ -12,6 +12,7 @@ import {
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import vendorsService from "@/api/services/vendors";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -54,6 +55,7 @@ export default function VendorBlackoutScreen() {
   const days = useMemo(buildDays, []);
   const [selected, setSelected] = useState<string[]>([]);
   const [reason, setReason]     = useState("");
+  const [saving, setSaving]     = useState(false);
 
   const toggle = (k: string) =>
     setSelected((arr) => (arr.includes(k) ? arr.filter((x) => x !== k) : [...arr, k]));
@@ -73,16 +75,27 @@ export default function VendorBlackoutScreen() {
     return `${first.label} – ${last.label}`;
   };
 
-  const onSave = () => {
+  const onSave = async () => {
     if (selected.length === 0) {
       Alert.alert("Pick at least one day", "Tap the days you want to block out.");
       return;
     }
-    Alert.alert(
-      "Time off blocked",
-      `${summarise()} is now blocked. Customers can't book during this window.`,
-      [{ text: "OK", onPress: () => router.back() }],
-    );
+    if (saving) return;
+    const dates = days
+      .filter((d) => selected.includes(d.key))
+      .map((d) => `${d.y}-${String(d.m + 1).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`);
+    setSaving(true);
+    try {
+      await vendorsService.addBlackouts(dates, reason.trim() || undefined);
+      Alert.alert(
+        "Time off blocked",
+        `${summarise()} is now blocked. Customers can't book during this window.`,
+        [{ text: "OK", onPress: () => router.back() }],
+      );
+    } catch (e: any) {
+      Alert.alert("Failed", e?.response?.data?.message ?? "Please try again.");
+      setSaving(false);
+    }
   };
 
   // Group the 35 days into weeks of 7 starting Monday.

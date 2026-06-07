@@ -23,6 +23,21 @@ const vendorsService = {
     return api.patch("/vendors/me", payload).then((r) => r.data);
   },
 
+  getAvailability(): Promise<any> {
+    return api.get("/vendors/me/availability").then((r) => r.data);
+  },
+  updateAvailability(payload: {
+    acceptingBookings?: boolean;
+    maxJobsPerDay?: number;
+    responseCommitment?: string;
+    schedule?: { day: string; on: boolean; hours: string }[];
+  }): Promise<any> {
+    return api.patch("/vendors/me/availability", payload).then((r) => r.data);
+  },
+  addBlackouts(dates: string[], reason?: string): Promise<any> {
+    return api.post("/vendors/me/blackouts", { dates, reason }).then((r) => r.data);
+  },
+
   /** Presign + PUT one image to storage; returns the public URL. */
   async uploadImage(uri: string): Promise<string> {
     const contentType = "image/jpeg";
