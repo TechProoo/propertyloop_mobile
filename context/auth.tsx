@@ -12,6 +12,7 @@ import authService, {
   type SignupPayload,
 } from "@/api/services/auth";
 import { refreshSession, setOnSessionExpired } from "@/api/client";
+import { syncSavedFromServer, clearSaved } from "@/lib/favourites";
 
 type Status = "loading" | "authed" | "guest";
 
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mounted) {
           setUser(me);
           setStatus("authed");
+          void syncSavedFromServer();
         }
       } catch {
         if (mounted) setStatus("guest");
@@ -68,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await authService.login(payload);
     setUser(res.user);
     setStatus("authed");
+    void syncSavedFromServer();
     return res.user;
   }, []);
 
@@ -82,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authService.logout();
     setUser(null);
     setStatus("guest");
+    clearSaved();
   }, []);
 
   const refreshUser = useCallback(async () => {

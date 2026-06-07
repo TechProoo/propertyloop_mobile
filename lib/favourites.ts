@@ -2,10 +2,12 @@
 // useSyncExternalStore, so a heart tapped on the Home card, the listing
 // detail, and the Saved tab all stay in lockstep without a Context wrapper.
 //
-// In-memory only for now (resets on reload). When auth lands, hydrate the
-// Set from the bookmarks API on sign-in and POST/DELETE on toggle.
+// Backed by the /bookmarks API: hydrated from the server on sign-in
+// (syncSavedFromServer), and toggles are optimistic with a server round-trip
+// that reverts on failure.
 import { useSyncExternalStore } from "react";
 import { tapLight } from "./haptics";
+import bookmarksService from "@/api/services/bookmarks";
 
 const saved = new Set<string>();
 const listeners = new Set<() => void>();
@@ -30,13 +32,43 @@ function subscribe(cb: () => void) {
   };
 }
 
-/** Toggle a listing's saved state. Fires a light haptic. Returns the new state. */
+/** Toggle a listing's saved state. Optimistic + server sync. Returns new state. */
 export function toggleSaved(id: string): boolean {
-  if (saved.has(id)) saved.delete(id);
-  else saved.add(id);
+  const willSave = !saved.has(id);
+  if (willSave) saved.add(id);
+  else saved.delete(id);
   tapLight();
   emit();
-  return saved.has(id);
+  // Persist; revert on failure.
+  bookmarksService.toggleProperty(id).catch(() => {
+    if (willSave) saved.delete(id);
+    else saved.add(id);
+    emit();
+  });
+  return willSave;
+}
+
+/** Replace the saved set (e.g. hydrated from the server). */
+export function hydrateSaved(ids: string[]) {
+  saved.clear();
+  ids.forEach((id) => saved.add(id));
+  emit();
+}
+
+/** Clear all saved state (on sign-out). */
+export function clearSaved() {
+  saved.clear();
+  emit();
+}
+
+/** Pull the user's saved properties from the server into the store. */
+export async function syncSavedFromServer() {
+  try {
+    const items = await bookmarksService.listProperties();
+    hydrateSaved(items.map((b) => b.listingId));
+  } catch {
+    /* offline / unauthenticated — leave as-is */
+  }
 }
 
 /** Subscribe a component to a single listing's saved state. */
