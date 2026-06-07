@@ -1,30 +1,80 @@
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { Stack, router, type Href } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Stack, router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { VENDOR_AVAILABILITY } from "@/mocks/vendor";
+import vendorsService from "@/api/services/vendors";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
+type Day = { day: string; on: boolean; hours: string };
+type Blackout = { id: string; date: string; reason?: string | null };
+
 export default function VendorAvailabilityScreen() {
-  const [accepting, setAccepting] = useState(VENDOR_AVAILABILITY.acceptingBookings);
-  const [schedule, setSchedule]   = useState(VENDOR_AVAILABILITY.schedule);
-  const [maxJobs, setMaxJobs]     = useState(VENDOR_AVAILABILITY.maxJobsPerDay);
-  const [blackouts, setBlackouts] = useState(VENDOR_AVAILABILITY.blackoutDates);
+  const [accepting, setAccepting] = useState(true);
+  const [schedule, setSchedule]   = useState<Day[]>([]);
+  const [maxJobs, setMaxJobs]     = useState(3);
+  const [responseCommitment, setResponseCommitment] = useState("");
+  const [blackouts, setBlackouts] = useState<Blackout[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const a = await vendorsService.getAvailability();
+      setAccepting(a.acceptingBookings);
+      setSchedule(Array.isArray(a.schedule) ? a.schedule : []);
+      setMaxJobs(a.maxJobsPerDay ?? 3);
+      setResponseCommitment(a.responseCommitment ?? "");
+      setBlackouts(a.blackouts ?? []);
+    } catch {
+      /* leave defaults */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const toggleDay = (day: string) =>
     setSchedule((arr) =>
       arr.map((r) => (r.day === day ? { ...r, on: !r.on, hours: !r.on ? "8:00 AM – 6:00 PM" : "Off" } : r)),
     );
 
-  const save = () =>
-    Alert.alert("Availability saved", "Customers will see the new hours immediately.", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+  const save = async () => {
+    setSaving(true);
+    try {
+      await vendorsService.updateAvailability({
+        acceptingBookings: accepting,
+        maxJobsPerDay: maxJobs,
+        responseCommitment: responseCommitment || undefined,
+        schedule,
+      });
+      Alert.alert("Availability saved", "Customers will see the new hours immediately.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (e: any) {
+      Alert.alert("Save failed", e?.response?.data?.message ?? "Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-cream items-center justify-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator color={PRIMARY} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -39,8 +89,8 @@ export default function VendorAvailabilityScreen() {
           <Ionicons name="chevron-back" size={18} color={INK_2} />
         </Pressable>
         <Text className="text-[15px] font-sans-bold text-ink">Availability</Text>
-        <Pressable onPress={save} hitSlop={8}>
-          <Text className="text-[13px] font-sans-bold text-primary">Save</Text>
+        <Pressable onPress={save} hitSlop={8} disabled={saving}>
+          <Text className="text-[13px] font-sans-bold text-primary">{saving ? "Saving…" : "Save"}</Text>
         </Pressable>
       </View>
 
@@ -151,7 +201,7 @@ export default function VendorAvailabilityScreen() {
           <View className="flex-row items-center justify-between px-3.5 py-3">
             <Text className="text-[13.5px] font-sans-semibold text-ink">Response commitment</Text>
             <Text className="text-[13px] font-sans-bold text-primary">
-              {VENDOR_AVAILABILITY.responseCommitment}
+              {responseCommitment || "—"}
             </Text>
           </View>
         </View>
@@ -161,17 +211,11 @@ export default function VendorAvailabilityScreen() {
         <View className="flex-row flex-wrap gap-2 mt-2">
           {blackouts.map((b) => (
             <View
-              key={b}
+              key={b.id}
               className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
               style={{ backgroundColor: "#1a2120" }}
             >
-              <Text className="text-[12px] font-sans-bold text-white">{b}</Text>
-              <Pressable
-                onPress={() => setBlackouts((arr) => arr.filter((x) => x !== b))}
-                hitSlop={6}
-              >
-                <Ionicons name="close" size={11} color="#ffffff" />
-              </Pressable>
+              <Text className="text-[12px] font-sans-bold text-white">{b.date}</Text>
             </View>
           ))}
           <Pressable
