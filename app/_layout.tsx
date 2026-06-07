@@ -1,10 +1,11 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, router, useRootNavigationState, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import { AuthProvider, useAuth, roleHome } from '@/context/auth';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
 // bundle the weights you actually use (instead of all 18 variants).
 import { useFonts } from '@expo-google-fonts/inter/useFonts';
@@ -55,8 +56,10 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="welcome">
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <SessionRedirect />
+        <Stack initialRouteName="welcome">
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="intro" options={{ headerShown: false }} />
         <Stack.Screen name="role-select" options={{ headerShown: false }} />
@@ -137,8 +140,32 @@ export default function RootLayout() {
         <Stack.Screen name="vendor-extra" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="vendor-blackout" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </AuthProvider>
   );
+}
+
+/**
+ * One-time redirect for a returning, already-authenticated user: once the
+ * session resolves on cold start, send them straight to their role's home.
+ * Guests stay on the welcome flow; runs once so it never fights onboarding
+ * navigation that happens after sign-up/login.
+ */
+function SessionRedirect() {
+  const { status, user } = useAuth();
+  const navState = useRootNavigationState();
+  const done = useRef(false);
+
+  useEffect(() => {
+    if (!navState?.key) return; // navigation tree not mounted yet
+    if (status === 'loading' || done.current) return;
+    done.current = true;
+    if (status === 'authed' && user) {
+      router.replace(roleHome(user.role) as Href);
+    }
+  }, [navState?.key, status, user]);
+
+  return null;
 }

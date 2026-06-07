@@ -30,19 +30,20 @@ export interface AuthUser {
 interface AuthResponse {
   user: AuthUser;
   accessToken: string;
+  refreshToken?: string;
   sessionId?: string;
 }
 
 const authService = {
   async signup(payload: SignupPayload): Promise<AuthResponse> {
     const { data } = await api.post<AuthResponse>("/auth/signup", payload);
-    tokenStore.setAccess(data.accessToken);
+    await tokenStore.setSession(data.accessToken, data.refreshToken ?? null);
     return data;
   },
 
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const { data } = await api.post<AuthResponse>("/auth/login", payload);
-    tokenStore.setAccess(data.accessToken);
+    await tokenStore.setSession(data.accessToken, data.refreshToken ?? null);
     return data;
   },
 
@@ -57,7 +58,7 @@ const authService = {
     } catch {
       /* noop */
     }
-    tokenStore.clear();
+    await tokenStore.clear();
   },
 };
 
