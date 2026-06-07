@@ -1,16 +1,27 @@
+import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { router, type Href } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { AGENT } from "@/mocks/agent";
 import { useAuth } from "@/context/auth";
+import agentsService from "@/api/services/agents";
 
 const PRIMARY = "#1f6f43";
-const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
+
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
 
 type IonName = keyof typeof Ionicons.glyphMap;
 
@@ -67,7 +78,15 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
 ];
 
 export default function AgentProfileTab() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const [me, setMe] = useState<any>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      agentsService.getMe().then(setMe).catch(() => {});
+    }, []),
+  );
+
   const onLink = (l: LinkRow) => {
     if (l.id === "out") {
       Alert.alert("Sign out?", "You'll need your email and password to come back.", [
@@ -107,42 +126,32 @@ export default function AgentProfileTab() {
           style={{ borderWidth: 0.5 }}
         >
           <View className="flex-row items-center gap-3">
-            <PLAvatar initials={AGENT.initials} size={60} tone="primary" />
+            <PLAvatar initials={initialsOf(user?.name)} size={60} tone="primary" />
             <View className="flex-1">
               <View className="flex-row items-center gap-1.5">
                 <Text className="text-[16px] font-sans-bold text-ink">
-                  {AGENT.name}
+                  {user?.name ?? "Agent"}
                 </Text>
-                {AGENT.verified && (
+                {me?.verified && (
                   <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
                 )}
               </View>
               <Text className="text-[12px] text-ink-3 mt-0.5">
-                {AGENT.agency} · {AGENT.area}
+                {[me?.agency, me?.location].filter(Boolean).join(" · ") || "Estate agent"}
               </Text>
               <View className="flex-row items-center gap-3 mt-1">
                 <View className="flex-row items-center gap-1">
                   <Ionicons name="star" size={11} color="#b9842c" />
                   <Text className="text-[11.5px] font-sans-bold text-ink">
-                    {AGENT.rating}
+                    {me?.rating ?? 0}
                   </Text>
-                  <Text className="text-[11.5px] text-ink-3">· {AGENT.reviews} reviews</Text>
+                  <Text className="text-[11.5px] text-ink-3">
+                    · {me?.listingsCount ?? 0} listings
+                  </Text>
                 </View>
               </View>
             </View>
           </View>
-
-          {AGENT.founding && (
-            <View
-              className="mt-3 flex-row items-center gap-2 rounded-xl px-3 py-2"
-              style={{ backgroundColor: "#e3efe7" }}
-            >
-              <Ionicons name="star" size={13} color={PRIMARY_INK} />
-              <Text className="text-[11.5px] font-sans-bold" style={{ color: PRIMARY_INK }}>
-                Founding member · free forever
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Groups */}
