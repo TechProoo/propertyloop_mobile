@@ -1,16 +1,33 @@
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import viewingsService from "@/api/services/viewings";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 type Day = { d: string; n: number; m: string; off?: boolean; tag?: string };
 type Slot = { t: string; off?: boolean };
+
+/** Build an ISO datetime from the picked day + slot, rolling to next year
+ *  if the resulting date would otherwise be in the past. */
+function toISO(day: Day, slot: string): string {
+  const monthIdx = Math.max(0, MONTHS.indexOf(day.m));
+  const [hh, mm] = slot.split(":").map(Number);
+  const now = new Date();
+  let year = now.getFullYear();
+  let d = new Date(year, monthIdx, day.n, hh, mm, 0, 0);
+  if (d.getTime() < now.getTime() - 60_000) {
+    year += 1;
+    d = new Date(year, monthIdx, day.n, hh, mm, 0, 0);
+  }
+  return d.toISOString();
+}
 
 const DAYS: Day[] = [
   { d: "Sun", n: 1,  m: "Jun" },
@@ -33,22 +50,47 @@ const SLOTS: Slot[] = [
 ];
 
 export default function RescheduleViewingScreen() {
-  const params = useLocalSearchParams<{ leadId?: string; buyer?: string; listing?: string }>();
+  const params = useLocalSearchParams<{
+    viewingId?: string;
+    leadId?: string;
+    buyer?: string;
+    listing?: string;
+  }>();
   const buyer = params.buyer ?? "the buyer";
   const listing = params.listing ?? "this listing";
+  const viewingId = params.viewingId;
 
   const [dayIdx, setDayIdx] = useState(1);
   const [slot, setSlot]     = useState("10:00");
   const [note, setNote]     = useState("");
+  const [saving, setSaving] = useState(false);
 
   const selected = DAYS[dayIdx];
 
-  const onConfirm = () => {
-    Alert.alert(
-      "Reschedule sent",
-      `${buyer} will be notified of the new slot: ${selected.d} ${selected.n} ${selected.m} at ${slot}.`,
-      [{ text: "OK", onPress: () => router.back() }],
-    );
+  const onConfirm = async () => {
+    if (saving) return;
+    const successAlert = () =>
+      Alert.alert(
+        "Reschedule sent",
+        `${buyer} will be notified of the new slot: ${selected.d} ${selected.n} ${selected.m} at ${slot}.`,
+        [{ text: "OK", onPress: () => router.back() }],
+      );
+
+    // Without a real viewingId (legacy mock lead) just acknowledge.
+    if (!viewingId) {
+      successAlert();
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await viewingsService.update(viewingId, { scheduledFor: toISO(selected, slot) });
+      successAlert();
+    } catch {
+      Alert.alert("Couldn’t reschedule", "Please check your connection and try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -196,11 +238,14 @@ export default function RescheduleViewingScreen() {
       >
         <Pressable
           onPress={onConfirm}
+          disabled={saving}
           className="bg-primary rounded-full items-center active:opacity-80"
-          style={{ paddingVertical: 16 }}
+          style={{ paddingVertical: 16, opacity: saving ? 0.6 : 1 }}
         >
           <Text className="text-white font-sans-bold text-[15px]">
-            Send new slot · {selected.d} {selected.n} {selected.m} · {slot}
+            {saving
+              ? "Sending…"
+              : `Send new slot · ${selected.d} ${selected.n} ${selected.m} · ${slot}`}
           </Text>
         </Pressable>
       </View>
