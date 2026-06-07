@@ -16,6 +16,8 @@ import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { LANGUAGES } from "@/mocks/vendor";
+import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -72,16 +74,15 @@ export default function VendorSetupScreen() {
   const canContinue = name.trim().length > 1 && about.trim().length > 10 && langs.length > 0;
 
   const onContinue = () => {
-    if (!canContinue) {
-      const missing: string[] = [];
-      if (name.trim().length <= 1) missing.push("a display name");
-      if (about.trim().length <= 10) missing.push("an About of at least 10 characters");
-      if (langs.length === 0) missing.push("at least one language");
-      Alert.alert("Almost there", `Please add ${missing.join(", ")} to continue.`);
-      return;
-    }
     router.push("/vendor-categories" as Href);
   };
+
+  const missing = () =>
+    [
+      name.trim().length <= 1 && "a display name",
+      about.trim().length <= 10 && "an About of at least 10 characters",
+      langs.length === 0 && "at least one language",
+    ].filter(Boolean) as string[];
 
   return (
     <View className="flex-1 bg-cream">
@@ -100,12 +101,10 @@ export default function VendorSetupScreen() {
             >
               <Text className="text-ink-2 text-xl">‹</Text>
             </Pressable>
-            <View className="items-center">
-              <Text className="text-ink font-sans-bold text-sm">Vendor setup</Text>
-              <Text className="text-ink-3 text-xs mt-0.5">Step 1 of 4</Text>
-            </View>
+            <Text className="text-ink font-sans-bold text-sm">Vendor setup</Text>
             <View style={{ width: 36 }} />
           </View>
+          <OnboardingProgress step={1} total={4} className="px-5 mt-3" />
 
           <ScrollView
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 130 }}
@@ -227,13 +226,12 @@ export default function VendorSetupScreen() {
             className="absolute left-0 right-0 bottom-0 bg-cream border-line"
             style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
           >
-            <Pressable
+            <OnboardingCta
+              label="Continue"
+              ready={canContinue}
               onPress={onContinue}
-              className="bg-primary rounded-full items-center active:opacity-80"
-              style={{ paddingVertical: 17, opacity: canContinue ? 1 : 0.5 }}
-            >
-              <Text className="text-white font-sans-bold text-[15px]">Continue</Text>
-            </Pressable>
+              getMissing={missing}
+            />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
