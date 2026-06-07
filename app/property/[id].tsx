@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Share,
@@ -14,6 +15,8 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import { tapLight, tapMedium } from "@/lib/haptics";
 import { toggleSaved, useIsSaved } from "@/lib/favourites";
 import listingsService from "@/api/services/listings";
+import messagesService, { type ConversationRole } from "@/api/services/messages";
+import { useAuth } from "@/context/auth";
 import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
@@ -99,9 +102,32 @@ function ListingDetail({
   listing: Listing;
   listingId: string;
 }) {
+  const { user } = useAuth();
   const saved = useIsSaved(listing.id);
+  const [startingChat, setStartingChat] = useState(false);
   const period = listing.period ?? "";
   const photoCount = listing.images?.length || 1;
+
+  const messageAgent = async () => {
+    if (!listing.agent || !user || startingChat) return;
+    setStartingChat(true);
+    try {
+      const conv = await messagesService.createOrFind({
+        recipientId: listing.agent.id,
+        recipientRole: "AGENT",
+        senderRole: user.role as ConversationRole,
+        listingId: listing.id,
+      });
+      router.push(`/conversation/${conv.conversationId}` as Href);
+    } catch (e: any) {
+      Alert.alert(
+        "Couldn't start chat",
+        e?.response?.data?.message ?? "Please try again.",
+      );
+    } finally {
+      setStartingChat(false);
+    }
+  };
 
   const stats: { icon: keyof typeof Ionicons.glyphMap; n: string; l: string }[] =
     [
@@ -406,7 +432,23 @@ function ListingDetail({
                       .join(" · ")}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={INK_3} />
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    messageAgent();
+                  }}
+                  disabled={startingChat}
+                  hitSlop={8}
+                  className="w-10 h-10 rounded-full bg-primary-soft items-center justify-center active:opacity-80"
+                  accessibilityRole="button"
+                  accessibilityLabel="Message agent"
+                >
+                  {startingChat ? (
+                    <ActivityIndicator size="small" color={PRIMARY} />
+                  ) : (
+                    <Ionicons name="chatbubble-ellipses" size={17} color={PRIMARY} />
+                  )}
+                </Pressable>
               </Pressable>
             </>
           )}
