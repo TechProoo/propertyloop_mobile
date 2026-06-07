@@ -1,16 +1,22 @@
+import { useCallback, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
-import { router, type Href } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { VENDOR } from "@/mocks/vendor";
 import { useAuth } from "@/context/auth";
+import vendorsService, { type VendorStats } from "@/api/services/vendors";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
+
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+}
 
 type IonName = keyof typeof Ionicons.glyphMap;
 
@@ -28,16 +34,16 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
   {
     label: "Business",
     rows: [
-      { id: "menu",     icon: "list-outline",       title: "Service menu",       detail: "3 active", href: "/vendor-menu" },
-      { id: "avail",    icon: "calendar-outline",   title: "Availability",                          href: "/vendor-availability" },
-      { id: "reviews",  icon: "star-outline",       title: "Reputation & reviews", detail: `${VENDOR.rating}`, href: "/vendor-reviews" },
-      { id: "cats",     icon: "grid-outline",       title: "Service categories", detail: VENDOR.category, href: "/vendor-categories?mode=manage" },
+      { id: "menu",     icon: "list-outline",       title: "Service menu",        href: "/vendor-menu" },
+      { id: "avail",    icon: "calendar-outline",   title: "Availability",         href: "/vendor-availability" },
+      { id: "reviews",  icon: "star-outline",       title: "Reputation & reviews", href: "/vendor-reviews" },
+      { id: "cats",     icon: "grid-outline",       title: "Service categories",   href: "/vendor-categories?mode=manage" },
     ],
   },
   {
     label: "Money",
     rows: [
-      { id: "bank",     icon: "wallet-outline",  title: "Payout account",          detail: VENDOR.bank, href: "/payout-bank" },
+      { id: "bank",     icon: "wallet-outline",  title: "Payout account",          href: "/payout-bank" },
       { id: "earnings", icon: "receipt-outline", title: "Earnings & statements",   href: "/(vendor-tabs)/earnings" },
     ],
   },
@@ -57,7 +63,22 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
 ];
 
 export default function VendorProfileScreen() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const [me, setMe] = useState<any>(null);
+  const [stats, setStats] = useState<VendorStats | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      vendorsService.getMe().then(setMe).catch(() => {});
+      vendorsService.getStats().then(setStats).catch(() => {});
+    }, []),
+  );
+
+  const category = me?.category ?? me?.serviceCategory ?? "Service Loop vendor";
+  const completed = stats?.jobs.completed ?? 0;
+  const totalJobs = stats?.jobs.total ?? 0;
+  const completeRate = totalJobs ? `${Math.round((completed / totalJobs) * 100)}%` : "—";
+
   const onLink = (l: LinkRow) => {
     if (l.id === "out") {
       Alert.alert("Sign out?", "You'll need your email and password to come back.", [
@@ -96,25 +117,24 @@ export default function VendorProfileScreen() {
           style={{ borderWidth: 0.5 }}
         >
           <View className="flex-row items-center gap-3">
-            <PLAvatar initials={VENDOR.initials} size={60} tone="primary" />
+            <PLAvatar initials={initialsOf(user?.name)} size={60} tone="primary" />
             <View className="flex-1">
               <View className="flex-row items-center gap-1.5">
-                <Text className="text-[16px] font-sans-bold text-ink">{VENDOR.name}</Text>
-                {VENDOR.verified && (
+                <Text className="text-[16px] font-sans-bold text-ink">{user?.name ?? "Vendor"}</Text>
+                {stats?.profile.verified && (
                   <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
                 )}
               </View>
               <Text className="text-[12px] text-ink-3 mt-0.5">
-                {VENDOR.category} · Service Loop vendor
+                {category} · Service Loop vendor
               </Text>
-              <Pressable
-                onPress={() => router.push(`/vendor/${VENDOR.id}` as Href)}
-                hitSlop={6}
-              >
-                <Text className="text-[12px] font-sans-bold text-primary mt-1">
-                  View public profile →
-                </Text>
-              </Pressable>
+              {!!me?.id && (
+                <Pressable onPress={() => router.push(`/vendor/${me.id}` as Href)} hitSlop={6}>
+                  <Text className="text-[12px] font-sans-bold text-primary mt-1">
+                    View public profile →
+                  </Text>
+                </Pressable>
+              )}
             </View>
           </View>
 
@@ -124,9 +144,9 @@ export default function VendorProfileScreen() {
             style={{ borderWidth: 0.5 }}
           >
             {[
-              { n: `${VENDOR.rating}`, l: "Rating", star: true },
-              { n: `${VENDOR.reviews}`, l: "Jobs" },
-              { n: VENDOR.completionRate, l: "Complete" },
+              { n: `${stats?.profile.rating ?? 0}`, l: "Rating", star: true },
+              { n: `${stats?.profile.jobsCount ?? 0}`, l: "Jobs" },
+              { n: completeRate, l: "Complete" },
             ].map((s, i) => (
               <View
                 key={s.l}
