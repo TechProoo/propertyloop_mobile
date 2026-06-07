@@ -36,7 +36,25 @@ interface ConversationsPage {
   pages: number;
 }
 
+export type ConversationRole = "BUYER" | "AGENT" | "VENDOR" | "ADMIN";
+
+export interface CreateConversationPayload {
+  recipientId: string;
+  recipientRole: ConversationRole;
+  senderRole: ConversationRole;
+  listingId?: string;
+  productId?: string;
+  text?: string;
+}
+
 const messagesService = {
+  createOrFind(
+    payload: CreateConversationPayload,
+  ): Promise<{ conversationId: string; created: boolean }> {
+    return api
+      .post("/messages/conversations", payload)
+      .then((r) => r.data);
+  },
   listConversations(): Promise<ConversationsPage> {
     return api
       .get<ConversationsPage>("/messages/conversations")
