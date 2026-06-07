@@ -30,6 +30,38 @@ const listingsService = {
     const { data } = await api.get<Listing>(`/listings/slug/${slug}`);
     return data;
   },
+
+  async getComps(id: string): Promise<CompsResponse> {
+    const { data } = await api.get<CompsResponse>(`/listings/${id}/comps`);
+    return data;
+  },
 };
+
+export interface Comp {
+  id: string;
+  title: string;
+  coverImage: string;
+  location: string;
+  beds: number;
+  baths: number;
+  sqft: string;
+  priceNaira: number;
+  priceLabel: string;
+  pricePerSqm: number | null;
+  daysListed: number;
+}
+
+export interface CompsResponse {
+  asking: { priceNaira: number; priceLabel: string };
+  location: string;
+  beds: number;
+  type: string;
+  medianNaira: number | null;
+  medianLabel: string | null;
+  askingVsMedianPct: number | null;
+  avgDaysListed: number | null;
+  count: number;
+  comps: Comp[];
+}
 
 export default listingsService;

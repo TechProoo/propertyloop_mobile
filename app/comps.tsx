@@ -1,8 +1,13 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import listingsService, {
+  type Comp,
+  type CompsResponse,
+} from "@/api/services/listings";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -10,35 +15,37 @@ const ACCENT_INK = "#6b4a16";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-type Comp = {
-  id: string;
-  imageSeed: string;
-  price: string;
-  priceNumeric: number;
-  title: string;
-  area: string;
-  beds: number;
-  baths: number;
-  sqm: number;
-  ppm: string;
-  soldOn: string;
-  daysOnMarket: number;
-};
-
-const COMPS: Comp[] = [
-  { id: "c-1", imageSeed: "comp-1", price: "₦82M", priceNumeric: 82, title: "Acacia Villa · 4-bed", area: "Lekki Phase 1", beds: 4, baths: 4, sqm: 320, ppm: "256k/m²", soldOn: "Apr 2026", daysOnMarket: 38 },
-  { id: "c-2", imageSeed: "comp-2", price: "₦74M", priceNumeric: 74, title: "Marula Court · 4-bed", area: "Lekki Phase 1", beds: 4, baths: 3, sqm: 295, ppm: "251k/m²", soldOn: "Mar 2026", daysOnMarket: 22 },
-  { id: "c-3", imageSeed: "comp-3", price: "₦80M", priceNumeric: 80, title: "Palm Heights · 4-bed", area: "Lekki Phase 1", beds: 4, baths: 5, sqm: 340, ppm: "235k/m²", soldOn: "Feb 2026", daysOnMarket: 51 },
-  { id: "c-4", imageSeed: "comp-4", price: "₦69M", priceNumeric: 69, title: "Iroko Mews · 3-bed",  area: "Lekki Phase 1", beds: 3, baths: 3, sqm: 260, ppm: "265k/m²", soldOn: "Feb 2026", daysOnMarket: 19 },
-];
-
-const ASKING = 78;
+function naira(n: number) {
+  return `₦${Math.round(n).toLocaleString("en-NG")}`;
+}
+function compactNaira(n: number) {
+  if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (n >= 1_000) return `₦${Math.round(n / 1_000)}k`;
+  return naira(n);
+}
 
 export default function CompsScreen() {
-  useLocalSearchParams<{ id?: string }>();
-  const median =
-    [...COMPS].map((c) => c.priceNumeric).sort((a, b) => a - b)[Math.floor(COMPS.length / 2)];
-  const askingVsMedian = Math.round(((ASKING - median) / median) * 100);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const [data, setData] = useState<CompsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    let active = true;
+    listingsService
+      .getComps(id)
+      .then((d) => active && setData(d))
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  const pct = data?.askingVsMedianPct ?? null;
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -53,150 +60,168 @@ export default function CompsScreen() {
           <Ionicons name="chevron-back" size={18} color={INK_2} />
         </Pressable>
         <Text className="text-[15px] font-sans-bold text-ink">
-          Comparable sales
+          Comparable listings
         </Text>
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero summary */}
-        <Text
-          className="font-serif text-ink mt-2"
-          style={{ fontSize: 26, letterSpacing: -0.5, lineHeight: 28 }}
-        >
-          What 4-beds <Text className="font-serif-italic">actually sold for</Text>
-        </Text>
-        <Text className="text-[13px] text-ink-2 mt-1.5 leading-5">
-          Last 4 verified sales in Lekki Phase 1 · 3-6 beds · within 1.5 km.
-        </Text>
-
-        {/* Stat strip */}
-        <View className="flex-row gap-2 mt-4">
-          <Stat n={`₦${median}M`} l="Median sold" tone="primary" />
-          <Stat n={`${askingVsMedian > 0 ? "+" : ""}${askingVsMedian}%`} l="Asking vs median" />
-          <Stat n="32d" l="Avg days on market" />
+      {loading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator color={PRIMARY} />
         </View>
-
-        {/* Asking marker */}
-        <View
-          className="mt-4 bg-white rounded-2xl px-3.5 py-3 border-line"
-          style={{ borderWidth: 0.5 }}
-        >
-          <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
-            This listing
+      ) : !data || data.count === 0 ? (
+        <View className="flex-1 items-center justify-center px-8">
+          <Ionicons name="bar-chart-outline" size={34} color={INK_3} />
+          <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+            No comparables yet
           </Text>
-          <View className="flex-row items-baseline gap-2 mt-1">
-            <Text className="font-serif text-ink" style={{ fontSize: 22, letterSpacing: -0.4 }}>
-              ₦{ASKING}M
-            </Text>
-            <Text
-              className="text-[12px] font-sans-bold"
-              style={{ color: askingVsMedian > 0 ? "#a8421a" : PRIMARY }}
-            >
-              {askingVsMedian > 0 ? `${askingVsMedian}% above` : `${-askingVsMedian}% below`} median
-            </Text>
+          <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+            We couldn’t find similar active listings nearby to compare against.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Hero */}
+          <Text
+            className="font-serif text-ink mt-2"
+            style={{ fontSize: 26, letterSpacing: -0.5, lineHeight: 28 }}
+          >
+            How similar homes{" "}
+            <Text className="font-serif-italic">are priced</Text>
+          </Text>
+          <Text className="text-[13px] text-ink-2 mt-1.5 leading-5">
+            {data.count} active listing{data.count === 1 ? "" : "s"} in{" "}
+            {data.location} · around {data.beds} bed
+            {data.beds === 1 ? "" : "s"}.
+          </Text>
+
+          {/* Stat strip */}
+          <View className="flex-row gap-2 mt-4">
+            <Stat
+              n={data.medianNaira != null ? compactNaira(data.medianNaira) : "—"}
+              l="Median asking"
+              tone="primary"
+            />
+            <Stat
+              n={pct != null ? `${pct > 0 ? "+" : ""}${pct}%` : "—"}
+              l="This vs median"
+            />
+            <Stat
+              n={data.avgDaysListed != null ? `${data.avgDaysListed}d` : "—"}
+              l="Avg days listed"
+            />
           </View>
-        </View>
 
-        {/* Comp list */}
-        <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">
-          Recently sold · {COMPS.length}
-        </Text>
-        <View className="gap-3">
-          {COMPS.map((c) => (
-            <View
-              key={c.id}
-              className="bg-white rounded-2xl overflow-hidden border-line"
-              style={{ borderWidth: 0.5 }}
-            >
-              <View className="flex-row gap-3 p-3">
-                <Image
-                  source={`https://picsum.photos/seed/${c.imageSeed}/200/200`}
-                  style={{ width: 76, height: 76, borderRadius: 10 }}
-                  contentFit="cover"
-                />
-                <View className="flex-1">
-                  <View className="flex-row items-baseline justify-between">
-                    <Text
-                      className="font-serif text-ink"
-                      style={{ fontSize: 17, letterSpacing: -0.3 }}
-                    >
-                      {c.price}
-                    </Text>
-                    <View
-                      className="px-1.5 py-0.5 rounded-full"
-                      style={{ backgroundColor: "#e3efe7" }}
-                    >
-                      <Text
-                        className="text-[9.5px] font-sans-bold tracking-widest uppercase"
-                        style={{ color: PRIMARY_INK }}
-                      >
-                        Sold {c.soldOn}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text className="text-[13px] font-sans-bold text-ink mt-0.5">
-                    {c.title}
-                  </Text>
-                  <Text className="text-[11.5px] text-ink-3 mt-0.5">{c.area}</Text>
-                  <View className="flex-row items-center gap-3 mt-1.5 flex-wrap">
-                    <MetaChip text={`${c.beds} bed`} />
-                    <MetaChip text={`${c.baths} bath`} />
-                    <MetaChip text={`${c.sqm} m²`} />
-                    <Text className="text-[11px] font-sans-bold text-ink-2 ml-auto">
-                      {c.ppm}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <View
-                className="flex-row items-center justify-between px-3.5 py-2"
-                style={{ backgroundColor: "#f0f0f0" }}
-              >
-                <View className="flex-row items-center gap-1.5">
-                  <Ionicons name="time-outline" size={12} color={ACCENT_INK} />
-                  <Text className="text-[11px] font-sans-bold" style={{ color: ACCENT_INK }}>
-                    {c.daysOnMarket} days on market
-                  </Text>
-                </View>
-                <Pressable onPress={() => router.push("/property/hibiscus-1" as Href)} hitSlop={6}>
-                  <Text className="text-[11px] font-sans-bold text-primary">
-                    See listing →
-                  </Text>
-                </Pressable>
-              </View>
+          {/* This listing */}
+          <View
+            className="mt-4 bg-white rounded-2xl px-3.5 py-3 border-line"
+            style={{ borderWidth: 0.5 }}
+          >
+            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
+              This listing
+            </Text>
+            <View className="flex-row items-baseline gap-2 mt-1">
+              <Text className="font-serif text-ink" style={{ fontSize: 22, letterSpacing: -0.4 }}>
+                {data.asking.priceLabel}
+              </Text>
+              {pct != null && pct !== 0 && (
+                <Text
+                  className="text-[12px] font-sans-bold"
+                  style={{ color: pct > 0 ? "#a8421a" : PRIMARY }}
+                >
+                  {pct > 0 ? `${pct}% above` : `${-pct}% below`} median
+                </Text>
+              )}
             </View>
-          ))}
-        </View>
+          </View>
 
-        <Text className="text-[11px] text-ink-3 mt-5 leading-4">
-          Data sourced from agent-confirmed completions on PropertyLoop within the
-          last 6 months. Off-market deals not included.
-        </Text>
-      </ScrollView>
+          {/* Comp list */}
+          <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">
+            Comparable · {data.count}
+          </Text>
+          <View className="gap-3">
+            {data.comps.map((c) => (
+              <CompCard key={c.id} comp={c} />
+            ))}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
+function CompCard({ comp }: { comp: Comp }) {
+  return (
+    <Pressable
+      onPress={() => router.push(`/property/${comp.id}` as Href)}
+      className="bg-white rounded-2xl overflow-hidden border-line active:opacity-90"
+      style={{ borderWidth: 0.5 }}
+    >
+      <View className="flex-row gap-3 p-3">
+        <Image
+          source={comp.coverImage}
+          style={{ width: 76, height: 76, borderRadius: 10 }}
+          contentFit="cover"
+        />
+        <View className="flex-1">
+          <View className="flex-row items-baseline justify-between">
+            <Text
+              className="font-serif text-ink"
+              style={{ fontSize: 17, letterSpacing: -0.3 }}
+            >
+              {comp.priceLabel}
+            </Text>
+            <View className="px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#e3efe7" }}>
+              <Text
+                className="text-[9.5px] font-sans-bold tracking-widest uppercase"
+                style={{ color: PRIMARY_INK }}
+              >
+                Listed {comp.daysListed}d ago
+              </Text>
+            </View>
+          </View>
+          <Text className="text-[13px] font-sans-bold text-ink mt-0.5" numberOfLines={1}>
+            {comp.title}
+          </Text>
+          <Text className="text-[11.5px] text-ink-3 mt-0.5" numberOfLines={1}>
+            {comp.location}
+          </Text>
+          <View className="flex-row items-center gap-3 mt-1.5 flex-wrap">
+            <MetaChip text={`${comp.beds} bed`} />
+            <MetaChip text={`${comp.baths} bath`} />
+            {!!comp.sqft && <MetaChip text={`${comp.sqft} m²`} />}
+            {comp.pricePerSqm != null && (
+              <Text className="text-[11px] font-sans-bold text-ink-2 ml-auto">
+                ₦{Math.round(comp.pricePerSqm / 1000)}k/m²
+              </Text>
+            )}
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 function Stat({ n, l, tone }: { n: string; l: string; tone?: "primary" }) {
+  const primary = tone === "primary";
   return (
     <View
-      className="flex-1 rounded-xl border-line px-2.5 py-2.5"
-      style={{
-        borderWidth: 0.5,
-        backgroundColor: tone === "primary" ? "#e3efe7" : "#ffffff",
-      }}
+      className="flex-1 rounded-2xl px-3 py-3"
+      style={{ backgroundColor: primary ? PRIMARY : "#ffffff", borderWidth: primary ? 0 : 0.5, borderColor: "#e1dcd3" }}
     >
       <Text
         className="font-serif"
-        style={{ fontSize: 18, letterSpacing: -0.3, color: tone === "primary" ? PRIMARY_INK : "#1a2120" }}
+        style={{ fontSize: 19, letterSpacing: -0.3, color: primary ? "#ffffff" : "#1a2120" }}
       >
         {n}
       </Text>
-      <Text className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5">
+      <Text
+        className="text-[10.5px] font-sans-semibold mt-0.5"
+        style={{ color: primary ? "rgba(255,255,255,0.8)" : INK_3 }}
+      >
         {l}
       </Text>
     </View>
@@ -208,6 +233,3 @@ function MetaChip({ text }: { text: string }) {
     <Text className="text-[11px] font-sans-semibold text-ink-3">{text}</Text>
   );
 }
-
-// Silence unused-warning if a constant becomes unused.
-void INK_3;
