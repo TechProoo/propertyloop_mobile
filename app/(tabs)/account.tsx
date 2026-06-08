@@ -1,5 +1,6 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { router, type Href } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 // Settings entry sits in the hero — see header below.
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,12 +8,11 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import {
   DASHBOARD_HERO,
   SAVED_SEARCHES,
-  SERVICE_JOBS,
   UP_NEXT,
   type SavedSearch,
-  type ServiceJob,
   type UpNextItem,
 } from "@/mocks/buyer-dashboard";
+import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -32,6 +32,28 @@ const TONE_FG: Record<UpNextItem["tone"], string> = {
 };
 
 export default function AccountScreen() {
+  const [jobs, setJobs] = useState<VendorJob[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+
+  const loadJobs = useCallback(async () => {
+    try {
+      const res = await vendorJobsService.listMine({ limit: 20 });
+      setJobs(res.items);
+    } catch {
+      setJobs([]);
+    } finally {
+      setJobsLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadJobs();
+    }, [loadJobs]),
+  );
+
+  const openJobs = jobs.filter((j) => j.status !== "CONFIRMED" && j.status !== "CANCELLED" && j.status !== "DECLINED");
+
   return (
     <View className="flex-1 bg-cream">
       <SafeAreaView className="flex-1" edges={["top"]}>
@@ -121,11 +143,21 @@ export default function AccountScreen() {
 
           {/* Service Loop · open jobs */}
           <SectionLabel className="px-5 pt-3.5">Service Loop · open jobs</SectionLabel>
-          <View className="px-4 pt-2.5 gap-2">
-            {SERVICE_JOBS.map((j) => (
-              <ServiceJobRow key={j.id} job={j} />
-            ))}
-          </View>
+          {jobsLoading ? (
+            <View className="py-8 items-center">
+              <ActivityIndicator color={PRIMARY} />
+            </View>
+          ) : openJobs.length === 0 ? (
+            <Text className="px-5 pt-2 text-[12.5px] text-ink-3">
+              No active service jobs. Hire a vendor from the Service Loop.
+            </Text>
+          ) : (
+            <View className="px-4 pt-2.5 gap-2">
+              {openJobs.map((j) => (
+                <ServiceJobRow key={j.id} job={j} />
+              ))}
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -213,56 +245,57 @@ function SavedSearchCard({ item }: { item: SavedSearch }) {
   );
 }
 
-function ServiceJobRow({ job }: { job: ServiceJob }) {
-  const dot = job.status === "escrow" ? PRIMARY : "#b9842c";
-  const initials = job.vendor
-    .split(" ")
-    .filter((w) => w[0]?.match(/[A-Z]/))
+const JOB_STATUS: Record<string, { label: string; dot: string }> = {
+  PENDING: { label: "Requested", dot: "#b9842c" },
+  ACCEPTED: { label: "Scheduled", dot: "#1f6f43" },
+  IN_PROGRESS: { label: "In progress", dot: "#1f6f43" },
+  COMPLETED: { label: "Confirm to release", dot: "#b9842c" },
+  CONFIRMED: { label: "Paid", dot: "#7f857f" },
+  DISPUTED: { label: "Disputed", dot: "#b3261e" },
+};
+
+function ServiceJobRow({ job }: { job: VendorJob }) {
+  const meta = JOB_STATUS[job.status] ?? { label: job.status, dot: "#7f857f" };
+  const initials = (job.vendor?.name ?? "Vendor")
+    .trim()
+    .split(/\s+/)
     .slice(0, 2)
     .map((w) => w[0])
-    .join("");
+    .join("")
+    .toUpperCase();
 
   return (
-    <View
-      className="bg-white rounded-2xl px-3 py-3 flex-row items-center gap-3 border-line"
+    <Pressable
+      onPress={() => router.push(`/service-job/${job.id}` as Href)}
+      className="bg-white rounded-2xl px-3 py-3 flex-row items-center gap-3 border-line active:opacity-90"
       style={{ borderWidth: 0.5 }}
     >
       <PLAvatar initials={initials || "SV"} size={36} tone="primary" />
       <View className="flex-1">
-        <Text
-          className="text-[13.5px] font-sans-bold text-ink"
-          numberOfLines={1}
-        >
-          {job.vendor}
+        <Text className="text-[13.5px] font-sans-bold text-ink" numberOfLines={1}>
+          {job.vendor?.name ?? "Vendor"}
         </Text>
-        <Text className="text-[11.5px] text-ink-3">
-          {job.category} · {job.detail}
+        <Text className="text-[11.5px] text-ink-3" numberOfLines={1}>
+          {job.title}
         </Text>
         <View className="flex-row items-center gap-1.5 mt-1">
-          <View style={{ width: 6, height: 6, borderRadius: 6, backgroundColor: dot }} />
+          <View style={{ width: 6, height: 6, borderRadius: 6, backgroundColor: meta.dot }} />
           <Text className="text-[10px] font-sans-bold text-ink-2 tracking-widest uppercase">
-            {job.statusLabel}
+            {meta.label}
           </Text>
         </View>
       </View>
       <View className="items-end">
         <Text className="font-serif text-ink" style={{ fontSize: 15, letterSpacing: -0.3 }}>
-          {job.amount}
+          ₦{Math.round(job.vendorFee).toLocaleString("en-NG")}
         </Text>
-        {job.status === "confirm" && (
-          <Pressable
-            onPress={() =>
-              router.push(`/service-job/${job.id}` as Href)
-            }
-            className="mt-1 bg-primary rounded-full px-2.5 py-1"
-          >
-            <Text className="text-[10.5px] font-sans-bold text-white tracking-wider">
-              Release
-            </Text>
-          </Pressable>
+        {job.status === "COMPLETED" && (
+          <View className="mt-1 bg-primary rounded-full px-2.5 py-1">
+            <Text className="text-[10.5px] font-sans-bold text-white tracking-wider">Release</Text>
+          </View>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 

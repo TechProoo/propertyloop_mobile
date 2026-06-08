@@ -74,6 +74,12 @@ const vendorJobsService = {
       .get<Paginated<VendorJob>>("/vendor-jobs", { params: params ?? {} })
       .then((r) => r.data);
   },
+  /** The signed-in buyer's own bookings. */
+  listMine(params?: ListJobsParams): Promise<Paginated<VendorJob>> {
+    return api
+      .get<Paginated<VendorJob>>("/vendor-jobs/mine", { params: params ?? {} })
+      .then((r) => r.data);
+  },
   getOne(id: string): Promise<VendorJob> {
     return api.get<VendorJob>(`/vendor-jobs/${id}`).then((r) => r.data);
   },
