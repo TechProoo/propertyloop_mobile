@@ -38,17 +38,14 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
   {
     label: "Practice",
     rows: [
-      { id: "edit",     icon: "create-outline",          title: "Edit profile",   detail: "Bio, specialties, languages", href: "/edit-profile" },
-      { id: "verify",   icon: "shield-checkmark-outline", title: "Verification",  detail: "Verified · NIESV on file",    href: "/agent-verify" },
-      { id: "public",   icon: "eye-outline",              title: "Preview public profile", href: "/agent-profile/agent-emeka" },
+      { id: "edit",     icon: "create-outline",          title: "Edit profile",   detail: "Name, bio, agency", href: "/edit-profile" },
+      { id: "public",   icon: "eye-outline",              title: "Preview public profile" },
     ],
   },
   {
     label: "Billing",
     rows: [
       { id: "plan",    icon: "star-outline",   title: "Plan & billing",    detail: "Founding · free forever", href: "/agent-plan" },
-      { id: "payout",  icon: "wallet-outline", title: "Payout bank account", detail: "GTBank •• 4421", href: "/payout-bank" },
-      { id: "invoices",icon: "receipt-outline", title: "Invoices & receipts" },
     ],
   },
   {
@@ -100,6 +97,10 @@ export default function AgentProfileTab() {
           },
         },
       ]);
+      return;
+    }
+    if (l.id === "public") {
+      if (user?.id) router.push(`/agent-profile/${user.id}` as Href);
       return;
     }
     if (l.href) {
