@@ -98,7 +98,8 @@ export default function ConversationScreen() {
     setSending(true);
     try {
       const msg = await messagesService.sendMessage(id, text);
-      setMessages((arr) => [...arr, msg]);
+      // The socket may deliver this same message first — dedupe by id.
+      setMessages((arr) => (arr.some((m) => m.id === msg.id) ? arr : [...arr, msg]));
     } catch {
       setDraft(text); // restore on failure
     } finally {
