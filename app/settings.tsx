@@ -3,7 +3,7 @@ import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { SETTINGS_GROUPS, SETTINGS_PROFILE, type SettingsLink } from "@/mocks/buyer-extra";
+import { SETTINGS_GROUPS, type SettingsLink } from "@/mocks/buyer-extra";
 import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
@@ -11,8 +11,13 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
 
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+}
+
 export default function SettingsScreen() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const onSignOut = () =>
     Alert.alert("Sign out?", "You'll need your email and password to come back.", [
       { text: "Cancel", style: "cancel" },
@@ -59,22 +64,17 @@ export default function SettingsScreen() {
           className="bg-white rounded-2xl px-4 py-4 flex-row items-center gap-3 border-line mt-1"
           style={{ borderWidth: 0.5 }}
         >
-          <PLAvatar initials={SETTINGS_PROFILE.initials} size={56} tone="primary" />
+          <PLAvatar initials={initialsOf(user?.name)} size={56} tone="primary" />
           <View className="flex-1">
-            <View className="flex-row items-center gap-1.5">
-              <Text className="text-[15px] font-sans-bold text-ink">
-                {SETTINGS_PROFILE.name}
-              </Text>
-              {SETTINGS_PROFILE.verified && (
-                <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />
-              )}
-            </View>
+            <Text className="text-[15px] font-sans-bold text-ink">
+              {user?.name ?? "Your account"}
+            </Text>
             <Text className="text-[12px] text-ink-3 mt-0.5">
-              {SETTINGS_PROFILE.email}
+              {user?.email ?? ""}
             </Text>
-            <Text className="text-[12px] text-ink-3">
-              {SETTINGS_PROFILE.phone}
-            </Text>
+            {!!user?.phone && (
+              <Text className="text-[12px] text-ink-3">{user.phone}</Text>
+            )}
           </View>
           <Pressable
             onPress={() => router.push("/edit-profile" as Href)}
