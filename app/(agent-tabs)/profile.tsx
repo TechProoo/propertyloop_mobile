@@ -51,9 +51,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
   {
     label: "Preferences",
     rows: [
-      { id: "notif",   icon: "notifications-outline", title: "Notifications",   detail: "Push + email" },
-      { id: "defaults",icon: "options-outline",       title: "Listing defaults", detail: "Hours, response time, area", href: "/listing-defaults" },
-      { id: "lang",    icon: "globe-outline",         title: "Language",         detail: "English (NG)" },
+      { id: "notif",   icon: "notifications-outline", title: "Notifications", detail: "Messages, email, SMS", href: "/notification-settings" },
     ],
   },
   {
