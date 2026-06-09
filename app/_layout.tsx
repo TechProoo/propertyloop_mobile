@@ -106,6 +106,7 @@ export default function RootLayout() {
         <Stack.Screen name="help" options={{ headerShown: false }} />
         {/* Polish-pass screens */}
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="notification-settings" options={{ headerShown: false }} />
         <Stack.Screen name="add-card" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="comps" options={{ headerShown: false }} />
         <Stack.Screen name="new-message" options={{ headerShown: false, presentation: 'modal' }} />

@@ -15,6 +15,27 @@ const usersService = {
   updateProfile(payload: UpdateProfilePayload): Promise<any> {
     return api.patch("/users/me", payload).then((r) => r.data);
   },
+  getSettings(): Promise<UserSettings> {
+    return api.get<UserSettings>("/users/me/settings").then((r) => r.data);
+  },
+  updateSettings(payload: Partial<UserSettings>): Promise<UserSettings> {
+    return api
+      .patch<UserSettings>("/users/me/settings", payload)
+      .then((r) => r.data);
+  },
 };
+
+export interface UserSettings {
+  notifEmail: boolean;
+  notifSms: boolean;
+  notifMessages: boolean;
+  notifPriceAlerts: boolean;
+  notifMarketing: boolean;
+  profileVisible: boolean;
+  shareActivity: boolean;
+  language: string;
+  currency: string;
+  twoFactorEnabled: boolean;
+}
 
 export default usersService;
