@@ -3,13 +3,45 @@ import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { SETTINGS_GROUPS, type SettingsLink } from "@/mocks/buyer-extra";
+import { type SettingsLink } from "@/mocks/buyer-extra";
 import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
+
+// Only features that hit a real backend (or are static info/legal pages).
+const GROUPS: { label: string; links: SettingsLink[] }[] = [
+  {
+    label: "Account",
+    links: [
+      { id: "edit", icon: "person-outline", title: "Edit profile", detail: "Name, phone, bio", href: "/edit-profile" },
+    ],
+  },
+  {
+    label: "Preferences",
+    links: [
+      { id: "notif", icon: "notifications-outline", title: "Notifications", detail: "Messages, email, SMS", href: "/notification-settings" },
+    ],
+  },
+  {
+    label: "Support",
+    links: [
+      { id: "help", icon: "help-circle-outline", title: "Help centre", href: "/help" },
+      { id: "logbook", icon: "document-text-outline", title: "About the logbook", href: "/logbook-info" },
+      { id: "escrow", icon: "lock-closed-outline", title: "How escrow works", href: "/escrow-info" },
+    ],
+  },
+  {
+    label: "Legal",
+    links: [
+      { id: "terms", icon: "reader-outline", title: "Terms of service", href: "/terms" },
+      { id: "privacy", icon: "eye-outline", title: "Privacy policy", href: "/privacy" },
+      { id: "out", icon: "log-out-outline", title: "Sign out", destructive: true },
+    ],
+  },
+];
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
@@ -85,7 +117,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Groups */}
-        {SETTINGS_GROUPS.map((g) => (
+        {GROUPS.map((g) => (
           <View key={g.label} className="mt-5">
             <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-2 px-1">
               {g.label}
