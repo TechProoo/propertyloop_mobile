@@ -50,10 +50,9 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
   {
     label: "Account",
     rows: [
-      { id: "verify",   icon: "shield-checkmark-outline", title: "Verification",  detail: "Verified", badge: true },
       { id: "edit",     icon: "create-outline",            title: "Edit business profile",      href: "/vendor-edit-profile" },
-      { id: "public",   icon: "eye-outline",               title: "Preview public profile",     href: "/vendor/vendor-sparkle" },
-      { id: "notif",    icon: "notifications-outline",     title: "Notifications" },
+      { id: "public",   icon: "eye-outline",               title: "Preview public profile" },
+      { id: "notif",    icon: "notifications-outline",     title: "Notifications", detail: "Messages, email, SMS", href: "/notification-settings" },
       { id: "help",     icon: "help-circle-outline",       title: "Help & vendor FAQ",          href: "/help" },
       { id: "terms",    icon: "reader-outline",            title: "Terms of service",           href: "/terms" },
       { id: "privacy",  icon: "eye-outline",               title: "Privacy policy",             href: "/privacy" },
@@ -92,6 +91,10 @@ export default function VendorProfileScreen() {
           },
         },
       ]);
+      return;
+    }
+    if (l.id === "public") {
+      if (user?.id) router.push(`/vendor/${user.id}` as Href);
       return;
     }
     if (l.href) {
