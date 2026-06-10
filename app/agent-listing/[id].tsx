@@ -262,7 +262,7 @@ export default function AgentListingDetailScreen() {
               {listing.status === "PENDING_REVIEW" && (
                 <View className="bg-white rounded-2xl px-3.5 py-3 border-line" style={{ borderWidth: 1 }}>
                   <Text className="text-[12.5px] text-ink-2">
-                    This listing is awaiting review. You'll be notified once it goes live.
+                    This listing is awaiting review. You&apos;ll be notified once it goes live.
                   </Text>
                 </View>
               )}

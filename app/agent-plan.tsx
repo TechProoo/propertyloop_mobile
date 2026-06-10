@@ -113,7 +113,7 @@ export default function AgentPlanScreen() {
             Pick the plan that <Text className="font-serif-italic">fits</Text>
           </Text>
           <Text className="text-ink-3 text-sm mt-2 leading-5">
-            Change tiers any time. We'll automatically prorate.
+            Change tiers any time. We&apos;ll automatically prorate.
           </Text>
 
           {/* Founding eligibility banner — only if waitlisted */}
@@ -124,7 +124,7 @@ export default function AgentPlanScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-white font-sans-semibold text-sm">
-                  You're on the Founding list
+                  You&apos;re on the Founding list
                 </Text>
                 <Text className="text-ink-3 text-xs mt-0.5">
                   Free forever · {foundingSpotsLeft} of {foundingCap} spots left

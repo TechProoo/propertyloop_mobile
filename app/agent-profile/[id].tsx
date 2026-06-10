@@ -13,7 +13,6 @@ const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const ACCENT = "#b9842c";
 const INK_2 = "#4d524f";
-const INK_3 = "#7f857f";
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
