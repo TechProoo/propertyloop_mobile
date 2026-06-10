@@ -66,6 +66,12 @@ const listingsService = {
     return data;
   },
 
+  /** Permanent maintenance history for a property (newest first). */
+  async getLogbook(id: string): Promise<LogbookEntry[]> {
+    const { data } = await api.get<LogbookEntry[]>(`/listings/${id}/logbook`);
+    return data;
+  },
+
   /** Upload one file (multipart) via the listings uploader. Returns the URL. */
   async uploadPhoto(
     uri: string,
@@ -103,6 +109,21 @@ const listingsService = {
     return data;
   },
 };
+
+export interface LogbookEntry {
+  id: string;
+  listingId: string | null;
+  jobId: string | null;
+  category: string;
+  title: string;
+  description: string | null;
+  vendorName: string;
+  vendorId: string | null;
+  cost: number; // naira
+  completedAt: string;
+  verified: boolean;
+  createdAt: string;
+}
 
 export interface Comp {
   id: string;

@@ -1,12 +1,13 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { Stack, router } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import listingsService from "@/api/services/listings";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
-const INK_3 = "#7f857f";
 
 const STEPS = [
   {
@@ -33,6 +34,24 @@ const STEPS = [
 ];
 
 export default function LogbookInfoScreen() {
+  const [opening, setOpening] = useState(false);
+
+  // Open the logbook for the first available listing as a live sample.
+  const openSample = async () => {
+    if (opening) return;
+    setOpening(true);
+    try {
+      const { items } = await listingsService.list({ limit: 1, sort: "newest" });
+      const id = items[0]?.id;
+      if (id) router.push(`/logbook/${id}` as Href);
+      else Alert.alert("No logbook yet", "There are no listings to preview right now.");
+    } catch {
+      Alert.alert("Couldn’t open logbook", "Please check your connection and try again.");
+    } finally {
+      setOpening(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -177,13 +196,18 @@ export default function LogbookInfoScreen() {
         style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28 }}
       >
         <Pressable
-          onPress={() => router.push("/logbook/hibiscus-1" as never)}
-          className="bg-primary rounded-full items-center active:opacity-80"
-          style={{ paddingVertical: 16 }}
+          onPress={openSample}
+          disabled={opening}
+          className="bg-primary rounded-full items-center justify-center active:opacity-80"
+          style={{ paddingVertical: 16, opacity: opening ? 0.7 : 1, minHeight: 52 }}
         >
-          <Text className="text-white font-sans-bold text-[15px]">
-            View a sample logbook
-          </Text>
+          {opening ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text className="text-white font-sans-bold text-[15px]">
+              View a sample logbook
+            </Text>
+          )}
         </Pressable>
       </View>
     </SafeAreaView>
