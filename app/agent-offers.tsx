@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import offersService, {
   type Offer,
@@ -18,7 +17,6 @@ import offersService, {
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
-const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
 
