@@ -67,6 +67,7 @@ export default function CreateListingScreen() {
   const [type, setType] = useState("sale");
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("Apartment");
+  const [address, setAddress] = useState("");
   const [area, setArea] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [price, setPrice] = useState("");
@@ -74,6 +75,7 @@ export default function CreateListingScreen() {
   const [beds, setBeds] = useState("3");
   const [baths, setBaths] = useState("3");
   const [sqm, setSqm] = useState("");
+  const [year, setYear] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
   const [description, setDescription] = useState("");
 
@@ -88,11 +90,13 @@ export default function CreateListingScreen() {
         setType(TYPE_TO_ID[l.type] ?? "sale");
         setTitle(l.title);
         setPropertyType(l.propertyType || "Apartment");
+        setAddress(l.address ?? "");
         setArea(l.location);
         setPrice(String(l.priceNaira));
         setBeds(String(l.beds));
         setBaths(String(l.baths));
         setSqm(l.sqft ?? "");
+        setYear(l.yearBuilt ?? "");
         setAmenities(l.features ?? []);
         setDescription(l.description ?? "");
         setPhotos(l.images?.length ? l.images : l.coverImage ? [l.coverImage] : []);
@@ -155,7 +159,12 @@ export default function CreateListingScreen() {
 
   const canNext =
     step === "Basics"
-      ? !!type && !!propertyType && !!title.trim() && !!area.trim() && !!price.trim()
+      ? !!type &&
+        !!propertyType &&
+        !!title.trim() &&
+        !!address.trim() &&
+        !!area.trim() &&
+        !!price.trim()
       : step === "Photos"
         ? photos.length >= 1
         : step === "Details"
@@ -168,11 +177,12 @@ export default function CreateListingScreen() {
     propertyType,
     priceNaira: Number(price) || 0,
     period: PERIOD_MAP[type],
-    address: area.trim(),
+    address: address.trim(),
     location: area.trim(),
     beds: Number(beds) || 0,
     baths: Number(baths) || 0,
     sqft: sqm.trim(),
+    yearBuilt: year.trim() || undefined,
     description: description.trim(),
     features: amenities,
     coverImage: urls[0],
@@ -325,8 +335,14 @@ export default function CreateListingScreen() {
               <Label className="mt-5">Listing title</Label>
               <Field value={title} onChangeText={setTitle} placeholder="e.g. Hibiscus House · 4-bed" autoCapitalize="words" />
 
+              <Label className="mt-4">Full address</Label>
+              <Field value={address} onChangeText={setAddress} placeholder="e.g. 12 Admiralty Way, Lekki Phase 1" autoCapitalize="words" />
+
               <Label className="mt-4">Area</Label>
               <Field value={area} onChangeText={setArea} placeholder="e.g. Lekki Phase 1" autoCapitalize="words" />
+              <Text className="text-[11.5px] text-ink-3 mt-1.5">
+                The neighbourhood buyers search by. The full address stays private until a viewing is booked.
+              </Text>
 
               <Label className="mt-4">Asking price</Label>
               <Field
@@ -411,13 +427,28 @@ export default function CreateListingScreen() {
                 <Stepper label="Bathrooms" value={baths} setValue={setBaths} />
               </View>
 
-              <Label className="mt-5">Area (m²)</Label>
-              <Field
-                value={sqm}
-                onChangeText={(t) => setSqm(t.replace(/[^0-9]/g, ""))}
-                placeholder="e.g. 320"
-                keyboardType="number-pad"
-              />
+              <View className="flex-row gap-3 mt-5">
+                <View className="flex-1">
+                  <Label>Area (m²)</Label>
+                  <Field
+                    value={sqm}
+                    onChangeText={(t) => setSqm(t.replace(/[^0-9]/g, ""))}
+                    placeholder="e.g. 320"
+                    keyboardType="number-pad"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Label>
+                    Year built <Text className="text-ink-3">· optional</Text>
+                  </Label>
+                  <Field
+                    value={year}
+                    onChangeText={(t) => setYear(t.replace(/[^0-9]/g, "").slice(0, 4))}
+                    placeholder="e.g. 2021"
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
 
               <Label className="mt-5">Amenities</Label>
               <View className="flex-row flex-wrap gap-2 mt-2">
@@ -475,9 +506,10 @@ export default function CreateListingScreen() {
               >
                 <Summary label="Type"        value={CREATE_LISTING_TYPES.find((t) => t.id === type)?.label ?? type} />
                 <Summary label="Title"       value={title || "—"} />
+                <Summary label="Address"     value={address || "—"} />
                 <Summary label="Area"        value={area || "—"} />
                 <Summary label="Price"       value={price ? `₦${Number(price).toLocaleString()}` : "—"} />
-                <Summary label="Bed / bath"  value={`${beds} bed · ${baths} bath${sqm ? ` · ${sqm} m²` : ""}`} />
+                <Summary label="Bed / bath"  value={`${beds} bed · ${baths} bath${sqm ? ` · ${sqm} m²` : ""}${year ? ` · ${year}` : ""}`} />
                 <Summary label="Photos"      value={`${photos.length} of 8`} />
                 <Summary label="Amenities"   value={amenities.length ? `${amenities.length} selected` : "none"} last />
               </View>
