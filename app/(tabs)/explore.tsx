@@ -5,22 +5,39 @@ import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, type MapType } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MAP_LOCATION, MAP_PINS, MAP_REGION } from "@/mocks/map";
 import { useListings } from "@/api/hooks/useListings";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
-const INK_3 = "#7f857f";
+
+// Default map viewport — Lekki Phase 1 / Lagos. Listings don't yet carry
+// geocoordinates from the backend, so markers are spread deterministically
+// around this region (stable per index). Swap to real lat/long once the
+// listings API returns them.
+const DEFAULT_REGION = {
+  latitude: 6.454,
+  longitude: 3.473,
+  latitudeDelta: 0.018,
+  longitudeDelta: 0.014,
+};
+function spreadCoord(i: number) {
+  const angle = i * 2.39996323; // golden angle — even, non-overlapping spiral
+  const radius = 0.0016 + (i % 5) * 0.0014;
+  return {
+    latitude: DEFAULT_REGION.latitude + radius * Math.cos(angle),
+    longitude: DEFAULT_REGION.longitude + radius * Math.sin(angle),
+  };
+}
 
 export default function ExploreMapScreen() {
-  const [selectedPin, setSelectedPin] = useState("p1");
+  const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [mapType, setMapType] = useState<MapType>("standard");
   const mapRef = useRef<MapView | null>(null);
-  const { items } = useListings({ sort: "newest", limit: 12 });
+  const { items, total } = useListings({ sort: "newest", limit: 12 });
 
   const recenter = () => {
-    mapRef.current?.animateToRegion(MAP_REGION, 600);
+    mapRef.current?.animateToRegion(DEFAULT_REGION, 600);
   };
   const toggleLayer = () => {
     setMapType((t) => (t === "standard" ? "satellite" : "standard"));
@@ -32,18 +49,18 @@ export default function ExploreMapScreen() {
       <MapView
         ref={mapRef}
         style={{ flex: 1 }}
-        initialRegion={MAP_REGION}
+        initialRegion={DEFAULT_REGION}
         mapType={mapType}
         showsCompass={false}
         toolbarEnabled={false}
       >
-        {MAP_PINS.map((p) => {
-          const isOn = selectedPin === p.id;
+        {items.map((listing, i) => {
+          const isOn = selectedPin === listing.id;
           return (
             <Marker
-              key={p.id}
-              coordinate={{ latitude: p.latitude, longitude: p.longitude }}
-              onPress={() => setSelectedPin(p.id)}
+              key={listing.id}
+              coordinate={spreadCoord(i)}
+              onPress={() => setSelectedPin(listing.id)}
               anchor={{ x: 0.5, y: 0.5 }}
               tracksViewChanges={false}
             >
@@ -68,7 +85,7 @@ export default function ExploreMapScreen() {
                     color: isOn ? "#ffffff" : INK,
                   }}
                 >
-                  {p.priceLabel}
+                  {listing.priceLabel}
                 </Text>
               </View>
             </Marker>
@@ -96,10 +113,10 @@ export default function ExploreMapScreen() {
           >
             <Ionicons name="search" size={17} color={INK_2} />
             <Text className="text-[13.5px] font-sans-semibold text-ink">
-              {MAP_LOCATION.label}
+              Search homes
             </Text>
             <Text className="ml-auto text-[11px] text-ink-3 font-sans-semibold">
-              {MAP_LOCATION.count}
+              {total} home{total === 1 ? "" : "s"}
             </Text>
           </Pressable>
           <Pressable
