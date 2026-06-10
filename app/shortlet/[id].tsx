@@ -1,51 +1,127 @@
-import { useState } from "react";
-import { Pressable, ScrollView, Share, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Share,
+  Text,
+  View,
+} from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import listingsService from "@/api/services/listings";
+import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const ACCENT = "#b9842c";
 const INK_2 = "#4d524f";
+const INK_3 = "#7f857f";
 const SHORTLET_PURPLE = "#3c2d5c";
 
-// Mock — the only shortlet so far. Re-wire to real listing service.
-const SHORTLET = {
-  id: "marlin-studios",
-  imageSeed: "short-1",
-  title: "Marlin Studios · 1-bed with sea view",
-  address: "Eko Atlantic, Victoria Island, Lagos",
-  rating: "4.92",
-  stays: 184,
-  nightlyPrice: "₦85,000",
-  checkIn: "Fri 12 Jun",
-  checkOut: "Sun 14 Jun",
-  nights: 2,
-  totalLabel: "₦170,000",
-  host: { initials: "FB", name: "Folake B.", badge: "Superhost · 2 years on PropertyLoop" },
-  amenities: [
-    { icon: "wifi-outline",       label: "Fast Wi-Fi · 500Mbps" },
-    { icon: "car-outline",        label: "Free parking" },
-    { icon: "shield-outline",     label: "24/7 security" },
-    { icon: "water-outline",      label: "Shared pool & gym" },
-  ] as const,
-} as const;
+// Example stay window shown in the booking widget — the guest picks real
+// dates on the request screen. Nightly price + total are derived from the
+// listing.
+const NIGHTS = 2;
+const CHECK_IN = "Fri 12 Jun";
+const CHECK_OUT = "Sun 14 Jun";
 
-function picsum(seed: string) {
-  return `https://picsum.photos/seed/${seed}/1200/900`;
+function naira(n?: number | null) {
+  return n != null ? `₦${Math.round(n).toLocaleString("en-NG")}` : "—";
+}
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 }
 
 export default function ShortletDetailScreen() {
-  useLocalSearchParams<{ id?: string }>();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+    let active = true;
+    setLoading(true);
+    setError(false);
+    listingsService
+      .getById(id)
+      .then((l) => active && setListing(l))
+      .catch(() => active && setError(true))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-cream items-center justify-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator color={PRIMARY} />
+      </View>
+    );
+  }
+
+  if (error || !listing) {
+    return (
+      <View className="flex-1 bg-cream items-center justify-center px-8">
+        <Stack.Screen options={{ headerShown: false }} />
+        <Ionicons name="bed-outline" size={36} color={INK_3} />
+        <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+          This shortlet isn’t available
+        </Text>
+        <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+          It may have been removed or is no longer active.
+        </Text>
+        <Pressable
+          onPress={() => router.back()}
+          className="mt-5 px-5 py-2.5 rounded-full bg-ink active:opacity-80"
+        >
+          <Text className="text-white text-[13px] font-sans-bold">Go back</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return <ShortletDetail listing={listing} />;
+}
+
+function ShortletDetail({ listing }: { listing: Listing }) {
   const [guests, setGuests] = useState(2);
   const [saved, setSaved] = useState(false);
 
+  const agent = listing.agent;
+  const hostBadge =
+    [
+      agent?.verified ? "Verified host" : null,
+      agent?.agency,
+      agent?.yearsExperience
+        ? `${agent.yearsExperience} yr${agent.yearsExperience === 1 ? "" : "s"} on PropertyLoop`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "Verified host";
+  const features = listing.features?.slice(0, 6) ?? [];
+  const totalLabel = naira(listing.priceNaira * NIGHTS);
+
   const handleShare = () =>
     Share.share({
-      title: SHORTLET.title,
-      message: `${SHORTLET.title} — ${SHORTLET.nightlyPrice}/night · ${SHORTLET.address}`,
+      title: listing.title,
+      message: `${listing.title} — ${listing.priceLabel}/night · ${listing.address}`,
     }).catch(() => {});
 
   return (
@@ -58,7 +134,7 @@ export default function ShortletDetailScreen() {
         {/* Hero */}
         <View style={{ height: 360 }} className="relative">
           <Image
-            source={picsum(SHORTLET.imageSeed)}
+            source={listing.coverImage}
             style={{ width: "100%", height: "100%" }}
             contentFit="cover"
           />
@@ -121,33 +197,37 @@ export default function ShortletDetailScreen() {
                 Shortlet
               </Text>
             </View>
-            <View className="bg-primary-soft px-2 py-1 rounded-full flex-row items-center gap-1">
-              <Ionicons name="shield-checkmark" size={10} color={PRIMARY} />
-              <Text
-                className="text-[10px] font-sans-bold tracking-widest uppercase"
-                style={{ color: PRIMARY_INK }}
-              >
-                Verified
-              </Text>
-            </View>
-            <View className="ml-auto flex-row items-center gap-1">
-              <Ionicons name="star" size={12} color={ACCENT} />
-              <Text className="text-[11px] font-sans-bold text-ink">
-                {SHORTLET.rating} · {SHORTLET.stays} stays
-              </Text>
-            </View>
+            {listing.verified && (
+              <View className="bg-primary-soft px-2 py-1 rounded-full flex-row items-center gap-1">
+                <Ionicons name="shield-checkmark" size={10} color={PRIMARY} />
+                <Text
+                  className="text-[10px] font-sans-bold tracking-widest uppercase"
+                  style={{ color: PRIMARY_INK }}
+                >
+                  Verified
+                </Text>
+              </View>
+            )}
+            {listing.rating > 0 && (
+              <View className="ml-auto flex-row items-center gap-1">
+                <Ionicons name="star" size={12} color={ACCENT} />
+                <Text className="text-[11px] font-sans-bold text-ink">
+                  {listing.rating}
+                </Text>
+              </View>
+            )}
           </View>
 
           <Text
             className="font-sans-bold text-ink tracking-tight"
             style={{ fontSize: 22, lineHeight: 26 }}
           >
-            {SHORTLET.title}
+            {listing.title}
           </Text>
           <View className="flex-row items-center gap-1 mt-1.5">
             <Ionicons name="location-outline" size={14} color={INK_2} />
             <Text className="text-[13.5px] font-sans-medium text-ink-2">
-              {SHORTLET.address}
+              {listing.address}
             </Text>
           </View>
 
@@ -161,16 +241,16 @@ export default function ShortletDetailScreen() {
                 className="font-serif text-ink"
                 style={{ fontSize: 28, letterSpacing: -0.6 }}
               >
-                {SHORTLET.nightlyPrice}
+                {listing.priceLabel}
               </Text>
               <Text className="text-xs text-ink-3 font-sans-semibold">
-                / night
+                {listing.period ?? "/ night"}
               </Text>
             </View>
 
             <View className="mt-3 flex-row gap-2">
-              <DatePick label="Check-in" value={SHORTLET.checkIn} />
-              <DatePick label="Check-out" value={SHORTLET.checkOut} />
+              <DatePick label="Check-in" value={CHECK_IN} />
+              <DatePick label="Check-out" value={CHECK_OUT} />
             </View>
 
             <View className="mt-2 bg-cream-2 rounded-xl px-3 py-2.5 flex-row items-center gap-2">
@@ -207,46 +287,57 @@ export default function ShortletDetailScreen() {
             className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line"
             style={{ borderWidth: 0.5 }}
           >
-            <PLAvatar initials={SHORTLET.host.initials} size={46} tone="primary" />
+            <PLAvatar
+              initials={initialsOf(agent?.name)}
+              uri={agent?.avatarUrl}
+              size={46}
+              tone="primary"
+            />
             <View className="flex-1">
               <View className="flex-row items-center gap-1.5">
                 <Text className="text-[14px] font-sans-bold text-ink">
-                  {SHORTLET.host.name}
+                  {agent?.name ?? "PropertyLoop host"}
                 </Text>
-                <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
+                {agent?.verified && (
+                  <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
+                )}
               </View>
               <Text className="text-xs font-sans-semibold text-ink-3 mt-0.5">
-                {SHORTLET.host.badge}
+                {hostBadge}
               </Text>
             </View>
           </View>
 
-          {/* Amenities */}
-          <Text className="text-[14px] font-sans-bold text-ink mt-6 mb-2.5">
-            What's included
-          </Text>
-          <View className="flex-row flex-wrap" style={{ gap: 10 }}>
-            {SHORTLET.amenities.map((a) => (
-              <View
-                key={a.label}
-                className="bg-white rounded-xl border-line flex-row items-center gap-2.5"
-                style={{
-                  width: "48%",
-                  paddingHorizontal: 12,
-                  paddingVertical: 11,
-                  borderWidth: 0.5,
-                }}
-              >
-                <Ionicons name={a.icon} size={18} color={INK_2} />
-                <Text
-                  className="text-[12.5px] font-sans-semibold text-ink flex-1"
-                  numberOfLines={1}
-                >
-                  {a.label}
-                </Text>
+          {/* What's included */}
+          {features.length > 0 && (
+            <>
+              <Text className="text-[14px] font-sans-bold text-ink mt-6 mb-2.5">
+                What&apos;s included
+              </Text>
+              <View className="flex-row flex-wrap" style={{ gap: 10 }}>
+                {features.map((f) => (
+                  <View
+                    key={f}
+                    className="bg-white rounded-xl border-line flex-row items-center gap-2.5"
+                    style={{
+                      width: "48%",
+                      paddingHorizontal: 12,
+                      paddingVertical: 11,
+                      borderWidth: 0.5,
+                    }}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={18} color={PRIMARY} />
+                    <Text
+                      className="text-[12.5px] font-sans-semibold text-ink flex-1"
+                      numberOfLines={1}
+                    >
+                      {f}
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            </>
+          )}
         </View>
       </ScrollView>
 
@@ -264,20 +355,20 @@ export default function ShortletDetailScreen() {
         <View className="flex-row items-center gap-3">
           <View className="flex-1">
             <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
-              {SHORTLET.nights} nights total
+              {NIGHTS} nights total
             </Text>
             <Text
               className="font-serif text-ink"
               style={{ fontSize: 22, letterSpacing: -0.4, lineHeight: 24 }}
             >
-              {SHORTLET.totalLabel}
+              {totalLabel}
             </Text>
           </View>
           <Pressable
             onPress={() =>
               router.push({
                 pathname: "/shortlet-request",
-                params: { shortletId: SHORTLET.id },
+                params: { shortletId: listing.id },
               } as Href)
             }
             className="bg-primary rounded-full active:opacity-80"
@@ -289,7 +380,6 @@ export default function ShortletDetailScreen() {
           </Pressable>
         </View>
       </View>
-
     </View>
   );
 }
