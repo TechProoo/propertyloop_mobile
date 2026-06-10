@@ -38,15 +38,6 @@ export const NOTIFICATIONS: Notif[] = [
     href: "/(tabs)/account",
   },
   {
-    id: "n-3",
-    kind: "doc",
-    title: "Document needs signing",
-    detail: "Title-search authorisation · due tomorrow",
-    when: "3h ago",
-    unread: true,
-    href: "/sign-document",
-  },
-  {
     id: "n-4",
     kind: "vendor",
     title: "Bright Sparks Ltd marked the job complete",
