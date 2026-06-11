@@ -65,10 +65,35 @@ const messagesService = {
       .get<Message[]>(`/messages/conversations/${conversationId}`)
       .then((r) => r.data);
   },
-  sendMessage(conversationId: string, text: string): Promise<Message> {
+  sendMessage(
+    conversationId: string,
+    text: string,
+    attachmentUrls?: string[],
+  ): Promise<Message> {
     return api
-      .post<Message>(`/messages/conversations/${conversationId}`, { text })
+      .post<Message>(`/messages/conversations/${conversationId}`, {
+        ...(text ? { text } : {}),
+        ...(attachmentUrls?.length ? { attachmentUrls } : {}),
+      })
       .then((r) => r.data);
+  },
+  /** Upload one image/PDF (multipart) for a message. Returns the hosted URL. */
+  async uploadAttachment(
+    uri: string,
+    opts?: { name?: string; type?: string },
+  ): Promise<{ url: string; mimeType: string }> {
+    const form = new FormData();
+    form.append("file", {
+      uri,
+      name: opts?.name ?? `attachment-${Date.now()}`,
+      type: opts?.type ?? "application/octet-stream",
+    } as any);
+    const { data } = await api.post<{ url: string; mimeType: string }>(
+      "/upload/message-attachment",
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return { url: data.url, mimeType: data.mimeType };
   },
   markRead(conversationId: string): Promise<{ success: boolean }> {
     return api
