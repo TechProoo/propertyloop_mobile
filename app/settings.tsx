@@ -3,13 +3,20 @@ import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { type SettingsLink } from "@/mocks/buyer-extra";
 import { useAuth } from "@/context/auth";
 
-const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
+
+type SettingsLink = {
+  id: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  detail?: string;
+  href?: string;
+  destructive?: boolean;
+};
 
 // Only features that hit a real backend (or are static info/legal pages).
 const GROUPS: { label: string; links: SettingsLink[] }[] = [
@@ -65,8 +72,7 @@ export default function SettingsScreen() {
 
   const onLink = (link: SettingsLink) => {
     if (link.id === "out") return onSignOut();
-    if (link.href) return router.push(link.href as Href);
-    Alert.alert(link.title, "Coming soon.");
+    if (link.href) router.push(link.href as Href);
   };
 
   return (
