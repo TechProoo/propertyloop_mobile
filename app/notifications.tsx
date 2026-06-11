@@ -52,6 +52,9 @@ function hrefFor(n: AppNotification): Href | null {
   const d = n.data ?? {};
   if (d.purchaseId) return "/purchase-progress" as Href;
   if (d.offerId) return "/offers" as Href;
+  // Job events (request / dispute / paid) all notify the vendor — land them on
+  // the active-job screen, which surfaces the dispute banner when applicable.
+  if (d.jobId) return `/vendor-active-job/${d.jobId}` as Href;
   return null;
 }
 

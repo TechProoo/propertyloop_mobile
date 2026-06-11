@@ -108,39 +108,6 @@ export function getVendorRequest(id?: string): VendorRequest {
   return VENDOR_REQUESTS.find((r) => r.id === id) ?? VENDOR_REQUESTS[0];
 }
 
-// ─── Jobs (schedule) ───────────────────────────────────────────
-export type JobStatus = "next" | "confirmed" | "done";
-
-export type VendorJob = {
-  id: string;
-  time: string;
-  customer: { initials: string; name: string; tone: "primary" | "accent" | "neutral" };
-  service: string;
-  home: string;
-  amount: string;
-  status: JobStatus;
-  groupLabel: string;
-};
-
-export const VENDOR_JOBS: VendorJob[] = [
-  { id: "vj-1", time: "09:00", customer: { initials: "NA", name: "Ngozi Adeyemi",    tone: "primary" }, service: "Standard clean",       home: "Marina One · Flat 2C",       amount: "₦18,000", status: "done",      groupLabel: "Today · Fri 29 May" },
-  { id: "vj-2", time: "13:30", customer: { initials: "SO", name: "Seyi Okafor",      tone: "accent"  }, service: "Standard clean",       home: "Cedar Court · 14, Magodo",   amount: "₦18,000", status: "next",      groupLabel: "Today · Fri 29 May" },
-  { id: "vj-3", time: "10:00", customer: { initials: "AO", name: "Adebayo Okafor",   tone: "primary" }, service: "Standard clean",       home: "Sandbridge Court · 4B",      amount: "₦18,000", status: "confirmed", groupLabel: "Tomorrow · Sat 30 May" },
-  { id: "vj-4", time: "All day", customer: { initials: "LR", name: "Loop Realty",    tone: "accent"  }, service: "Post-construction",    home: "Hibiscus House, Lekki",      amount: "₦65,000", status: "confirmed", groupLabel: "Tomorrow · Sat 30 May" },
-];
-
-export function getVendorJob(id?: string): VendorJob {
-  return VENDOR_JOBS.find((j) => j.id === id) ?? VENDOR_JOBS[1];
-}
-
-// ─── Active job progress ───────────────────────────────────────
-export const ACTIVE_JOB_STEPS = [
-  { id: "way",     title: "On the way",  detail: "Marked at 1:18 PM" },
-  { id: "arrived", title: "Arrived",     detail: "Marked at 1:32 PM" },
-  { id: "started", title: "Started work", detail: "In progress · 48 min" },
-  { id: "done",    title: "Complete",    detail: "Mark done when finished" },
-];
-
 // ─── Earnings ──────────────────────────────────────────────────
 export const VENDOR_EARNINGS = {
   lifetime: "₦4,128,500",
