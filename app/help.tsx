@@ -13,7 +13,6 @@ const INK_3 = "#7f857f";
 const TOPICS: { id: string; icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap; label: string; href: string }[] = [
   { id: "escrow",  icon: "lock-closed-outline",   label: "Escrow",   href: "/escrow-info"   },
   { id: "logbook", icon: "document-text-outline", label: "Logbook",  href: "/logbook-info"  },
-  { id: "kyc",     icon: "shield-checkmark-outline", label: "Verify", href: "/verify-identity" },
   { id: "offers",  icon: "swap-horizontal-outline", label: "Offers",  href: "/offers"        },
 ];
 

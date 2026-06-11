@@ -99,9 +99,7 @@ export default function RootLayout() {
         <Stack.Screen name="notifications" options={{ headerShown: false }} />
         <Stack.Screen name="filters" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
-        <Stack.Screen name="payment" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="logbook/[propertyId]" options={{ headerShown: false }} />
-        <Stack.Screen name="verify-identity" options={{ headerShown: false }} />
         <Stack.Screen name="help" options={{ headerShown: false }} />
         {/* Polish-pass screens */}
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />

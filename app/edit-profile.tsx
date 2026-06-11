@@ -18,7 +18,6 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import usersService from "@/api/services/users";
 
-const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
@@ -211,25 +210,6 @@ export default function EditProfileScreen() {
               </Text>
             </View>
           </View>
-
-          {/* Verification banner */}
-          <Pressable
-            onPress={() => router.push("/verify-identity" as never)}
-            className="mt-6 bg-primary-soft rounded-2xl px-4 py-3.5 flex-row items-center gap-3 active:opacity-90"
-          >
-            <View className="w-10 h-10 rounded-xl bg-white items-center justify-center">
-              <Ionicons name="shield-checkmark" size={18} color={PRIMARY} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[13.5px] font-sans-bold" style={{ color: "#134a2d" }}>
-                Verified buyer
-              </Text>
-              <Text className="text-[11.5px]" style={{ color: "#134a2d", opacity: 0.75 }}>
-                NIN on file · last checked 28 May 2026
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={14} color="#134a2d" />
-          </Pressable>
         </ScrollView>
 
         {/* Sticky CTA */}

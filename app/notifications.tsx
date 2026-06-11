@@ -52,7 +52,6 @@ function hrefFor(n: AppNotification): Href | null {
   const d = n.data ?? {};
   if (d.purchaseId) return "/purchase-progress" as Href;
   if (d.offerId) return "/offers" as Href;
-  if (d.kycId) return "/verify-identity" as Href;
   return null;
 }
 
