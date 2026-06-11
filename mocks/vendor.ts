@@ -160,40 +160,6 @@ export const VENDOR_EARNINGS = {
 };
 
 // ─── Disputes ──────────────────────────────────────────────────
-export type DisputeMessage = {
-  id: string;
-  who: "customer" | "vendor" | "system";
-  author: string;
-  body: string;
-  photos?: number;
-};
-
-export const DISPUTE = {
-  id: "dp-1",
-  jobRef: "SL-2026-04790",
-  amountHeld: "₦31,500",
-  hoursLeft: 41,
-  customer: { initials: "TB", name: "Tunde Bello", tone: "accent" as const },
-  service: "Deep clean",
-  date: "27 May",
-  property: "Foreshore Mews",
-  amountTotal: "₦35,000",
-  customerClaim:
-    "The guest bathroom wasn't touched and the balcony is still dusty. Photos attached.",
-  customerPhotoCount: 2,
-  thread: [
-    {
-      id: "m-1", who: "customer" as const, author: "Tunde · Customer",
-      body: "The guest bathroom wasn't touched and the balcony is still dusty. Photos attached.",
-      photos: 2,
-    },
-    {
-      id: "m-2", who: "system" as const, author: "System",
-      body: "⚖️ PropertyLoop is mediating this dispute",
-    },
-  ] as DisputeMessage[],
-};
-
 // ─── Reviews ───────────────────────────────────────────────────
 export type Review = {
   id: string;

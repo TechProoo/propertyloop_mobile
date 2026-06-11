@@ -46,6 +46,36 @@ export interface VendorJob {
   } | null;
 }
 
+export type DisputeAuthorRole = "CUSTOMER" | "VENDOR" | "SYSTEM" | "ADMIN";
+
+export interface DisputeMessage {
+  id: string;
+  role: DisputeAuthorRole;
+  author: string;
+  body: string;
+  attachments: string[];
+  createdAt: string;
+}
+
+export interface JobDispute {
+  jobId: string;
+  jobRef: string;
+  status: string;
+  reason?: string | null;
+  disputedAt?: string | null;
+  responseDeadline?: string | null;
+  amountHeldNaira: number;
+  amountTotalNaira: number;
+  service?: string | null;
+  title?: string | null;
+  address?: string | null;
+  scheduledFor?: string | null;
+  completedAt?: string | null;
+  customer: { name?: string | null; avatar?: string | null };
+  vendor?: { id: string; name: string; avatar?: string | null } | null;
+  thread: DisputeMessage[];
+}
+
 export interface ListJobsParams {
   status?: JobStatus;
   page?: number;
@@ -107,6 +137,19 @@ const vendorJobsService = {
   dispute(id: string, disputeReason: string): Promise<VendorJob> {
     return api
       .post<VendorJob>(`/vendor-jobs/${id}/dispute`, { disputeReason })
+      .then((r) => r.data);
+  },
+  // ─── Dispute thread (vendor or buyer on the job) ─────────────────────────
+  getDispute(id: string): Promise<JobDispute> {
+    return api.get<JobDispute>(`/vendor-jobs/${id}/dispute`).then((r) => r.data);
+  },
+  addDisputeMessage(
+    id: string,
+    body: string,
+    attachments?: string[],
+  ): Promise<JobDispute> {
+    return api
+      .post<JobDispute>(`/vendor-jobs/${id}/dispute/messages`, { body, attachments })
       .then((r) => r.data);
   },
 };
