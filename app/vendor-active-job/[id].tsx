@@ -271,7 +271,23 @@ export default function VendorActiveJobScreen() {
           </>
         )}
 
-        {job.status === "COMPLETED" && (
+        {job.escrowStatus === "DISPUTED" ? (
+          <Pressable
+            onPress={() => router.push(`/vendor-dispute/${job.id}` as Href)}
+            className="mt-2 rounded-2xl px-4 py-3.5 flex-row items-center gap-2 active:opacity-90"
+            style={{ backgroundColor: "#fdf3eb", borderWidth: 1, borderColor: "#e4a87e" }}
+          >
+            <View className="flex-1">
+              <Text className="text-[12.5px] font-sans-bold" style={{ color: "#7a3a13" }}>
+                Customer raised a dispute
+              </Text>
+              <Text className="text-[11.5px] mt-0.5" style={{ color: "#7a3a13", opacity: 0.85 }}>
+                Respond with evidence so our team can review both sides.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#7a3a13" />
+          </Pressable>
+        ) : job.status === "COMPLETED" ? (
           <View className="mt-2 bg-primary-soft rounded-2xl px-4 py-3.5">
             <Text className="text-[12.5px] font-sans-bold" style={{ color: "#134a2d" }}>
               Waiting on the customer to confirm
@@ -280,7 +296,7 @@ export default function VendorActiveJobScreen() {
               Once they confirm, your share is released from escrow.
             </Text>
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
       {/* Sticky CTA */}
@@ -300,6 +316,14 @@ export default function VendorActiveJobScreen() {
           <Pressable onPress={complete} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>
             <Text className="text-white font-sans-bold text-[15px]">Mark complete & request release</Text>
           </Pressable>
+        ) : job.escrowStatus === "DISPUTED" ? (
+          <Pressable
+            onPress={() => router.push(`/vendor-dispute/${job.id}` as Href)}
+            className="rounded-full items-center active:opacity-80"
+            style={{ paddingVertical: 16, backgroundColor: "#c05a1f" }}
+          >
+            <Text className="text-white font-sans-bold text-[15px]">Respond to dispute</Text>
+          </Pressable>
         ) : (
           <View className="rounded-full items-center bg-cream-2" style={{ paddingVertical: 16 }}>
             <Text className="font-sans-bold text-[15px] text-ink-3">
@@ -308,7 +332,9 @@ export default function VendorActiveJobScreen() {
           </View>
         )}
         <Text className="text-center text-[11px] text-ink-3 mt-2">
-          Customer confirms → your share released from escrow
+          {job.escrowStatus === "DISPUTED"
+            ? "Our team reviews disputes within 48 hours"
+            : "Customer confirms → your share released from escrow"}
         </Text>
       </View>
     </SafeAreaView>
