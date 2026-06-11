@@ -132,20 +132,6 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   },
 ];
 
-// ─── Payment / fund escrow ──────────────────────────────────────
-export type PaymentMethod = {
-  id: string;
-  label: string;
-  detail: string;
-  icon: IonName;
-};
-
-export const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: "gtb",  label: "GTBank •• 4421",       detail: "Default · debit",  icon: "card-outline" },
-  { id: "psk",  label: "Paystack transfer",    detail: "Bank transfer · 2 min", icon: "swap-vertical-outline" },
-  { id: "ussd", label: "USSD · *737#",          detail: "Pay from any GTB line", icon: "phone-portrait-outline" },
-];
-
 // ─── Logbook viewer ─────────────────────────────────────────────
 export type LogbookEvent = {
   id: string;
@@ -181,13 +167,6 @@ export const LOGBOOK = {
     { id: "l-6", date: "Jul 2025", category: "Pest",       title: "Termite treatment",            detail: "Perimeter spray · 6-mo warranty",    cost: "₦28,000",  vendor: "PestAway NG",           verified: true,  receipt: true },
   ] as LogbookEvent[],
 };
-
-// ─── KYC / identity verification ────────────────────────────────
-export const KYC_STEPS = [
-  { id: "nin",     title: "NIN",          detail: "11-digit national ID number" },
-  { id: "selfie",  title: "Selfie",       detail: "Liveness check via camera" },
-  { id: "address", title: "Proof of address", detail: "Utility bill, < 3 months" },
-];
 
 // ─── Help / support ─────────────────────────────────────────────
 export type FaqItem = { q: string; a: string };
