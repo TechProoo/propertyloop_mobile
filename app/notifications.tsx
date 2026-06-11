@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import notificationsService, {
   type AppNotification,
 } from "@/api/services/notifications";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -48,13 +49,20 @@ function iconFor(type: string): {
   return { icon: "notifications-outline", tone: "neutral" };
 }
 
-function hrefFor(n: AppNotification): Href | null {
+function hrefFor(n: AppNotification, role?: string): Href | null {
   const d = n.data ?? {};
   if (d.purchaseId) return "/purchase-progress" as Href;
   if (d.offerId) return "/offers" as Href;
-  // Job events (request / dispute / paid) all notify the vendor — land them on
-  // the active-job screen, which surfaces the dispute banner when applicable.
-  if (d.jobId) return `/vendor-active-job/${d.jobId}` as Href;
+  // Job events route to the recipient's own job screen: the vendor's
+  // active-job view (surfaces the dispute banner), or the buyer's service-job
+  // view (where they confirm/release escrow).
+  if (d.jobId) {
+    return (
+      role === "VENDOR"
+        ? `/vendor-active-job/${d.jobId}`
+        : `/service-job/${d.jobId}`
+    ) as Href;
+  }
   return null;
 }
 
@@ -71,6 +79,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function NotificationsScreen() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<TabId>("All");
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +125,7 @@ export default function NotificationsScreen() {
       );
       notificationsService.markRead(n.id).catch(() => {});
     }
-    const href = hrefFor(n);
+    const href = hrefFor(n, user?.role);
     if (href) router.push(href);
   };
 
