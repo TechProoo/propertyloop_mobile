@@ -36,8 +36,8 @@ const agentsService = {
   getStats(): Promise<AgentStats> {
     return api.get<AgentStats>("/agents/me/stats").then((r) => r.data);
   },
-  getSubscription(): Promise<any> {
-    return api.get("/agents/me/subscription").then((r) => r.data);
+  getSubscription(): Promise<AgentSubscription> {
+    return api.get<AgentSubscription>("/agents/me/subscription").then((r) => r.data);
   },
   initCheckout(
     tier: "STANDARD" | "PRO",
@@ -46,6 +46,16 @@ const agentsService = {
       .post("/agents/me/subscription/checkout", { tier })
       .then((r) => r.data);
   },
+  cancelSubscription(): Promise<{ success: boolean }> {
+    return api.post("/agents/me/subscription/cancel", {}).then((r) => r.data);
+  },
 };
+
+export interface AgentSubscription {
+  tier: "FOUNDING" | "STANDARD" | "PRO" | null;
+  status: "ACTIVE" | "LAPSED" | "CANCELLED" | null;
+  renewsAt: string | null;
+  paystackSubscriptionCode: string | null;
+}
 
 export default agentsService;

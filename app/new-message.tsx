@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { Appear, PressableScale, stagger } from "@/components/anim/motion";
 import { useAuth } from "@/context/auth";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
 import viewingsService from "@/api/services/viewings";
@@ -164,22 +165,43 @@ export default function NewMessageScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Top bar */}
-      <View className="flex-row items-center justify-between px-5 pt-1 pb-2">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"
-        >
-          <Ionicons name="close" size={18} color={INK_2} />
-        </Pressable>
-        <Text className="text-[15px] font-sans-bold text-ink">New message</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <Appear from="down">
+        <View className="flex-row items-center justify-between px-5 pt-1 pb-2">
+          <PressableScale
+            onPress={() => router.back()}
+            activeScale={0.88}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#f0f0f0",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="close" size={18} color={INK_2} />
+          </PressableScale>
+          <Text className="text-[15px] font-sans-bold text-ink">
+            New message
+          </Text>
+          <View style={{ width: 36 }} />
+        </View>
+      </Appear>
 
       {/* Search */}
+      <Appear delay={50} from="down">
       <View className="px-5 pt-2">
         <View
-          className="bg-white rounded-full px-3.5 py-2.5 flex-row items-center gap-2.5 border-line"
-          style={{ borderWidth: 1 }}
+          className="bg-white rounded-full px-3.5 py-2.5 flex-row items-center gap-2.5"
+          style={{
+            borderWidth: 1,
+            borderColor: "#ece6df",
+            shadowColor: "#1a2120",
+            shadowOpacity: 0.04,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 1,
+          }}
         >
           <Ionicons name="search" size={16} color={INK_2} />
           <TextInput
@@ -199,15 +221,20 @@ export default function NewMessageScreen() {
           )}
         </View>
       </View>
+      </Appear>
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <BouncyLoader color={PRIMARY} />
         </View>
       ) : recipients.length === 0 ? (
+        <Appear delay={80} from="fade">
         <View className="flex-1 items-center justify-center px-10">
-          <View className="w-16 h-16 rounded-full bg-cream-2 items-center justify-center">
-            <Ionicons name="chatbubbles-outline" size={28} color={INK_2} />
+          <View
+            className="w-20 h-20 rounded-full items-center justify-center"
+            style={{ backgroundColor: "#e3efe7" }}
+          >
+            <Ionicons name="chatbubbles-outline" size={30} color={PRIMARY} />
           </View>
           <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
             No one to message yet
@@ -216,6 +243,7 @@ export default function NewMessageScreen() {
             Message an agent straight from a property, viewing, or offer and they’ll appear here.
           </Text>
         </View>
+        </Appear>
       ) : (
         <ScrollView
           contentContainerStyle={{ paddingBottom: 32 }}
@@ -225,10 +253,11 @@ export default function NewMessageScreen() {
             <>
               <SectionLabel>Recent</SectionLabel>
               <View className="px-2 pt-1">
-                {recent.map((r) => (
+                {recent.map((r, i) => (
                   <ContactRow
                     key={r.conversationId ?? r.userId}
                     recipient={r}
+                    index={i}
                     busy={startingId === r.userId}
                     onPress={() => onTap(r)}
                   />
@@ -251,10 +280,11 @@ export default function NewMessageScreen() {
               (query.trim().length === 0
                 ? filtered.filter((r) => !r.recent)
                 : filtered
-              ).map((r) => (
+              ).map((r, i) => (
                 <ContactRow
                   key={r.conversationId ?? r.userId}
                   recipient={r}
+                  index={i}
                   busy={startingId === r.userId}
                   onPress={() => onTap(r)}
                 />
@@ -277,37 +307,67 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function ContactRow({
   recipient,
+  index,
   busy,
   onPress,
 }: {
   recipient: Recipient;
+  index: number;
   busy: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={busy}
-      className="flex-row items-center gap-3 px-3 py-2.5 rounded-2xl active:bg-cream-2"
-      style={{ opacity: busy ? 0.6 : 1 }}
-    >
-      <PLAvatar initials={initialsOf(recipient.name)} uri={recipient.avatar} size={42} tone={recipient.tone} />
-      <View className="flex-1">
-        <View className="flex-row items-center gap-1.5">
-          <Text className="text-[14px] font-sans-bold text-ink">{recipient.name}</Text>
-          {recipient.role === "AGENT" && (
-            <Ionicons name="shield-checkmark" size={12} color={PRIMARY} />
-          )}
+    <Appear delay={stagger(index)}>
+      <PressableScale
+        onPress={onPress}
+        disabled={busy}
+        activeScale={0.98}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+          paddingHorizontal: 10,
+          paddingVertical: 10,
+          borderRadius: 18,
+          opacity: busy ? 0.6 : 1,
+        }}
+      >
+        <PLAvatar
+          initials={initialsOf(recipient.name)}
+          uri={recipient.avatar}
+          size={46}
+          tone={recipient.tone}
+        />
+        <View className="flex-1">
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-[14.5px] font-sans-bold text-ink">
+              {recipient.name}
+            </Text>
+            {recipient.role === "AGENT" && (
+              <Ionicons name="shield-checkmark" size={12} color={PRIMARY} />
+            )}
+          </View>
+          <Text className="text-[12px] text-ink-3 mt-0.5" numberOfLines={1}>
+            {recipient.subtitle}
+          </Text>
         </View>
-        <Text className="text-[11.5px] text-ink-3 mt-0.5" numberOfLines={1}>
-          {recipient.subtitle}
-        </Text>
-      </View>
-      {busy ? (
-        <BouncyLoader color={PRIMARY} />
-      ) : (
-        <Ionicons name="chevron-forward" size={14} color={INK_3} />
-      )}
-    </Pressable>
+        {busy ? (
+          <BouncyLoader color={PRIMARY} />
+        ) : (
+          <View
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: "#f0f0f0",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="chevron-forward" size={14} color={INK_3} />
+          </View>
+        )}
+      </PressableScale>
+    </Appear>
   );
 }

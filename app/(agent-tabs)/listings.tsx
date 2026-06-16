@@ -9,9 +9,11 @@ import {
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Appear, PressableScale, stagger } from "@/components/anim";
 import listingsService from "@/api/services/listings";
 import { useAuth } from "@/context/auth";
 import type { Listing, ListingType } from "@/api/types";
@@ -179,12 +181,25 @@ export default function AgentListingsScreen() {
                 )}
               </Text>
             </View>
-            <Pressable
+            <PressableScale
               onPress={() => router.push("/create-listing" as Href)}
-              className="w-11 h-11 rounded-full bg-primary items-center justify-center active:opacity-80"
+              activeScale={0.9}
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 23,
+                backgroundColor: PRIMARY,
+                alignItems: "center",
+                justifyContent: "center",
+                shadowColor: PRIMARY,
+                shadowOpacity: 0.3,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 3,
+              }}
             >
-              <Ionicons name="add" size={22} color="#ffffff" />
-            </Pressable>
+              <Ionicons name="add" size={23} color="#ffffff" />
+            </PressableScale>
           </View>
         </View>
 
@@ -202,6 +217,11 @@ export default function AgentListingsScreen() {
                   style={{
                     paddingVertical: 9,
                     backgroundColor: on ? PRIMARY : "transparent",
+                    shadowColor: PRIMARY,
+                    shadowOpacity: on ? 0.25 : 0,
+                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 3 },
+                    elevation: on ? 2 : 0,
                   }}
                 >
                   <Text
@@ -308,8 +328,10 @@ export default function AgentListingsScreen() {
             <Loader />
           ) : (
             <View className="px-4 pt-3 gap-3">
-              {mineFiltered.map((l) => (
-                <PortfolioCard key={l.id} listing={l} />
+              {mineFiltered.map((l, i) => (
+                <Appear key={l.id} delay={stagger(Math.min(i, 8))}>
+                  <PortfolioCard listing={l} />
+                </Appear>
               ))}
               {mineFiltered.length === 0 && (
                 <EmptyState
@@ -334,8 +356,10 @@ export default function AgentListingsScreen() {
                 {allTotal === 1 ? "listing" : "listings"}
               </Text>
             )}
-            {allFiltered.map((l) => (
-              <MarketCard key={l.id} listing={l} mine={l.agent?.id === myId} />
+            {allFiltered.map((l, i) => (
+              <Appear key={l.id} delay={stagger(Math.min(i, 8))}>
+                <MarketCard listing={l} mine={l.agent?.id === myId} />
+              </Appear>
             ))}
             {allFiltered.length === 0 && (
               <EmptyState
@@ -369,14 +393,29 @@ function EmptyState({
   detail: string;
 }) {
   return (
-    <View
-      className="bg-white rounded-2xl py-12 items-center border-line"
-      style={{ borderWidth: 0.5 }}
-    >
-      <Ionicons name={icon} size={28} color={INK_3} />
-      <Text className="text-[13px] font-sans-bold text-ink mt-2">{title}</Text>
-      <Text className="text-[11.5px] text-ink-3 mt-1 text-center px-8">{detail}</Text>
-    </View>
+    <Appear delay={60} from="fade">
+      <View
+        className="bg-white rounded-3xl py-12 items-center"
+        style={{
+          shadowColor: INK,
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 3 },
+          elevation: 1,
+        }}
+      >
+        <View
+          className="w-16 h-16 rounded-full items-center justify-center mb-3"
+          style={{ backgroundColor: "#e3efe7" }}
+        >
+          <Ionicons name={icon} size={28} color={PRIMARY} />
+        </View>
+        <Text className="text-[14px] font-sans-bold text-ink">{title}</Text>
+        <Text className="text-[12px] text-ink-3 mt-1.5 text-center px-8 leading-5">
+          {detail}
+        </Text>
+      </View>
+    </Appear>
   );
 }
 
@@ -384,10 +423,17 @@ function EmptyState({
 function PortfolioCard({ listing }: { listing: Listing }) {
   const meta = STATUS_UI[listing.status] ?? STATUS_UI.PAUSED;
   return (
-    <Pressable
+    <PressableScale
       onPress={() => router.push(`/agent-listing/${listing.id}` as Href)}
-      className="bg-white rounded-2xl overflow-hidden border-line active:opacity-90"
-      style={{ borderWidth: 0.5 }}
+      activeScale={0.985}
+      className="bg-white rounded-2xl overflow-hidden"
+      style={{
+        shadowColor: INK,
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 2,
+      }}
     >
       {/* Status header */}
       <View
@@ -436,7 +482,7 @@ function PortfolioCard({ listing }: { listing: Listing }) {
           </View>
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -444,17 +490,30 @@ function PortfolioCard({ listing }: { listing: Listing }) {
 function MarketCard({ listing, mine }: { listing: Listing; mine: boolean }) {
   const agent = listing.agent;
   return (
-    <Pressable
+    <PressableScale
       onPress={() => router.push(`/property/${listing.id}` as Href)}
-      className="bg-white rounded-2xl overflow-hidden border-line active:opacity-95"
-      style={{ borderWidth: 0.5 }}
+      activeScale={0.985}
+      className="bg-white rounded-2xl overflow-hidden"
+      style={{
+        shadowColor: INK,
+        shadowOpacity: 0.07,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 2,
+      }}
     >
       {/* Cover */}
       <View>
         <Image
           source={listing.coverImage}
-          style={{ width: "100%", height: 168 }}
+          style={{ width: "100%", height: 178 }}
           contentFit="cover"
+        />
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.55)"]}
+          locations={[0.45, 1]}
+          pointerEvents="none"
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
         {/* Price */}
         <View className="absolute left-3 bottom-3 bg-ink/90 rounded-full px-3 py-1.5">
@@ -526,7 +585,7 @@ function MarketCard({ listing, mine }: { listing: Listing; mine: boolean }) {
           </View>
         )}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { Appear, PressableScale } from "@/components/anim/motion";
 import messagesService, {
   type Conversation,
   type Message,
@@ -67,6 +68,22 @@ function formatTime(iso: string) {
     const ap = h >= 12 ? "PM" : "AM";
     h = h % 12 || 12;
     return `${h}:${m.toString().padStart(2, "0")} ${ap}`;
+  } catch {
+    return "";
+  }
+}
+
+function dayLabel(iso: string) {
+  try {
+    const d = new Date(iso);
+    const start = (x: Date) =>
+      new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((start(new Date()) - start(d)) / 86400000);
+    if (diff <= 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    if (diff < 7)
+      return d.toLocaleDateString(undefined, { weekday: "long" });
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   } catch {
     return "";
   }
@@ -289,13 +306,19 @@ export default function ConversationScreen() {
           className="flex-row items-center gap-2.5 px-4 pt-1 pb-3 bg-cream"
           style={{ borderBottomWidth: 0.5, borderBottomColor: LINE }}
         >
-          <Pressable
+          <PressableScale
             onPress={() => router.back()}
-            className="w-9 h-9 items-center justify-center"
+            activeScale={0.85}
             hitSlop={6}
+            style={{
+              width: 36,
+              height: 36,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <Ionicons name="chevron-back" size={20} color={INK} />
-          </Pressable>
+            <Ionicons name="chevron-back" size={22} color={INK} />
+          </PressableScale>
           {conv?.avatar ? (
             <Image
               source={{ uri: conv.avatar }}
@@ -362,24 +385,38 @@ export default function ConversationScreen() {
             keyboardShouldPersistTaps="handled"
           >
             {messages.length === 0 ? (
-              <View className="items-center mt-16 px-8">
-                <View
-                  className="w-14 h-14 rounded-full items-center justify-center mb-3"
-                  style={{ backgroundColor: "#e3efe7" }}
-                >
-                  <Ionicons name="chatbubbles" size={24} color={PRIMARY} />
+              <Appear delay={60} from="fade">
+                <View className="items-center mt-16 px-8">
+                  <View
+                    className="w-16 h-16 rounded-full items-center justify-center mb-4"
+                    style={{ backgroundColor: "#e3efe7" }}
+                  >
+                    <Ionicons name="chatbubbles" size={26} color={PRIMARY} />
+                  </View>
+                  <Text className="text-center text-[15px] font-sans-bold text-ink">
+                    Say hello
+                  </Text>
+                  <Text className="text-center text-[12.5px] text-ink-3 mt-1.5 leading-5">
+                    This is the start of your conversation
+                    {conv?.name ? ` with ${conv.name}` : ""}.
+                  </Text>
                 </View>
-                <Text className="text-center text-[13px] font-sans-semibold text-ink-2">
-                  Say hello
-                </Text>
-                <Text className="text-center text-[12px] text-ink-3 mt-1">
-                  Your messages will appear here.
-                </Text>
-              </View>
+              </Appear>
             ) : (
-              messages.map((m) => (
-                <Bubble key={m.id} message={m} onRetry={() => retry(m)} />
-              ))
+              messages.map((m, i) => {
+                const prev = messages[i - 1];
+                const showDay =
+                  !prev ||
+                  dayLabel(prev.createdAt) !== dayLabel(m.createdAt);
+                return (
+                  <View key={m.id}>
+                    {showDay ? <DaySeparator iso={m.createdAt} /> : null}
+                    <Appear from="up" duration={320}>
+                      <Bubble message={m} onRetry={() => retry(m)} />
+                    </Appear>
+                  </View>
+                );
+              })
             )}
           </ScrollView>
         )}
@@ -452,20 +489,32 @@ export default function ConversationScreen() {
 
         {/* Composer */}
         <View
-          className="px-3 pt-2 pb-6 flex-row items-end gap-2 bg-cream"
+          className="px-3 pt-2.5 pb-6 flex-row items-end gap-2 bg-cream"
           style={{ borderTopWidth: 0.5, borderTopColor: LINE }}
         >
-          <Pressable
+          <PressableScale
             onPress={onAttach}
-            className="w-9 h-9 rounded-full items-center justify-center active:opacity-70"
-            style={{ backgroundColor: CREAM_2 }}
+            activeScale={0.88}
             hitSlop={6}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: CREAM_2,
+            }}
           >
             <Ionicons name="add" size={20} color={INK_2} />
-          </Pressable>
+          </PressableScale>
           <View
-            className="flex-1 bg-cream-2 rounded-3xl px-4 py-2.5"
-            style={{ maxHeight: 120 }}
+            className="flex-1 rounded-3xl px-4 py-2.5"
+            style={{
+              maxHeight: 120,
+              backgroundColor: "#ffffff",
+              borderWidth: 1,
+              borderColor: "#ece6df",
+            }}
           >
             <TextInput
               value={draft}
@@ -476,22 +525,64 @@ export default function ConversationScreen() {
               style={{
                 fontFamily: "Inter_500Medium",
                 paddingVertical: 0,
-                minHeight: 20,
+                minHeight: 22,
               }}
               multiline
             />
           </View>
-          <Pressable
-            className="w-9 h-9 rounded-full bg-primary items-center justify-center active:opacity-80"
+          <PressableScale
             onPress={send}
             disabled={!canSend}
-            style={{ opacity: canSend ? 1 : 0.5 }}
+            activeScale={0.86}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: canSend ? PRIMARY : CREAM_2,
+              shadowColor: PRIMARY,
+              shadowOpacity: canSend ? 0.3 : 0,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 3 },
+              elevation: canSend ? 3 : 0,
+            }}
           >
-            <Ionicons name="arrow-up" size={18} color="#ffffff" />
-          </Pressable>
+            <Ionicons
+              name="arrow-up"
+              size={19}
+              color={canSend ? "#ffffff" : INK_3}
+            />
+          </PressableScale>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function DaySeparator({ iso }: { iso: string }) {
+  return (
+    <View style={{ alignItems: "center", marginVertical: 6 }}>
+      <View
+        style={{
+          paddingHorizontal: 12,
+          paddingVertical: 4,
+          borderRadius: 999,
+          backgroundColor: CREAM_2,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: "Inter_600SemiBold",
+            fontSize: 11,
+            color: INK_3,
+            letterSpacing: 0.2,
+          }}
+        >
+          {dayLabel(iso)}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -538,13 +629,18 @@ function Bubble({
           maxWidth: "80%",
           paddingHorizontal: atts.length && !message.text ? 6 : 12,
           paddingVertical: atts.length && !message.text ? 6 : 9,
-          borderRadius: 18,
-          borderBottomRightRadius: isMe ? 5 : 18,
-          borderBottomLeftRadius: isMe ? 18 : 5,
+          borderRadius: 20,
+          borderBottomRightRadius: isMe ? 6 : 20,
+          borderBottomLeftRadius: isMe ? 20 : 6,
           backgroundColor: bubbleBg,
           borderWidth: isMe ? 0 : 0.5,
           borderColor: LINE,
           gap: atts.length ? 6 : 0,
+          shadowColor: isMe ? PRIMARY : "#1a2120",
+          shadowOpacity: isMe ? 0.18 : 0.05,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 2 },
+          elevation: 1,
         }}
       >
         {/* Attachments */}

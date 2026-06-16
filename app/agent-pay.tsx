@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Linking,
   Pressable,
   ScrollView,
-  Switch,
   Text,
   View,
 } from "react-native";
@@ -15,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 
 type Tier = "FOUNDING" | "STANDARD" | "PRO";
-type PayMethod = "CARD" | "TRANSFER" | "USSD";
 
 const PRICES_NAIRA: Record<Tier, number> = {
   FOUNDING: 0,
@@ -37,12 +35,6 @@ function naira(n: number) {
   })}`;
 }
 
-function nextRenewalLabel() {
-  const d = new Date();
-  d.setMonth(d.getMonth() + 1);
-  return d.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
-}
-
 export default function AgentPayScreen() {
   const params = useLocalSearchParams<{ tier?: string }>();
   const tier: Tier = ((): Tier => {
@@ -55,11 +47,7 @@ export default function AgentPayScreen() {
   const total = planAmount + vat;
   const isFree = total === 0;
 
-  const [method, setMethod] = useState<PayMethod>("CARD");
-  const [autoRenew, setAutoRenew] = useState(true);
   const [paying, setPaying] = useState(false);
-
-  const renewalDate = useMemo(() => nextRenewalLabel(), []);
 
   const handlePay = async () => {
     if (paying) return;
@@ -147,60 +135,30 @@ export default function AgentPayScreen() {
             <Row label="Charged today" value={naira(total)} bold />
           </View>
 
-          {/* Pay with */}
-          <Text className="text-ink-3 text-[11px] font-sans-bold tracking-[1.5px] mt-7 mb-3">
-            PAY WITH
-          </Text>
-
-          <View className="gap-2.5">
-            <PaymentRow
-              brand="VISA"
-              brandBg="bg-slate-900"
-              title="•••• •••• •••• 4127"
-              subtitle="Adebayo Okafor · Visa · expires 09/27"
-              selected={method === "CARD"}
-              onPress={() => setMethod("CARD")}
-            />
-            <PaymentRow
-              brand="NGN"
-              brandBg="bg-slate-900"
-              title="Pay with bank transfer"
-              subtitle="Generate a one-time account · Paystack"
-              selected={method === "TRANSFER"}
-              onPress={() => setMethod("TRANSFER")}
-            />
-            <PaymentRow
-              brand="*770#"
-              brandBg="bg-white"
-              brandTextColor="text-ink-2"
-              title="USSD code"
-              subtitle="Pay from any Nigerian bank"
-              selected={method === "USSD"}
-              onPress={() => setMethod("USSD")}
-            />
-          </View>
-
-          {/* Auto-renew */}
+          {/* How payment works */}
           {!isFree && (
-            <View className="bg-cream-2 rounded-2xl px-4 py-3 mt-5 flex-row items-center gap-3">
-              <View className="w-9 h-9 rounded-full bg-white items-center justify-center">
-                <Ionicons name="refresh" size={18} color="#334155" />
+            <>
+              <Text className="text-ink-3 text-[11px] font-sans-bold tracking-[1.5px] mt-7 mb-3">
+                HOW PAYMENT WORKS
+              </Text>
+              <View className="bg-white rounded-3xl px-5 py-4 border border-line gap-3.5">
+                <InfoRow
+                  icon="card-outline"
+                  title="Pay any way you like"
+                  body="Card, bank transfer, or USSD — choose on the secure checkout."
+                />
+                <InfoRow
+                  icon="refresh-outline"
+                  title="Auto-renews monthly"
+                  body="Billed automatically each month. Cancel any time from your profile."
+                />
+                <InfoRow
+                  icon="lock-closed-outline"
+                  title="Your details stay safe"
+                  body="We never see your card. Payments are handled end-to-end by Paystack."
+                />
               </View>
-              <View className="flex-1">
-                <Text className="text-ink font-sans-semibold text-sm">
-                  Auto-renew monthly
-                </Text>
-                <Text className="text-ink-3 text-xs mt-0.5">
-                  Next charge {renewalDate} · cancel any time
-                </Text>
-              </View>
-              <Switch
-                value={autoRenew}
-                onValueChange={setAutoRenew}
-                trackColor={{ false: "#cbd5e1", true: "#047857" }}
-                thumbColor="#ffffff"
-              />
-            </View>
+            </>
           )}
 
           <Text className="text-ink-3 text-[11px] text-center mt-4">
@@ -260,52 +218,24 @@ function Row({
   );
 }
 
-function PaymentRow({
-  brand,
-  brandBg,
-  brandTextColor = "text-white",
+function InfoRow({
+  icon,
   title,
-  subtitle,
-  selected,
-  onPress,
+  body,
 }: {
-  brand: string;
-  brandBg: string;
-  brandTextColor?: string;
+  icon: keyof typeof Ionicons.glyphMap;
   title: string;
-  subtitle: string;
-  selected: boolean;
-  onPress: () => void;
+  body: string;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      className={`bg-white rounded-2xl px-4 py-3 flex-row items-center gap-3 border-2 ${
-        selected ? "border-primary" : "border-line"
-      } active:opacity-80`}
-    >
-      <View
-        className={`w-12 h-7 ${brandBg} rounded items-center justify-center border ${
-          brandBg === "bg-white" ? "border-line" : "border-transparent"
-        }`}
-      >
-        <Text className={`${brandTextColor} text-[10px] font-sans-bold`}>
-          {brand}
-        </Text>
+    <View className="flex-row items-start gap-3">
+      <View className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center">
+        <Ionicons name={icon} size={17} color="#1f6f43" />
       </View>
       <View className="flex-1">
         <Text className="text-ink font-sans-semibold text-sm">{title}</Text>
-        <Text className="text-ink-3 text-xs mt-0.5">{subtitle}</Text>
+        <Text className="text-ink-3 text-xs mt-0.5 leading-5">{body}</Text>
       </View>
-      <View
-        className={`w-5 h-5 rounded-full border-2 items-center justify-center ${
-          selected
-            ? "bg-primary border-primary"
-            : "bg-white border-line"
-        }`}
-      >
-        {selected && <View className="w-2 h-2 rounded-full bg-white" />}
-      </View>
-    </Pressable>
+    </View>
   );
 }
