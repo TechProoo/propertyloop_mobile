@@ -5,12 +5,34 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
-import agentsService from "@/api/services/agents";
+import agentsService, { type AgentSubscription } from "@/api/services/agents";
 
 const PRIMARY = "#1f6f43";
+const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
+const ACCENT = "#b9842c";
 const DESTRUCTIVE = "#b3261e";
+
+const TIER_LABEL: Record<string, string> = {
+  FOUNDING: "Founding",
+  STANDARD: "Standard",
+  PRO: "Pro",
+};
+const TIER_PRICE: Record<string, string> = {
+  FOUNDING: "Free forever",
+  STANDARD: "₦5,000 / month",
+  PRO: "₦12,000 / month",
+};
+
+function formatDate(iso?: string | null) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
@@ -43,12 +65,6 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     ],
   },
   {
-    label: "Billing",
-    rows: [
-      { id: "plan",    icon: "star-outline",   title: "Plan & billing",    detail: "Founding · free forever", href: "/agent-plan" },
-    ],
-  },
-  {
     label: "Preferences",
     rows: [
       { id: "notif",   icon: "notifications-outline", title: "Notifications", detail: "Messages, email, SMS", href: "/notification-settings" },
@@ -75,12 +91,49 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
 export default function AgentProfileTab() {
   const { user, signOut } = useAuth();
   const [me, setMe] = useState<any>(null);
+  const [sub, setSub] = useState<AgentSubscription | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  const loadSub = useCallback(() => {
+    agentsService.getSubscription().then(setSub).catch(() => setSub(null));
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       agentsService.getMe().then(setMe).catch(() => {});
-    }, []),
+      loadSub();
+    }, [loadSub]),
   );
+
+  const cancelSub = () => {
+    Alert.alert(
+      "Cancel subscription?",
+      "Your plan stays active until the end of the current billing period. After that you won't be charged and your active listings will be paused.",
+      [
+        { text: "Keep plan", style: "cancel" },
+        {
+          text: "Cancel plan",
+          style: "destructive",
+          onPress: async () => {
+            setCancelling(true);
+            try {
+              await agentsService.cancelSubscription();
+              loadSub();
+              Alert.alert(
+                "Subscription cancelled",
+                "You won't be charged again. Your plan stays active until it expires.",
+              );
+            } catch (e: any) {
+              const msg = e?.response?.data?.message ?? "Please try again.";
+              Alert.alert("Couldn't cancel", Array.isArray(msg) ? msg.join(", ") : msg);
+            } finally {
+              setCancelling(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const onLink = (l: LinkRow) => {
     if (l.id === "out") {
@@ -153,6 +206,14 @@ export default function AgentProfileTab() {
           </View>
         </View>
 
+        {/* Subscription / billing */}
+        <SubscriptionCard
+          sub={sub}
+          cancelling={cancelling}
+          onChangePlan={() => router.push("/agent-plan" as Href)}
+          onCancel={cancelSub}
+        />
+
         {/* Groups */}
         {GROUPS.map((g) => (
           <View key={g.label} className="mt-5">
@@ -208,5 +269,111 @@ export default function AgentProfileTab() {
         </Text>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SubscriptionCard({
+  sub,
+  cancelling,
+  onChangePlan,
+  onCancel,
+}: {
+  sub: AgentSubscription | null;
+  cancelling: boolean;
+  onChangePlan: () => void;
+  onCancel: () => void;
+}) {
+  const tier = sub?.tier ?? "FOUNDING";
+  const status = sub?.status ?? "ACTIVE";
+  const isPaid = tier === "STANDARD" || tier === "PRO";
+  const canCancel =
+    isPaid && status === "ACTIVE" && !!sub?.paystackSubscriptionCode;
+  const renewal = formatDate(sub?.renewsAt);
+
+  const statusMeta: Record<string, { label: string; color: string; bg: string }> =
+    {
+      ACTIVE: { label: "Active", color: "#134a2d", bg: "#e3efe7" },
+      LAPSED: { label: "Payment failed", color: "#7a4a12", bg: "#faf0dd" },
+      CANCELLED: { label: "Cancelling", color: "#7f857f", bg: "#efece6" },
+    };
+  const badge = statusMeta[status] ?? statusMeta.ACTIVE;
+
+  // Sub-line: what the renewal date means depends on status.
+  const renewalLine =
+    status === "LAPSED"
+      ? "Renew to reactivate your listings"
+      : status === "CANCELLED"
+        ? renewal
+          ? `Active until ${renewal}`
+          : "Ends at the current period"
+        : isPaid && renewal
+          ? `Renews ${renewal}`
+          : TIER_PRICE[tier];
+
+  return (
+    <View className="mt-5">
+      <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-2 px-1">
+        Plan & billing
+      </Text>
+      <View
+        className="bg-white rounded-2xl px-4 py-4 border-line"
+        style={{ borderWidth: 0.5 }}
+      >
+        <View className="flex-row items-center gap-3">
+          <View
+            className="w-10 h-10 rounded-xl items-center justify-center"
+            style={{ backgroundColor: "#f3eee2" }}
+          >
+            <Ionicons name="star" size={18} color={ACCENT} />
+          </View>
+          <View className="flex-1">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-[14.5px] font-sans-bold" style={{ color: INK }}>
+                {TIER_LABEL[tier] ?? "Founding"} plan
+              </Text>
+              <View
+                className="px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: badge.bg }}
+              >
+                <Text
+                  className="text-[10px] font-sans-bold tracking-wider uppercase"
+                  style={{ color: badge.color }}
+                >
+                  {badge.label}
+                </Text>
+              </View>
+            </View>
+            <Text className="text-[11.5px] text-ink-3 mt-0.5">{renewalLine}</Text>
+          </View>
+        </View>
+
+        <View className="flex-row gap-2 mt-4">
+          <Pressable
+            onPress={onChangePlan}
+            className="flex-1 rounded-full items-center bg-primary-soft active:opacity-80"
+            style={{ paddingVertical: 11 }}
+          >
+            <Text className="text-[12.5px] font-sans-bold" style={{ color: "#134a2d" }}>
+              {isPaid ? "Change plan" : "Upgrade plan"}
+            </Text>
+          </Pressable>
+          {canCancel && (
+            <Pressable
+              onPress={onCancel}
+              disabled={cancelling}
+              className="flex-1 rounded-full items-center bg-cream-2 active:opacity-80"
+              style={{ paddingVertical: 11, opacity: cancelling ? 0.6 : 1 }}
+            >
+              <Text
+                className="text-[12.5px] font-sans-bold"
+                style={{ color: DESTRUCTIVE }}
+              >
+                {cancelling ? "Cancelling…" : "Cancel"}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+    </View>
   );
 }
