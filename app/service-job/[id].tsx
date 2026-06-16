@@ -110,7 +110,10 @@ export default function ServiceJobScreen() {
     );
   }
 
-  const stageIdx = Math.max(0, ORDER.indexOf(job.status));
+  const isDisputed = job.status === "DISPUTED";
+  // A dispute can only be raised after completion, so keep the tracker at the
+  // "Complete" stage instead of letting indexOf(-1) reset it to "Booked".
+  const stageIdx = Math.max(0, ORDER.indexOf(isDisputed ? "COMPLETED" : job.status));
   const awaitingConfirm = job.status === "COMPLETED";
   const photos = job.completionProofImages ?? [];
 
@@ -139,16 +142,18 @@ export default function ServiceJobScreen() {
         {/* Status hero */}
         <View className="mt-4 rounded-2xl px-4 py-5" style={{ backgroundColor: INK }}>
           <View className="flex-row items-center gap-2">
-            <Ionicons name="shield-checkmark" size={14} color="#7ad296" />
+            <Ionicons name={isDisputed ? "alert-circle" : "shield-checkmark"} size={14} color={isDisputed ? "#f0a98e" : "#7ad296"} />
             <Text className="text-[11px] font-sans-bold tracking-widest uppercase text-white/70">
-              {job.status === "CONFIRMED" ? "Released · paid" : awaitingConfirm ? "Complete · awaiting your confirmation" : "In escrow"}
+              {job.status === "CONFIRMED" ? "Released · paid" : isDisputed ? "Disputed · under review" : awaitingConfirm ? "Complete · awaiting your confirmation" : "In escrow"}
             </Text>
           </View>
           <Text className="font-serif text-white mt-2" style={{ fontSize: 34, letterSpacing: -0.6 }}>{naira(job.vendorFee)}</Text>
           <Text className="text-[12.5px] text-white/70 mt-1 leading-5">
             {job.status === "CONFIRMED"
               ? "You released this payment to the vendor."
-              : "Held in escrow until you confirm. The vendor only gets paid when you say the work is good."}
+              : isDisputed
+                ? "Payment is paused while our team reviews your dispute."
+                : "Held in escrow until you confirm. The vendor only gets paid when you say the work is good."}
           </Text>
         </View>
 
@@ -169,6 +174,19 @@ export default function ServiceJobScreen() {
             );
           })}
         </View>
+
+        {/* Dispute notice */}
+        {isDisputed && (
+          <View className="mt-5 rounded-2xl px-4 py-3.5 flex-row gap-2.5 items-start" style={{ backgroundColor: "#fdecea", borderWidth: 1, borderColor: "#f1b5ab" }}>
+            <Ionicons name="alert-circle" size={16} color={DISPUTE} style={{ marginTop: 1 }} />
+            <View className="flex-1">
+              <Text className="text-[12.5px] font-sans-bold" style={{ color: "#7a1d12" }}>Dispute under review</Text>
+              <Text className="text-[11.5px] mt-0.5 leading-4" style={{ color: "#7a1d12", opacity: 0.85 }}>
+                We&apos;ve paused the escrow release. Our team will reach out to you and the vendor to resolve it.
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Details */}
         <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">Details</Text>

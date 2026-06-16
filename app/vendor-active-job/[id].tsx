@@ -271,7 +271,7 @@ export default function VendorActiveJobScreen() {
           </>
         )}
 
-        {job.escrowStatus === "DISPUTED" ? (
+        {job.status === "DISPUTED" ? (
           <Pressable
             onPress={() => router.push(`/vendor-dispute/${job.id}` as Href)}
             className="mt-2 rounded-2xl px-4 py-3.5 flex-row items-center gap-2 active:opacity-90"
@@ -316,7 +316,7 @@ export default function VendorActiveJobScreen() {
           <Pressable onPress={complete} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>
             <Text className="text-white font-sans-bold text-[15px]">Mark complete & request release</Text>
           </Pressable>
-        ) : job.escrowStatus === "DISPUTED" ? (
+        ) : job.status === "DISPUTED" ? (
           <Pressable
             onPress={() => router.push(`/vendor-dispute/${job.id}` as Href)}
             className="rounded-full items-center active:opacity-80"
@@ -332,7 +332,7 @@ export default function VendorActiveJobScreen() {
           </View>
         )}
         <Text className="text-center text-[11px] text-ink-3 mt-2">
-          {job.escrowStatus === "DISPUTED"
+          {job.status === "DISPUTED"
             ? "Our team reviews disputes within 48 hours"
             : "Customer confirms → your share released from escrow"}
         </Text>

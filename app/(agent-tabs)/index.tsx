@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import {
   Pressable,
-  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -11,7 +10,7 @@ import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { Appear, PressableScale, CountUp, stagger } from "@/components/anim";
+import { PressableScale, CountUp, Reveal, RevealScrollView } from "@/components/anim";
 import { useAuth } from "@/context/auth";
 import agentsService, { type AgentStats } from "@/api/services/agents";
 import listingsService from "@/api/services/listings";
@@ -116,7 +115,7 @@ export default function AgentHomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
-      <ScrollView
+      <RevealScrollView
         contentContainerStyle={{ paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
@@ -166,8 +165,8 @@ export default function AgentHomeScreen() {
               <>
                 <SectionLabel className="px-5 pt-4">Up next</SectionLabel>
                 <View className="px-4 pt-2.5 gap-2">
-                  {upNext.map((u, i) => (
-                    <Appear key={u.tag} delay={stagger(i, 40)}>
+                  {upNext.map((u) => (
+                    <Reveal key={u.tag}>
                     <PressableScale
                       onPress={() => router.push(u.href)}
                       className="bg-white rounded-2xl px-3.5 py-3 flex-row items-center gap-3 border-line"
@@ -183,7 +182,7 @@ export default function AgentHomeScreen() {
                       </View>
                       <Ionicons name="chevron-forward" size={15} color={INK_3} />
                     </PressableScale>
-                    </Appear>
+                    </Reveal>
                   ))}
                 </View>
               </>
@@ -233,16 +232,16 @@ export default function AgentHomeScreen() {
               </View>
             ) : (
               <View className="px-4 pt-2 gap-2">
-                {listings.slice(0, 3).map((l, i) => (
-                  <Appear key={l.id} delay={stagger(i, 40)}>
+                {listings.slice(0, 3).map((l) => (
+                  <Reveal key={l.id}>
                     <ListingRow listing={l} />
-                  </Appear>
+                  </Reveal>
                 ))}
               </View>
             )}
           </>
         )}
-      </ScrollView>
+      </RevealScrollView>
     </SafeAreaView>
   );
 }

@@ -18,7 +18,6 @@ export default function VendorAvailabilityScreen() {
   const [accepting, setAccepting] = useState(true);
   const [schedule, setSchedule]   = useState<Day[]>([]);
   const [maxJobs, setMaxJobs]     = useState(3);
-  const [responseCommitment, setResponseCommitment] = useState("");
   const [blackouts, setBlackouts] = useState<Blackout[]>([]);
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
@@ -29,7 +28,6 @@ export default function VendorAvailabilityScreen() {
       setAccepting(a.acceptingBookings);
       setSchedule(Array.isArray(a.schedule) ? a.schedule : []);
       setMaxJobs(a.maxJobsPerDay ?? 3);
-      setResponseCommitment(a.responseCommitment ?? "");
       setBlackouts(a.blackouts ?? []);
     } catch {
       /* leave defaults */
@@ -55,7 +53,6 @@ export default function VendorAvailabilityScreen() {
       await vendorsService.updateAvailability({
         acceptingBookings: accepting,
         maxJobsPerDay: maxJobs,
-        responseCommitment: responseCommitment || undefined,
         schedule,
       });
       Alert.alert("Availability saved", "Customers will see the new hours immediately.", [
@@ -177,7 +174,7 @@ export default function VendorAvailabilityScreen() {
           className="bg-white rounded-2xl overflow-hidden border-line mt-2"
           style={{ borderWidth: 0.5 }}
         >
-          <View className="flex-row items-center justify-between px-3.5 py-3" style={{ borderBottomWidth: 0.5, borderBottomColor: "#ece6df" }}>
+          <View className="flex-row items-center justify-between px-3.5 py-3">
             <Text className="text-[13.5px] font-sans-semibold text-ink">Max jobs per day</Text>
             <View className="flex-row items-center gap-3">
               <Pressable
@@ -198,12 +195,6 @@ export default function VendorAvailabilityScreen() {
                 <Ionicons name="add" size={14} color={INK_2} />
               </Pressable>
             </View>
-          </View>
-          <View className="flex-row items-center justify-between px-3.5 py-3">
-            <Text className="text-[13.5px] font-sans-semibold text-ink">Response commitment</Text>
-            <Text className="text-[13px] font-sans-bold text-primary">
-              {responseCommitment || "—"}
-            </Text>
           </View>
         </View>
 

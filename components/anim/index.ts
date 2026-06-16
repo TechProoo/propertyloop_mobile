@@ -11,3 +11,4 @@ export {
 } from "./motion";
 export { SaveHeart } from "./SaveHeart";
 export { TabBarIcon } from "./TabBarIcon";
+export { Reveal, RevealScrollView } from "./Reveal";

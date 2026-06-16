@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
@@ -23,8 +23,19 @@ export default function ServicesScreen() {
   const [selected, setSelected] = useState(SERVICE_CATEGORIES_GRID[0]?.id ?? "");
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
 
   const selectedCat = SERVICE_CATEGORIES_GRID.find((c) => c.id === selected);
+
+  const filtered = (() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return vendors;
+    return vendors.filter((v) =>
+      [v.name, v.category, v.serviceArea]
+        .filter(Boolean)
+        .some((s: string) => s.toLowerCase().includes(q)),
+    );
+  })();
 
   useEffect(() => {
     let on = true;
@@ -65,21 +76,27 @@ export default function ServicesScreen() {
           </Text>
         </View>
 
-        {/* Search pill */}
+        {/* Search */}
         <View className="px-5 pt-3.5">
           <View
             className="bg-white rounded-full px-3.5 py-3 flex-row items-center gap-2.5 border-line"
             style={{ borderWidth: 1 }}
           >
             <Ionicons name="search" size={17} color={INK_2} />
-            <Text className="flex-1 text-[14px] text-ink-3 font-sans-medium">
-              Search "leaking tap", "deep clean"…
-            </Text>
-            <View className="bg-cream-2 px-2 py-1 rounded-full">
-              <Text className="text-[11px] font-sans-bold text-ink-2">
-                Lekki
-              </Text>
-            </View>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search vendors by name, trade or area…"
+              placeholderTextColor={INK_3}
+              className="flex-1 text-[14px] text-ink font-sans-medium"
+              style={{ paddingVertical: 0 }}
+              returnKeyType="search"
+            />
+            {query.length > 0 && (
+              <Pressable onPress={() => setQuery("")} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color={INK_3} />
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -134,13 +151,15 @@ export default function ServicesScreen() {
           <View className="py-10 items-center">
             <BouncyLoader color={PRIMARY} />
           </View>
-        ) : vendors.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <Text className="px-5 pt-3 text-[12.5px] text-ink-3">
-            No {selectedCat?.label?.toLowerCase() ?? "vendors"} available yet.
+            {query.trim()
+              ? `No vendors match "${query.trim()}".`
+              : `No ${selectedCat?.label?.toLowerCase() ?? "vendors"} available yet.`}
           </Text>
         ) : (
           <View className="px-4 pt-2.5 gap-2.5">
-            {vendors.map((v) => (
+            {filtered.map((v) => (
               <VendorRow key={v.id} vendor={v} />
             ))}
           </View>

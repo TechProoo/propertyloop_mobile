@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import {
   Alert,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -12,7 +11,6 @@ import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
-  FadeInDown,
   FadeOut,
   LinearTransition,
 } from "react-native-reanimated";
@@ -20,7 +18,7 @@ import bookmarksService, {
   type PropertyBookmark,
 } from "@/api/services/bookmarks";
 import { toggleSaved } from "@/lib/favourites";
-import { Appear, PressableScale, stagger } from "@/components/anim";
+import { Appear, PressableScale, Reveal, RevealScrollView } from "@/components/anim";
 
 const PRIMARY = "#1f6f43";
 const ACCENT = "#b9842c";
@@ -68,7 +66,7 @@ export default function SavedScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
-      <ScrollView
+      <RevealScrollView
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
@@ -120,19 +118,20 @@ export default function SavedScreen() {
           />
         ) : (
           <View className="px-5 pt-5 gap-3.5">
-            {items.map((b, i) => (
+            {items.map((b) => (
               <Animated.View
                 key={b.id}
-                entering={FadeInDown.springify().damping(20).stiffness(140).delay(stagger(i, 40))}
                 exiting={FadeOut.duration(220)}
                 layout={LinearTransition.springify().damping(20).stiffness(160)}
               >
-                <SavedCard bookmark={b} onUnsave={() => unsave(b)} />
+                <Reveal>
+                  <SavedCard bookmark={b} onUnsave={() => unsave(b)} />
+                </Reveal>
               </Animated.View>
             ))}
           </View>
         )}
-      </ScrollView>
+      </RevealScrollView>
     </SafeAreaView>
   );
 }

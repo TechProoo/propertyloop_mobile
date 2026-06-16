@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import {
   Alert,
   Pressable,
-  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -11,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { Appear, PressableScale, CountUp, stagger } from "@/components/anim";
+import { Appear, PressableScale, CountUp, Reveal, RevealScrollView } from "@/components/anim";
 import { useAuth } from "@/context/auth";
 import vendorsService, { type VendorStats } from "@/api/services/vendors";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
@@ -88,7 +87,7 @@ export default function VendorHomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
+      <RevealScrollView contentContainerStyle={{ paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
         {/* Top bar */}
         <View className="flex-row items-center justify-between px-5 pt-1">
           <View className="flex-row items-center gap-2.5">
@@ -180,10 +179,10 @@ export default function VendorHomeScreen() {
               <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No new requests right now.</Text>
             ) : (
               <View className="px-4 pt-2 gap-2.5">
-                {requests.map((r, i) => (
-                  <Appear key={r.id} delay={stagger(i, 40)}>
+                {requests.map((r) => (
+                  <Reveal key={r.id}>
                     <RequestCard job={r} onChanged={load} />
-                  </Appear>
+                  </Reveal>
                 ))}
               </View>
             )}
@@ -199,16 +198,16 @@ export default function VendorHomeScreen() {
               <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No active jobs.</Text>
             ) : (
               <View className="px-4 pt-2 gap-2">
-                {active.map((j, i) => (
-                  <Appear key={j.id} delay={stagger(i, 40)}>
+                {active.map((j) => (
+                  <Reveal key={j.id}>
                     <JobMini job={j} />
-                  </Appear>
+                  </Reveal>
                 ))}
               </View>
             )}
           </>
         )}
-      </ScrollView>
+      </RevealScrollView>
     </SafeAreaView>
   );
 }
