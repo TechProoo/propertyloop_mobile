@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { Appear, PressableScale, SaveHeart } from "@/components/anim";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import { RichText } from "@/lib/richText";
 import { tapLight, tapMedium } from "@/lib/haptics";
 import listingsService from "@/api/services/listings";
@@ -113,6 +114,8 @@ function ListingDetail({
   const insets = useSafeAreaInsets();
   const [startingChat, setStartingChat] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
   const period = listing.period ?? "";
 
   // `images` already includes the cover as its first element; fall back to the
@@ -210,12 +213,19 @@ function ListingDetail({
             onScroll={onPhotoScroll}
             scrollEventThrottle={16}
             scrollEnabled={photoCount > 1}
-            renderItem={({ item }) => (
-              <Image
-                source={item}
-                style={{ width: screenW, height: 360 }}
-                contentFit="cover"
-              />
+            renderItem={({ item, index }) => (
+              <Pressable
+                onPress={() => {
+                  setViewerIndex(index);
+                  setViewerOpen(true);
+                }}
+              >
+                <Image
+                  source={item}
+                  style={{ width: screenW, height: 360 }}
+                  contentFit="cover"
+                />
+              </Pressable>
             )}
           />
           <View
@@ -566,6 +576,14 @@ function ListingDetail({
           </PressableScale>
         </View>
       </View>
+
+      {/* Full-screen photo viewer */}
+      <PhotoViewer
+        visible={viewerOpen}
+        images={gallery}
+        initialIndex={viewerIndex}
+        onClose={() => setViewerOpen(false)}
+      />
     </View>
   );
 }
