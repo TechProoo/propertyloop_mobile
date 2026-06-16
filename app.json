@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "ng.propertyloop.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -44,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c9560cba-72ee-4279-8252-59c45f2c5b75"
+      }
     }
   }
 }

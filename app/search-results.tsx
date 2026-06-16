@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -129,7 +129,7 @@ export default function SearchResultsScreen() {
       {/* Results */}
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : error ? (
         <Empty
@@ -169,7 +169,7 @@ export default function SearchResultsScreen() {
             <ResultCard key={c.id} listing={c} />
           ))}
           {loadingMore && (
-            <ActivityIndicator color={PRIMARY} style={{ marginTop: 4 }} />
+            <BouncyLoader color={PRIMARY} style={{ marginTop: 4 }} />
           )}
           {!hasMore && (
             <Text className="text-center text-[12px] text-ink-3 font-sans-semibold pt-1">

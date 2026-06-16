@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, type Href } from "expo-router";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import vendorEarningsService, {
@@ -93,7 +94,7 @@ export default function VendorEarningsScreen() {
 
         {loading ? (
           <View className="py-16 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : (
           <>

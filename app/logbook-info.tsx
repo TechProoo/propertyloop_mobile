@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import listingsService from "@/api/services/listings";
@@ -202,7 +203,7 @@ export default function LogbookInfoScreen() {
           style={{ paddingVertical: 16, opacity: opening ? 0.7 : 1, minHeight: 52 }}
         >
           {opening ? (
-            <ActivityIndicator color="#ffffff" />
+            <BouncyLoader color="#ffffff" />
           ) : (
             <Text className="text-white font-sans-bold text-[15px]">
               View a sample logbook

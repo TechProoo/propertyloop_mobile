@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import vendorsService, { type VendorStats } from "@/api/services/vendors";
@@ -91,7 +91,7 @@ export default function VendorHomeScreen() {
         {/* Top bar */}
         <View className="flex-row items-center justify-between px-5 pt-1">
           <View className="flex-row items-center gap-2.5">
-            <PLAvatar initials={initialsOf(user?.name)} size={40} tone="primary" />
+            <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
             <View>
               <Text className="text-[11px] font-sans-bold text-ink-3">{greeting}</Text>
               <Text className="text-[16px] font-sans-bold text-ink">{user?.name ?? "Vendor"}</Text>
@@ -157,7 +157,7 @@ export default function VendorHomeScreen() {
 
         {loading ? (
           <View className="py-16 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : (
           <>
@@ -253,7 +253,7 @@ function RequestCard({ job, onChanged }: { job: VendorJob; onChanged: () => void
       </Pressable>
       {busy ? (
         <View className="py-2.5 items-center" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : (
         <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>

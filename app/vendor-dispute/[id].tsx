@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -8,6 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -130,7 +130,7 @@ export default function VendorDisputeScreen() {
     return (
       <View className="flex-1 bg-cream items-center justify-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       </View>
     );
   }
@@ -318,7 +318,7 @@ export default function VendorDisputeScreen() {
           style={{ paddingVertical: 16, minHeight: 54, opacity: submitting ? 0.7 : 1 }}
         >
           {submitting ? (
-            <ActivityIndicator color="#ffffff" />
+            <BouncyLoader color="#ffffff" />
           ) : (
             <Text className="text-white font-sans-bold text-[15px]">
               Submit response & evidence

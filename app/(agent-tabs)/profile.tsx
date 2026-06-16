@@ -125,7 +125,7 @@ export default function AgentProfileTab() {
           style={{ borderWidth: 0.5 }}
         >
           <View className="flex-row items-center gap-3">
-            <PLAvatar initials={initialsOf(user?.name)} size={60} tone="primary" />
+            <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={60} tone="primary" />
             <View className="flex-1">
               <View className="flex-row items-center gap-1.5">
                 <Text className="text-[16px] font-sans-bold text-ink">

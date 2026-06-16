@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
@@ -10,6 +9,7 @@ import {
 import { Stack, router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
@@ -202,7 +202,7 @@ export default function NewMessageScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : recipients.length === 0 ? (
         <View className="flex-1 items-center justify-center px-10">
@@ -304,7 +304,7 @@ function ContactRow({
         </Text>
       </View>
       {busy ? (
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       ) : (
         <Ionicons name="chevron-forward" size={14} color={INK_3} />
       )}

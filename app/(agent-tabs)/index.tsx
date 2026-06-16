@@ -1,11 +1,11 @@
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -122,7 +122,7 @@ export default function AgentHomeScreen() {
         {/* Hero */}
         <View className="bg-primary-soft px-5 pt-3 pb-5">
           <View className="flex-row items-center gap-3.5">
-            <PLAvatar initials={initialsOf(user?.name)} size={56} tone="primary" />
+            <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={56} tone="primary" />
             <View className="flex-1">
               <Text
                 className="text-[11px] font-sans-bold tracking-widest uppercase"
@@ -156,7 +156,7 @@ export default function AgentHomeScreen() {
 
         {loading ? (
           <View className="py-16 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : (
           <>
