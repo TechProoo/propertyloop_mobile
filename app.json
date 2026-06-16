@@ -8,6 +8,12 @@
     "scheme": "propertyloopmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "updates": {
+      "url": "https://u.expo.dev/c9560cba-72ee-4279-8252-59c45f2c5b75"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "ios": {
       "supportsTablet": true
     },
