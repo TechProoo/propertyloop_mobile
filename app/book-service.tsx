@@ -12,7 +12,7 @@ import {
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorsService from "@/api/services/vendors";
 import vendorJobsService from "@/api/services/vendorJobs";
@@ -59,6 +59,7 @@ export default function BookServiceScreen() {
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!vendorId) { setLoading(false); return; }
@@ -269,7 +270,7 @@ export default function BookServiceScreen() {
         </ScrollView>
 
         {/* Sticky CTA */}
-        <View className="absolute left-0 right-0 bottom-0 border-line" style={{ backgroundColor: "rgba(245,240,235,0.96)", borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 30 }}>
+        <View className="absolute left-0 right-0 bottom-0 border-line" style={{ backgroundColor: "rgba(245,240,235,0.96)", borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
           <Pressable
             disabled={submitting || !service}
             className="bg-primary rounded-full items-center active:opacity-80"

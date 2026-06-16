@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import {
+  FlatList,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   ScrollView,
   Share,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
@@ -101,8 +105,26 @@ export default function ShortletDetailScreen() {
 }
 
 function ShortletDetail({ listing }: { listing: Listing }) {
+  const { width: screenW } = useWindowDimensions();
   const [guests, setGuests] = useState(2);
   const [saved, setSaved] = useState(false);
+  const [activePhoto, setActivePhoto] = useState(0);
+
+  // `images` already includes the cover as its first element; dedupe so a
+  // repeated cover doesn't create a phantom slide.
+  const gallery = Array.from(
+    new Set(
+      (listing.images?.length ? listing.images : [listing.coverImage]).filter(
+        Boolean,
+      ),
+    ),
+  );
+  const photoCount = gallery.length;
+
+  const onPhotoScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / screenW);
+    if (i !== activePhoto) setActivePhoto(i);
+  };
 
   const agent = listing.agent;
   const hostBadge =
@@ -133,12 +155,25 @@ function ShortletDetail({ listing }: { listing: Listing }) {
       >
         {/* Hero */}
         <View style={{ height: 360 }} className="relative">
-          <Image
-            source={listing.coverImage}
-            style={{ width: "100%", height: "100%" }}
-            contentFit="cover"
+          <FlatList
+            data={gallery}
+            keyExtractor={(uri, i) => `${i}-${uri}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={onPhotoScroll}
+            scrollEventThrottle={16}
+            scrollEnabled={photoCount > 1}
+            renderItem={({ item }) => (
+              <Image
+                source={item}
+                style={{ width: screenW, height: 360 }}
+                contentFit="cover"
+              />
+            )}
           />
           <View
+            pointerEvents="none"
             style={{
               position: "absolute",
               top: 0,
@@ -180,6 +215,41 @@ function ShortletDetail({ listing }: { listing: Listing }) {
               </Pressable>
             </View>
           </View>
+
+          {/* Photo counter */}
+          {photoCount > 1 && (
+            <View
+              className="absolute right-4 flex-row items-center gap-1 px-2.5 py-1 rounded-full"
+              style={{ bottom: 56, backgroundColor: "rgba(0,0,0,0.55)" }}
+            >
+              <Ionicons name="image" size={11} color="#ffffff" />
+              <Text className="text-[11px] font-sans-bold text-white">
+                {activePhoto + 1} / {photoCount}
+              </Text>
+            </View>
+          )}
+
+          {/* Page indicator dots */}
+          {photoCount > 1 && photoCount <= 10 && (
+            <View
+              className="absolute left-0 right-0 flex-row items-center justify-center gap-1.5"
+              style={{ bottom: 58 }}
+              pointerEvents="none"
+            >
+              {gallery.map((_, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: i === activePhoto ? 18 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor:
+                      i === activePhoto ? "#ffffff" : "rgba(255,255,255,0.55)",
+                  }}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Body */}

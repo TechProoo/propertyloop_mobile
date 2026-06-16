@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -40,6 +40,7 @@ export default function ListingDefaultsScreen() {
     "Thanks for reaching out — I'll get back to you shortly. For urgent viewings, please call or WhatsApp.",
   );
   const [requireVerified, setRequireVerified] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const toggleDay = (d: Day) =>
     setOpenDays((arr) =>
@@ -259,7 +260,7 @@ export default function ListingDefaultsScreen() {
             borderTopWidth: 0.5,
             paddingHorizontal: 16,
             paddingTop: 14,
-            paddingBottom: 28,
+            paddingBottom: Math.max(insets.bottom, 20) + 10,
           }}
         >
           <Pressable

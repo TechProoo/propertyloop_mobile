@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import { Appear, PressableScale, stagger } from "@/components/anim";
+import { tapSelection, tapMedium } from "@/lib/haptics";
 
 type Role = "BUYER" | "AGENT" | "VENDOR";
 
@@ -105,37 +112,46 @@ export default function RoleSelectScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Heading */}
-          <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
-            How will you use{"\n"}
-            <Text className="font-serif-italic">propertyloop</Text>?
-          </Text>
-          <Text className="text-ink-3 text-sm mt-2 leading-5">
-            Pick one to start — you can add other roles later from settings.
-          </Text>
+          <Appear delay={60}>
+            <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
+              How will you use{"\n"}
+              <Text className="font-serif-italic">propertyloop</Text>?
+            </Text>
+            <Text className="text-ink-3 text-sm mt-2 leading-5">
+              Pick one to start — you can add other roles later from settings.
+            </Text>
+          </Appear>
 
           {/* Role cards */}
           <View className="mt-6 gap-4">
-            {CARDS.map((card) => (
-              <RoleCardView
-                key={card.id}
-                card={card}
-                selected={selected === card.id}
-                onPress={() => setSelected(card.id)}
-              />
+            {CARDS.map((card, i) => (
+              <Appear key={card.id} delay={stagger(i, 160)}>
+                <RoleCardView
+                  card={card}
+                  selected={selected === card.id}
+                  onPress={() => {
+                    tapSelection();
+                    setSelected(card.id);
+                  }}
+                />
+              </Appear>
             ))}
           </View>
         </ScrollView>
 
         {/* Sticky CTA */}
         <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
-          <Pressable
-            onPress={handleContinue}
-            className="bg-primary rounded-full py-4 items-center active:opacity-80"
+          <PressableScale
+            onPress={() => {
+              tapMedium();
+              handleContinue();
+            }}
+            className="bg-primary rounded-full py-4 items-center"
           >
             <Text className="text-white font-sans-semibold text-base">
               {current.ctaLabel}
             </Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </SafeAreaView>
     </View>
@@ -151,10 +167,24 @@ function RoleCardView({
   selected: boolean;
   onPress: () => void;
 }) {
+  // Selected cards lift slightly on a spring — gives the choice physical weight.
+  const sel = useSharedValue(selected ? 1 : 0);
+  useEffect(() => {
+    sel.value = withSpring(selected ? 1 : 0, { damping: 15, stiffness: 200 });
+  }, [selected, sel]);
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + sel.value * 0.018 }],
+  }));
+  const checkStyle = useAnimatedStyle(() => ({
+    opacity: sel.value,
+    transform: [{ scale: sel.value }],
+  }));
+
   return (
+    <Animated.View style={cardStyle}>
     <Pressable
       onPress={onPress}
-      className={`rounded-3xl p-5 border-2 active:opacity-90 ${
+      className={`rounded-3xl p-5 border-2 ${
         selected
           ? "bg-primary-soft border-primary"
           : "bg-white border-line"
@@ -174,7 +204,9 @@ function RoleCardView({
               : "bg-white border-line"
           }`}
         >
-          {selected && <Text className="text-white text-xs font-sans-bold">✓</Text>}
+          <Animated.Text style={checkStyle} className="text-white text-xs font-sans-bold">
+            ✓
+          </Animated.Text>
         </View>
       </View>
 
@@ -213,5 +245,6 @@ function RoleCardView({
         </View>
       )}
     </Pressable>
+    </Animated.View>
   );
 }

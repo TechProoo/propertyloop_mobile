@@ -60,7 +60,18 @@ export default function RootLayout() {
     <AuthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <SessionRedirect />
-        <Stack initialRouteName="welcome">
+        <Stack
+          initialRouteName="welcome"
+          screenOptions={{
+            // App-wide push feel: cards slide in from the right with the
+            // platform's native gesture-driven back-swipe. Modal screens opt
+            // into their own `presentation: 'modal'` per-screen below.
+            animation: "slide_from_right",
+            animationDuration: 280,
+            gestureEnabled: true,
+            contentStyle: { backgroundColor: "#ffffff" },
+          }}
+        >
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="intro" options={{ headerShown: false }} />
         <Stack.Screen name="role-select" options={{ headerShown: false }} />
@@ -85,6 +96,8 @@ export default function RootLayout() {
         <Stack.Screen name="book-service" options={{ headerShown: false, presentation: 'modal' }} />
         {/* Returning user login (R1, R2) */}
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        {/* Email verification — "check your inbox" after signup / blocked login */}
+        <Stack.Screen name="verify-email-sent" options={{ headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: 'modal' }} />
         {/* Inbox thread */}
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />

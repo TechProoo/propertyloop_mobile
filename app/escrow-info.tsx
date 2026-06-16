@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -37,6 +37,7 @@ const STEPS = [
 ];
 
 export default function EscrowInfoScreen() {
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -164,7 +165,7 @@ export default function EscrowInfoScreen() {
       {/* Sticky CTA */}
       <View
         className="absolute left-0 right-0 bottom-0 bg-cream"
-        style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28 }}
+        style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
       >
         <Pressable
           onPress={() => router.back()}

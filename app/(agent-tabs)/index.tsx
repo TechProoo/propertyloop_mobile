@@ -11,6 +11,7 @@ import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { Appear, PressableScale, CountUp, stagger } from "@/components/anim";
 import { useAuth } from "@/context/auth";
 import agentsService, { type AgentStats } from "@/api/services/agents";
 import listingsService from "@/api/services/listings";
@@ -165,11 +166,11 @@ export default function AgentHomeScreen() {
               <>
                 <SectionLabel className="px-5 pt-4">Up next</SectionLabel>
                 <View className="px-4 pt-2.5 gap-2">
-                  {upNext.map((u) => (
-                    <Pressable
-                      key={u.tag}
+                  {upNext.map((u, i) => (
+                    <Appear key={u.tag} delay={stagger(i, 40)}>
+                    <PressableScale
                       onPress={() => router.push(u.href)}
-                      className="bg-white rounded-2xl px-3.5 py-3 flex-row items-center gap-3 border-line active:opacity-90"
+                      className="bg-white rounded-2xl px-3.5 py-3 flex-row items-center gap-3 border-line"
                       style={{ borderWidth: 0.5 }}
                     >
                       <View className="flex-1">
@@ -181,7 +182,8 @@ export default function AgentHomeScreen() {
                         </Text>
                       </View>
                       <Ionicons name="chevron-forward" size={15} color={INK_3} />
-                    </Pressable>
+                    </PressableScale>
+                    </Appear>
                   ))}
                 </View>
               </>
@@ -231,8 +233,10 @@ export default function AgentHomeScreen() {
               </View>
             ) : (
               <View className="px-4 pt-2 gap-2">
-                {listings.slice(0, 3).map((l) => (
-                  <ListingRow key={l.id} listing={l} />
+                {listings.slice(0, 3).map((l, i) => (
+                  <Appear key={l.id} delay={stagger(i, 40)}>
+                    <ListingRow listing={l} />
+                  </Appear>
                 ))}
               </View>
             )}
@@ -249,9 +253,11 @@ function StatTile({ n, l }: { n: number; l: string }) {
       className="flex-1 bg-white rounded-xl border-line"
       style={{ borderWidth: 0.5, paddingHorizontal: 8, paddingVertical: 10 }}
     >
-      <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>
-        {n}
-      </Text>
+      <CountUp
+        value={n}
+        className="font-serif text-ink"
+        style={{ fontSize: 20, letterSpacing: -0.4 }}
+      />
       <Text className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5">
         {l}
       </Text>
@@ -285,23 +291,24 @@ function QuickAction({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      className="flex-1 bg-white rounded-2xl items-center justify-center gap-1.5 py-4 border-line active:opacity-90"
-      style={{ borderWidth: 0.5 }}
+      style={{ flex: 1, borderWidth: 0.5 }}
+      className="bg-white rounded-2xl items-center justify-center gap-1.5 py-4 border-line"
     >
       <Ionicons name={icon} size={22} color={PRIMARY} />
       <Text className="text-[12px] font-sans-bold text-ink">{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 function ListingRow({ listing }: { listing: Listing }) {
   const meta = STATUS_UI[listing.status] ?? STATUS_UI.PAUSED;
   return (
-    <Pressable
+    <PressableScale
       onPress={() => router.push(`/agent-listing/${listing.id}` as Href)}
-      className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line active:opacity-90"
+      activeScale={0.975}
+      className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line"
       style={{ borderWidth: 0.5 }}
     >
       <Image
@@ -333,6 +340,6 @@ function ListingRow({ listing }: { listing: Listing }) {
       <Text className="font-serif text-ink" style={{ fontSize: 15, letterSpacing: -0.3 }}>
         {listing.priceLabel}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }

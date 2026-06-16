@@ -1,7 +1,8 @@
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
+import { TabBarIcon } from "@/components/anim";
 
 const PRIMARY = "#1f6f43"; // brand green — active tab (was blue in the reference)
 const INK_3 = "#7f857f";
@@ -21,6 +22,11 @@ const TAB_ICON: Record<string, { off: IonName; on: IonName }> = {
 };
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  // Lift the bar clear of the system gesture / nav area, plus a little
+  // breathing room so the icons don't hug the bottom edge.
+  const bottomPad = Math.max(insets.bottom, 12) + 6;
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -38,17 +44,18 @@ export default function TabLayout() {
           backgroundColor: "#ffffff",
           borderTopWidth: 0.5,
           borderTopColor: LINE,
-          height: Platform.OS === "ios" ? 84 : 64,
+          height: 54 + bottomPad,
           paddingTop: 8,
-          paddingBottom: Platform.OS === "ios" ? 24 : 10,
+          paddingBottom: bottomPad,
         },
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICON[route.name] ?? TAB_ICON.index;
           return (
-            <Ionicons
+            <TabBarIcon
+              focused={focused}
+              color={color}
               name={focused ? icons.on : icons.off}
               size={23}
-              color={color}
             />
           );
         },

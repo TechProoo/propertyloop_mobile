@@ -13,7 +13,7 @@ import { Stack, router } from "expo-router";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import usersService from "@/api/services/users";
@@ -41,6 +41,7 @@ export default function EditProfileScreen() {
   const [bio, setBio]     = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatarUrl ?? null);
   const [saving, setSaving] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Bio / location aren't on the lightweight auth user — pull the full profile.
   useEffect(() => {
@@ -215,7 +216,7 @@ export default function EditProfileScreen() {
         {/* Sticky CTA */}
         <View
           className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-          style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+          style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
         >
           <Pressable
             onPress={onSave}

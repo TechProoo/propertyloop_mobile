@@ -13,7 +13,7 @@ import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import {
   CREATE_LISTING_AMENITIES,
@@ -62,6 +62,7 @@ export default function CreateListingScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const isEdit = !!id;
   const [loadingEdit, setLoadingEdit] = useState(!!id);
+  const insets = useSafeAreaInsets();
 
   const [step, setStep] = useState<Step>("Basics");
   const [type, setType] = useState("sale");
@@ -546,7 +547,7 @@ export default function CreateListingScreen() {
             borderTopWidth: 0.5,
             paddingHorizontal: 16,
             paddingTop: 14,
-            paddingBottom: 28,
+            paddingBottom: Math.max(insets.bottom, 20) + 10,
           }}
         >
           <Pressable

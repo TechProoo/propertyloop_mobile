@@ -7,8 +7,8 @@ import { router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { Skeleton } from "@/components/brand/Skeleton";
+import { Appear, PressableScale, SaveHeart, stagger } from "@/components/anim";
 import { tapLight, tapSelection } from "@/lib/haptics";
-import { toggleSaved, useIsSaved } from "@/lib/favourites";
 import { MODES, type Mode } from "@/mocks/home";
 import listingsService from "@/api/services/listings";
 import type { Listing, ListingType } from "@/api/types";
@@ -114,8 +114,10 @@ export default function HomeScreen() {
           <EmptyState query={query} mode={mode} />
         ) : (
           <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
-            {filtered.map((h) => (
-              <HomeCard key={h.id} listing={h} />
+            {filtered.map((h, i) => (
+              <Appear key={h.id} delay={stagger(i, 40)} style={{ width: "47.5%" }}>
+                <HomeCard listing={h} />
+              </Appear>
             ))}
           </View>
         )}
@@ -293,16 +295,16 @@ function ModeChips({
 // Home card — photo with verified badge, price pill, rating overlay
 // ─────────────────────────────────────────────────────────────────
 function HomeCard({ listing }: { listing: Listing }) {
-  const saved = useIsSaved(listing.id);
   const period = listing.period ?? "";
   return (
-    <Pressable
+    <PressableScale
       onPress={() => {
         tapLight();
         router.push(`/property/${listing.id}` as Href);
       }}
-      className="rounded-[18px] overflow-hidden active:opacity-95"
-      style={{ width: "47.5%" }}
+      activeScale={0.95}
+      className="rounded-[18px] overflow-hidden"
+      style={{ width: "100%" }}
       accessibilityRole="button"
       accessibilityLabel={`${listing.title}, ${listing.location}, ${listing.priceLabel}${period}`}
     >
@@ -336,25 +338,13 @@ function HomeCard({ listing }: { listing: Listing }) {
           </Text>
         </View>
 
-        {/* Save heart (bottom-right) */}
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation();
-            toggleSaved(listing.id);
-          }}
-          hitSlop={10}
+        {/* Save heart (bottom-right) — pops + ring-bursts on save */}
+        <View
           className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full items-center justify-center"
           style={{ backgroundColor: "rgba(26,33,32,0.45)" }}
-          accessibilityRole="button"
-          accessibilityLabel={saved ? "Remove from saved" : "Save this home"}
-          accessibilityState={{ selected: saved }}
         >
-          <Ionicons
-            name={saved ? "heart" : "heart-outline"}
-            size={16}
-            color={saved ? "#ff6b66" : "#ffffff"}
-          />
-        </Pressable>
+          <SaveHeart id={listing.id} size={16} />
+        </View>
 
         <LinearGradient
           colors={["transparent", "rgba(0,0,0,0.6)"]}
@@ -388,7 +378,7 @@ function HomeCard({ listing }: { listing: Listing }) {
           </View>
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -397,13 +387,13 @@ function HomeCard({ listing }: { listing: Listing }) {
 // ─────────────────────────────────────────────────────────────────
 function ServiceLoopBanner() {
   return (
-    <View className="px-5 pt-6">
-      <Pressable
+    <Appear delay={120} style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+      <PressableScale
         onPress={() => {
           tapLight();
           router.push("/services" as Href);
         }}
-        className="bg-primary rounded-2xl flex-row items-center gap-3 px-4 py-3.5 active:opacity-90"
+        className="bg-primary rounded-2xl flex-row items-center gap-3 px-4 py-3.5"
         accessibilityRole="button"
         accessibilityLabel="Service Loop — hire verified pros, paid safely via escrow"
       >
@@ -419,8 +409,8 @@ function ServiceLoopBanner() {
           </Text>
         </View>
         <Ionicons name="arrow-forward" size={18} color="#ffffff" />
-      </Pressable>
-    </View>
+      </PressableScale>
+    </Appear>
   );
 }
 

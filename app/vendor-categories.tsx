@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +22,7 @@ export default function VendorCategoriesScreen() {
   const isManage = params.mode === "manage";
 
   const [cats, setCats]       = useState<string[]>(["cleaning"]);
+  const [customCat, setCustomCat] = useState("");
   const [area, setArea]       = useState("Lekki, Ikoyi, V.I.");
   const [radius, setRadius]   = useState("10");
   const [idDone, setIdDone]         = useState(true);
@@ -66,8 +67,20 @@ export default function VendorCategoriesScreen() {
   const stepState = (done: boolean, prev: boolean): VerifyState =>
     done ? "done" : prev ? "active" : "todo";
 
-  const canContinueOnboarding = cats.length > 0 && idDone && (skillDone || samples.length >= 3);
-  const canSaveManage = cats.length > 0;
+  // Resolve a selected chip id to the label we save. "other" maps to whatever
+  // trade the vendor typed, so professions outside the preset list aren't lost.
+  const resolveLabel = (id: string) =>
+    id === "other"
+      ? customCat.trim()
+      : VENDOR_CATEGORIES.find((c) => c.id === id)?.label ?? id;
+
+  // If they picked "Other" they must type a trade — otherwise we'd save a blank
+  // category and they'd show up as "Other" in the directory.
+  const otherNeedsTrade = cats.includes("other") && !customCat.trim();
+  const hasValidCats = cats.length > 0 && !otherNeedsTrade;
+
+  const canContinueOnboarding = hasValidCats && idDone && (skillDone || samples.length >= 3);
+  const canSaveManage = hasValidCats;
   const canContinue = isManage ? canSaveManage : canContinueOnboarding;
 
   const onContinue = async () => {
@@ -83,7 +96,7 @@ export default function VendorCategoriesScreen() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const primary = VENDOR_CATEGORIES.find((c) => c.id === cats[0])?.label ?? cats[0];
+      const primary = resolveLabel(cats[0]);
       let portfolio: string[] | undefined;
       if (samples.length) {
         portfolio = await Promise.all(samples.map((u) => vendorsService.uploadImage(u)));
@@ -165,7 +178,43 @@ export default function VendorCategoriesScreen() {
                 </Pressable>
               );
             })}
+
+            {/* Anything not in the preset list — vendor types their own trade */}
+            {(() => {
+              const on = cats.includes("other");
+              return (
+                <Pressable
+                  key="other"
+                  onPress={() => toggle("other")}
+                  className="flex-row items-center gap-1.5 rounded-full px-3.5 py-2"
+                  style={{
+                    backgroundColor: on ? INK : "#ffffff",
+                    borderWidth: on ? 0 : 1,
+                    borderColor: "#e1dcd3",
+                  }}
+                >
+                  <Ionicons name="add-outline" size={14} color={on ? "#ffffff" : INK_2} />
+                  <Text className="text-[12.5px] font-sans-bold" style={{ color: on ? "#ffffff" : INK_2 }}>
+                    Other
+                  </Text>
+                </Pressable>
+              );
+            })()}
           </View>
+
+          {/* Custom trade input — revealed when "Other" is selected */}
+          {cats.includes("other") && (
+            <TextInput
+              value={customCat}
+              onChangeText={setCustomCat}
+              placeholder="Type your trade (e.g. Tiler, Welder, Locksmith)"
+              placeholderTextColor={INK_3}
+              autoCapitalize="words"
+              maxLength={60}
+              className="mt-3 bg-white rounded-2xl px-3.5 py-3 text-[14px] font-sans-bold text-ink border-line"
+              style={{ borderWidth: 1 }}
+            />
+          )}
 
           {/* Service area */}
           <Label className="mt-6">Service area</Label>
@@ -261,16 +310,19 @@ export default function VendorCategoriesScreen() {
             label={submitting ? "Saving…" : isManage ? "Save categories" : "Continue"}
             ready={canContinue && !submitting}
             onPress={onContinue}
-            getMissing={() =>
-              isManage
-                ? ["at least one category"]
+            getMissing={() => {
+              const catMissing = otherNeedsTrade
+                ? "your trade name"
+                : cats.length === 0 && "at least one category";
+              return isManage
+                ? ([catMissing].filter(Boolean) as string[])
                 : ([
-                    cats.length === 0 && "at least one category",
+                    catMissing,
                     !idDone && "ID verification",
                     !(skillDone || samples.length >= 3) &&
                       "a skill certificate or 3 work samples",
-                  ].filter(Boolean) as string[])
-            }
+                  ].filter(Boolean) as string[]);
+            }}
           />
         </View>
       </SafeAreaView>
@@ -330,5 +382,3 @@ function Label({ children, className }: { children: React.ReactNode; className?:
     </Text>
   );
 }
-
-void INK_3;

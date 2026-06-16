@@ -72,8 +72,21 @@ const PICKUP_CARDS = [
   { id: "pu-2", price: "₦2.4M", title: "Marlin Studios",   area: "V.I.",          tag: "Saved",      imageSeed: "feat-3" },
 ];
 
+// Curated, on-brand property photos (Unsplash). Picked deterministically per
+// seed so a given card always shows the same home.
+const PROPERTY_PHOTOS = [
+  "1564013799919-ab600027ffc6",
+  "1568605114967-8130f3a36994",
+  "1600596542815-ffad4c1539a9",
+  "1600585154340-be6161a56a0c",
+  "1583608205776-bfd35f0d9f83",
+];
+
 function picsum(seed: string) {
-  return `https://picsum.photos/seed/${seed}/400/250`;
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  const id = PROPERTY_PHOTOS[Math.abs(h) % PROPERTY_PHOTOS.length];
+  return `https://images.unsplash.com/photo-${id}?w=400&h=250&fit=crop&auto=format&q=70`;
 }
 
 export default function WelcomeBackScreen() {

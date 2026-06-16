@@ -11,10 +11,16 @@ import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, {
+  FadeInDown,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
 import bookmarksService, {
   type PropertyBookmark,
 } from "@/api/services/bookmarks";
 import { toggleSaved } from "@/lib/favourites";
+import { Appear, PressableScale, stagger } from "@/components/anim";
 
 const PRIMARY = "#1f6f43";
 const ACCENT = "#b9842c";
@@ -67,6 +73,7 @@ export default function SavedScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
+        <Appear>
         <View className="px-5 pt-1">
           <Text
             className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase"
@@ -86,6 +93,7 @@ export default function SavedScreen() {
             ) : null}
           </Text>
         </View>
+        </Appear>
 
         {loading ? (
           <View className="py-20 items-center">
@@ -112,8 +120,15 @@ export default function SavedScreen() {
           />
         ) : (
           <View className="px-5 pt-5 gap-3.5">
-            {items.map((b) => (
-              <SavedCard key={b.id} bookmark={b} onUnsave={() => unsave(b)} />
+            {items.map((b, i) => (
+              <Animated.View
+                key={b.id}
+                entering={FadeInDown.springify().damping(20).stiffness(140).delay(stagger(i, 40))}
+                exiting={FadeOut.duration(220)}
+                layout={LinearTransition.springify().damping(20).stiffness(160)}
+              >
+                <SavedCard bookmark={b} onUnsave={() => unsave(b)} />
+              </Animated.View>
             ))}
           </View>
         )}
@@ -131,9 +146,10 @@ function SavedCard({
 }) {
   const l = bookmark.listing!;
   return (
-    <Pressable
+    <PressableScale
       onPress={() => router.push(`/property/${l.id}` as Href)}
-      className="bg-white rounded-[18px] overflow-hidden active:opacity-90"
+      activeScale={0.975}
+      className="bg-white rounded-[18px] overflow-hidden"
       style={{ borderWidth: 0.5, borderColor: LINE }}
     >
       <View className="flex-row gap-3 p-3">
@@ -195,7 +211,7 @@ function SavedCard({
           </View>
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -228,6 +244,7 @@ function EmptyBlock({
   onAction: () => void;
 }) {
   return (
+    <Appear from="fade" duration={500}>
     <View className="px-5 pt-16 items-center">
       <View className="w-16 h-16 rounded-full bg-cream-2 items-center justify-center">
         <Ionicons name={icon} size={28} color={INK_2} />
@@ -238,12 +255,13 @@ function EmptyBlock({
       <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
         {body}
       </Text>
-      <Pressable
+      <PressableScale
         onPress={onAction}
-        className="mt-5 px-5 py-2.5 rounded-full bg-ink active:opacity-80"
+        className="mt-5 px-5 py-2.5 rounded-full bg-ink"
       >
         <Text className="text-white text-[13px] font-sans-bold">{actionLabel}</Text>
-      </Pressable>
+      </PressableScale>
     </View>
+    </Appear>
   );
 }

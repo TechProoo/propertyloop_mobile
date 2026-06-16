@@ -52,6 +52,13 @@ const authService = {
     return data;
   },
 
+  // Re-sends the email-verification link. Public + rate-limited (3/60s on the
+  // server) and always 200 even for unknown/verified emails, so we never leak
+  // whether an address is registered. Used by the "Check your inbox" screen.
+  async resendVerification(email: string): Promise<void> {
+    await api.post("/auth/resend-verification-public", { email });
+  },
+
   async logout(): Promise<void> {
     try {
       await api.post("/auth/logout", {});
