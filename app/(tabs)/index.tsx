@@ -7,7 +7,7 @@ import { router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { Skeleton } from "@/components/brand/Skeleton";
-import { Appear, PressableScale, SaveHeart, stagger } from "@/components/anim";
+import { Appear, PressableScale, SaveHeart, Reveal, RevealScrollView } from "@/components/anim";
 import { tapLight, tapSelection } from "@/lib/haptics";
 import { MODES, type Mode } from "@/mocks/home";
 import listingsService from "@/api/services/listings";
@@ -87,8 +87,8 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <ScrollView
-        contentContainerClassName="pb-8"
+      <RevealScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
       >
@@ -114,16 +114,16 @@ export default function HomeScreen() {
           <EmptyState query={query} mode={mode} />
         ) : (
           <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
-            {filtered.map((h, i) => (
-              <Appear key={h.id} delay={stagger(i, 40)} style={{ width: "47.5%" }}>
+            {filtered.map((h) => (
+              <Reveal key={h.id} style={{ width: "47.5%" }}>
                 <HomeCard listing={h} />
-              </Appear>
+              </Reveal>
             ))}
           </View>
         )}
 
         <ServiceLoopBanner />
-      </ScrollView>
+      </RevealScrollView>
     </SafeAreaView>
   );
 }

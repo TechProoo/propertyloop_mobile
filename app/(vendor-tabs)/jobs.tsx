@@ -148,8 +148,8 @@ function JobCard({ job, onChanged }: { job: VendorJob; onChanged: () => void }) 
       .then(onChanged)
       .catch((e: any) => {
         Alert.alert("Failed", e?.response?.data?.message ?? "Please try again.");
-        setBusy(false);
-      });
+      })
+      .finally(() => setBusy(false));
   };
 
   return (

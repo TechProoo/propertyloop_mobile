@@ -25,7 +25,6 @@ export default function VendorCategoriesScreen() {
   const [customCat, setCustomCat] = useState("");
   const [area, setArea]       = useState("Lekki, Ikoyi, V.I.");
   const [radius, setRadius]   = useState("10");
-  const [idDone, setIdDone]         = useState(true);
   const [skillDone, setSkillDone]   = useState(false);
   const [selfieDone, setSelfieDone] = useState(false);
   const [samples, setSamples]       = useState<string[]>([]);
@@ -79,7 +78,7 @@ export default function VendorCategoriesScreen() {
   const otherNeedsTrade = cats.includes("other") && !customCat.trim();
   const hasValidCats = cats.length > 0 && !otherNeedsTrade;
 
-  const canContinueOnboarding = hasValidCats && idDone && (skillDone || samples.length >= 3);
+  const canContinueOnboarding = hasValidCats && (skillDone || samples.length >= 3);
   const canSaveManage = hasValidCats;
   const canContinue = isManage ? canSaveManage : canContinueOnboarding;
 
@@ -233,15 +232,7 @@ export default function VendorCategoriesScreen() {
           <Label className="mt-6">Get the verified badge</Label>
           <View className="gap-2 mt-2">
             <VerifyRow
-              state={stepState(idDone, true)}
-              title="Government ID"
-              detail="NIN or driver's licence"
-              icon="card-outline"
-              cta="Upload"
-              onPress={() => setIdDone(true)}
-            />
-            <VerifyRow
-              state={stepState(skillDone, idDone)}
+              state={stepState(skillDone, true)}
               title="Proof of skill"
               detail="Trade certificate or 3+ work photos"
               icon="ribbon-outline"
@@ -249,7 +240,7 @@ export default function VendorCategoriesScreen() {
               onPress={pickSamples}
             />
             <VerifyRow
-              state={stepState(selfieDone, idDone && skillDone)}
+              state={stepState(selfieDone, skillDone)}
               title="Selfie check"
               detail="Confirm it's really you"
               icon="happy-outline"
@@ -318,7 +309,6 @@ export default function VendorCategoriesScreen() {
                 ? ([catMissing].filter(Boolean) as string[])
                 : ([
                     catMissing,
-                    !idDone && "ID verification",
                     !(skillDone || samples.length >= 3) &&
                       "a skill certificate or 3 work samples",
                   ].filter(Boolean) as string[]);

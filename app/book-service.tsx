@@ -57,6 +57,7 @@ export default function BookServiceScreen() {
   const [dateIdx, setDateIdx] = useState(0);
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
+  const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [submitting, setSubmitting] = useState(false);
   const insets = useSafeAreaInsets();
@@ -74,6 +75,7 @@ export default function BookServiceScreen() {
         setVendor(v);
         setServices(s);
         setServiceId(s[0]?.id ?? null);
+        if (me?.name) setName(me.name);
         if (me?.phone) setPhone(me.phone);
         if (me?.location && !address) setAddress(me.location);
       })
@@ -92,9 +94,9 @@ export default function BookServiceScreen() {
     if (!vendorId || !service) return;
     if (!address.trim()) { Alert.alert("Add an address", "Where should the vendor come?"); return; }
     if (!note.trim()) { Alert.alert("Add a note", "Tell the vendor what needs doing."); return; }
-    const name = (user?.name ?? "").trim();
+    const nameToUse = name.trim();
     const phoneToUse = phone.trim();
-    if (!name) { Alert.alert("Missing name", "Update your profile name first."); return; }
+    if (!nameToUse) { Alert.alert("Add your name", "The vendor needs a name for the booking."); return; }
     if (!phoneToUse) { Alert.alert("Add a phone number", "The vendor needs a number to reach you."); return; }
 
     setSubmitting(true);
@@ -107,7 +109,7 @@ export default function BookServiceScreen() {
         category: vendor?.category ?? undefined,
         vendorFee,
         scheduledFor: scheduledFor.toISOString(),
-        clientName: name,
+        clientName: nameToUse,
         clientPhone: phoneToUse,
       });
       Alert.alert(
@@ -235,6 +237,21 @@ export default function BookServiceScreen() {
             style={{ minHeight: 70 }}
             textAlignVertical="top"
           />
+
+          {/* Name (if missing) */}
+          {!(user?.name ?? "").trim() && (
+            <>
+              <SectionLabel className="mt-5">Your name</SectionLabel>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="Full name"
+                placeholderTextColor={INK_3}
+                autoCapitalize="words"
+                className="bg-white border border-line rounded-2xl px-3.5 py-3.5 text-ink text-[15px] mt-2"
+              />
+            </>
+          )}
 
           {/* Phone (if missing) */}
           {!(user?.phone ?? "").trim() && (

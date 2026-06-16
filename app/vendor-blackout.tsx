@@ -24,29 +24,23 @@ const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// Build a 30-day rolling window starting from Jun 1 (the mocked "today").
-const TODAY = { y: 2026, m: 5, d: 1 }; // Jun 1, 2026
+// Build a 35-day rolling window starting from the real "today", deriving each
+// day's actual weekday so the dates a vendor blocks always reflect now.
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function buildDays() {
   const out: { key: string; y: number; m: number; d: number; label: string; weekday: string }[] = [];
-  // Track an actual date to get weekdays — start from a known anchor.
-  // Jun 1 2026 was a Monday.
-  const weekdayCycle = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  let y = TODAY.y, m = TODAY.m, d = TODAY.d, wd = 0;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
   for (let i = 0; i < 35; i++) {
+    const dt = new Date(start);
+    dt.setDate(start.getDate() + i);
+    const y = dt.getFullYear(), m = dt.getMonth(), d = dt.getDate();
     out.push({
       key: `${y}-${m}-${d}`,
       y, m, d,
       label: `${d} ${MONTHS[m]}`,
-      weekday: weekdayCycle[wd],
+      weekday: WEEKDAYS[dt.getDay()],
     });
-    d += 1;
-    wd = (wd + 1) % 7;
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    if (d > daysInMonth) {
-      d = 1;
-      m += 1;
-      if (m > 11) { m = 0; y += 1; }
-    }
   }
   return out;
 }
