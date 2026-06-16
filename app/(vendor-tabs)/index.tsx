@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { Appear, PressableScale, CountUp, stagger } from "@/components/anim";
 import { useAuth } from "@/context/auth";
 import vendorsService, { type VendorStats } from "@/api/services/vendors";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
@@ -118,16 +119,20 @@ export default function VendorHomeScreen() {
         </View>
 
         {/* Escrow hero */}
-        <View className="mx-4 mt-4 rounded-2xl px-5 py-4" style={{ backgroundColor: INK }}>
+        <Appear delay={40} style={{ marginHorizontal: 16, marginTop: 16 }}>
+        <View className="rounded-2xl px-5 py-4" style={{ backgroundColor: INK }}>
           <View className="flex-row items-center gap-1.5">
             <Ionicons name="shield-checkmark" size={13} color="#7ad296" />
             <Text className="text-[11px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
               In escrow · releasing soon
             </Text>
           </View>
-          <Text className="font-serif text-white mt-1.5" style={{ fontSize: 36, letterSpacing: -0.8 }}>
-            {naira(stats?.earnings.pending ?? 0)}
-          </Text>
+          <CountUp
+            value={stats?.earnings.pending ?? 0}
+            format={naira}
+            className="font-serif text-white mt-1.5"
+            style={{ fontSize: 36, letterSpacing: -0.8 }}
+          />
           <Text className="text-[12px] mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>
             Released to you once clients confirm each job.
           </Text>
@@ -136,9 +141,12 @@ export default function VendorHomeScreen() {
               <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.55)" }}>
                 Paid this month
               </Text>
-              <Text className="font-serif text-white mt-0.5" style={{ fontSize: 18 }}>
-                {naira(stats?.earnings.thisMonth ?? 0)}
-              </Text>
+              <CountUp
+                value={stats?.earnings.thisMonth ?? 0}
+                format={naira}
+                className="font-serif text-white mt-0.5"
+                style={{ fontSize: 18 }}
+              />
             </View>
             <View style={{ width: 1, backgroundColor: "rgba(255,255,255,0.12)" }} />
             <View>
@@ -154,6 +162,7 @@ export default function VendorHomeScreen() {
             </View>
           </View>
         </View>
+        </Appear>
 
         {loading ? (
           <View className="py-16 items-center">
@@ -171,8 +180,10 @@ export default function VendorHomeScreen() {
               <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No new requests right now.</Text>
             ) : (
               <View className="px-4 pt-2 gap-2.5">
-                {requests.map((r) => (
-                  <RequestCard key={r.id} job={r} onChanged={load} />
+                {requests.map((r, i) => (
+                  <Appear key={r.id} delay={stagger(i, 40)}>
+                    <RequestCard job={r} onChanged={load} />
+                  </Appear>
                 ))}
               </View>
             )}
@@ -188,8 +199,10 @@ export default function VendorHomeScreen() {
               <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No active jobs.</Text>
             ) : (
               <View className="px-4 pt-2 gap-2">
-                {active.map((j) => (
-                  <JobMini key={j.id} job={j} />
+                {active.map((j, i) => (
+                  <Appear key={j.id} delay={stagger(i, 40)}>
+                    <JobMini job={j} />
+                  </Appear>
                 ))}
               </View>
             )}
@@ -283,9 +296,10 @@ function ActionBtn({ label, tone, onPress }: { label: string; tone: "ghost" | "p
 function JobMini({ job }: { job: VendorJob }) {
   const inProgress = job.status === "IN_PROGRESS";
   return (
-    <Pressable
+    <PressableScale
       onPress={() => router.push(`/vendor-active-job/${job.id}` as Href)}
-      className="flex-row items-center gap-3 p-3 bg-white rounded-2xl active:opacity-90"
+      activeScale={0.975}
+      className="flex-row items-center gap-3 p-3 bg-white rounded-2xl"
       style={{ borderWidth: inProgress ? 1.5 : 0.5, borderColor: inProgress ? PRIMARY : "#e1dcd3" }}
     >
       <Text className="font-serif text-ink text-center" style={{ fontSize: 15, letterSpacing: -0.3, width: 52 }}>
@@ -301,6 +315,6 @@ function JobMini({ job }: { job: VendorJob }) {
           {inProgress ? "In progress" : "Open"}
         </Text>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }

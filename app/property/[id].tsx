@@ -1,19 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  FlatList,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   ScrollView,
   Share,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { Appear, PressableScale, SaveHeart } from "@/components/anim";
+import { RichText } from "@/lib/richText";
 import { tapLight, tapMedium } from "@/lib/haptics";
-import { toggleSaved, useIsSaved } from "@/lib/favourites";
 import listingsService from "@/api/services/listings";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
 import { useAuth } from "@/context/auth";
@@ -103,10 +109,28 @@ function ListingDetail({
   listingId: string;
 }) {
   const { user } = useAuth();
-  const saved = useIsSaved(listing.id);
+  const { width: screenW } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [startingChat, setStartingChat] = useState(false);
+  const [activePhoto, setActivePhoto] = useState(0);
   const period = listing.period ?? "";
-  const photoCount = listing.images?.length || 1;
+
+  // `images` already includes the cover as its first element; fall back to the
+  // cover alone when the array is missing. Dedupe so a duplicated cover doesn't
+  // create a phantom slide.
+  const gallery = Array.from(
+    new Set(
+      (listing.images?.length ? listing.images : [listing.coverImage]).filter(
+        Boolean,
+      ),
+    ),
+  );
+  const photoCount = gallery.length;
+
+  const onPhotoScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / screenW);
+    if (i !== activePhoto) setActivePhoto(i);
+  };
 
   const messageAgent = async () => {
     if (!listing.agent || !user || startingChat) return;
@@ -177,12 +201,25 @@ function ListingDetail({
       >
         {/* ── Hero ─────────────────────────────────────────────────── */}
         <View style={{ height: 360 }} className="relative">
-          <Image
-            source={listing.coverImage}
-            style={{ width: "100%", height: "100%" }}
-            contentFit="cover"
+          <FlatList
+            data={gallery}
+            keyExtractor={(uri, i) => `${i}-${uri}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={onPhotoScroll}
+            scrollEventThrottle={16}
+            scrollEnabled={photoCount > 1}
+            renderItem={({ item }) => (
+              <Image
+                source={item}
+                style={{ width: screenW, height: 360 }}
+                contentFit="cover"
+              />
+            )}
           />
           <View
+            pointerEvents="none"
             style={{
               position: "absolute",
               top: 0,
@@ -213,33 +250,47 @@ function ListingDetail({
               >
                 <Ionicons name="share-outline" size={18} color="#ffffff" />
               </Pressable>
-              <Pressable
-                onPress={() => toggleSaved(listing.id)}
-                hitSlop={8}
+              <View
                 className="w-10 h-10 rounded-full items-center justify-center"
                 style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
-                accessibilityRole="button"
-                accessibilityLabel={saved ? "Remove from saved" : "Save this home"}
-                accessibilityState={{ selected: saved }}
               >
-                <Ionicons
-                  name={saved ? "heart" : "heart-outline"}
-                  size={18}
-                  color={saved ? "#ff5a5f" : "#ffffff"}
-                />
-              </Pressable>
+                <SaveHeart id={listing.id} size={18} />
+              </View>
             </View>
           </View>
 
           {/* Photo counter */}
           {photoCount > 1 && (
             <View
-              className="absolute right-4 px-2.5 py-1 rounded-full"
+              className="absolute right-4 flex-row items-center gap-1 px-2.5 py-1 rounded-full"
               style={{ bottom: 56, backgroundColor: "rgba(0,0,0,0.55)" }}
             >
+              <Ionicons name="image" size={11} color="#ffffff" />
               <Text className="text-[11px] font-sans-bold text-white">
-                {photoCount} photos
+                {activePhoto + 1} / {photoCount}
               </Text>
+            </View>
+          )}
+
+          {/* Page indicator dots */}
+          {photoCount > 1 && photoCount <= 10 && (
+            <View
+              className="absolute left-0 right-0 flex-row items-center justify-center gap-1.5"
+              style={{ bottom: 58 }}
+              pointerEvents="none"
+            >
+              {gallery.map((_, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: i === activePhoto ? 18 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor:
+                      i === activePhoto ? "#ffffff" : "rgba(255,255,255,0.55)",
+                  }}
+                />
+              ))}
             </View>
           )}
         </View>
@@ -283,6 +334,7 @@ function ListingDetail({
           </View>
 
           {/* Title + address */}
+          <Appear delay={40}>
           <Text
             className="font-sans-bold text-ink tracking-tight"
             style={{ fontSize: 22, lineHeight: 26 }}
@@ -295,8 +347,10 @@ function ListingDetail({
               {listing.address}
             </Text>
           </View>
+          </Appear>
 
           {/* Price */}
+          <Appear delay={110}>
           <View className="mt-4 bg-primary-soft rounded-2xl px-4 py-3.5">
             <View className="flex-row items-baseline justify-between">
               <Text
@@ -342,13 +396,14 @@ function ListingDetail({
               </View>
             )}
           </View>
+          </Appear>
 
-          {/* Stats grid */}
+          {/* Stats grid — each tile pops in on a short cascade */}
           <View className="flex-row gap-2 mt-3.5">
-            {stats.map((s) => (
+            {stats.map((s, i) => (
+              <Appear key={s.l} delay={180 + i * 70} style={{ flex: 1 }}>
               <View
-                key={s.l}
-                className="flex-1 bg-cream-2 rounded-xl items-center"
+                className="bg-cream-2 rounded-xl items-center"
                 style={{ paddingVertical: 10 }}
               >
                 <Ionicons name={s.icon} size={16} color={INK_2} />
@@ -362,6 +417,7 @@ function ListingDetail({
                   {s.l}
                 </Text>
               </View>
+              </Appear>
             ))}
           </View>
 
@@ -371,9 +427,16 @@ function ListingDetail({
               <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2">
                 About this home
               </Text>
-              <Text className="text-[13.5px] text-ink-2 leading-6">
-                {listing.description}
-              </Text>
+              <RichText
+                html={listing.description}
+                style={{
+                  fontSize: 13.5,
+                  lineHeight: 22,
+                  color: INK_2,
+                  fontFamily: "Inter_400Regular",
+                }}
+                boldStyle={{ fontFamily: "Inter_700Bold", color: "#1a2120" }}
+              />
             </>
           )}
 
@@ -461,12 +524,12 @@ function ListingDetail({
         style={{
           borderTopWidth: 0.5,
           paddingTop: 14,
-          paddingBottom: 30,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
           paddingHorizontal: 16,
         }}
       >
         <View className="flex-row gap-2">
-          <Pressable
+          <PressableScale
             onPress={() => {
               tapLight();
               router.push({
@@ -474,16 +537,16 @@ function ListingDetail({
                 params: { listingId: listing.id },
               } as Href);
             }}
-            className="flex-1 bg-cream-2 rounded-full items-center active:opacity-80"
-            style={{ paddingVertical: 15 }}
+            style={{ flex: 1, paddingVertical: 15 }}
+            className="bg-cream-2 rounded-full items-center"
             accessibilityRole="button"
             accessibilityLabel="Book a viewing"
           >
             <Text className="text-[14px] font-sans-bold text-ink">
               Book a viewing
             </Text>
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             onPress={() => {
               tapMedium();
               router.push({
@@ -491,8 +554,8 @@ function ListingDetail({
                 params: { listingId: listing.id },
               } as Href);
             }}
-            className="flex-1 bg-primary rounded-full flex-row items-center justify-center gap-1.5 active:opacity-80"
-            style={{ paddingVertical: 15 }}
+            style={{ flex: 1, paddingVertical: 15 }}
+            className="bg-primary rounded-full flex-row items-center justify-center gap-1.5"
             accessibilityRole="button"
             accessibilityLabel={primaryCta.label}
           >
@@ -500,7 +563,7 @@ function ListingDetail({
               {primaryCta.label}
             </Text>
             <Ionicons name="arrow-forward" size={15} color="#ffffff" />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
     </View>

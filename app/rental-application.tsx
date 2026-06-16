@@ -13,7 +13,7 @@ import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import listingsService from "@/api/services/listings";
 import rentalsService from "@/api/services/rentals";
 import type { Listing } from "@/api/types";
@@ -58,6 +58,7 @@ export default function RentalApplicationScreen() {
   const [dateIdx, setDateIdx] = useState(0);
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!listingId) {
@@ -274,7 +275,7 @@ export default function RentalApplicationScreen() {
             borderTopWidth: 0.5,
             paddingHorizontal: 16,
             paddingTop: 14,
-            paddingBottom: 30,
+            paddingBottom: Math.max(insets.bottom, 20) + 10,
           }}
         >
           <Pressable

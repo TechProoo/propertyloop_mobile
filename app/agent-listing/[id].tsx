@@ -16,7 +16,7 @@ import {
   type Href,
 } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import listingsService from "@/api/services/listings";
 import type { Listing } from "@/api/types";
 
@@ -40,6 +40,7 @@ export default function AgentListingDetailScreen() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -282,7 +283,7 @@ export default function AgentListingDetailScreen() {
       {/* Sticky CTA */}
       <View
         className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-        style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+        style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
       >
         <Pressable
           onPress={() => router.push("/(agent-tabs)/leads" as Href)}

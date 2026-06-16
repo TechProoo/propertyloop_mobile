@@ -12,7 +12,7 @@ import {
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import paymentsService, { type Bank } from "@/api/services/payments";
 
 const PRIMARY = "#1f6f43";
@@ -29,6 +29,7 @@ export default function PayoutBankScreen() {
   const [holder, setHolder] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Promise.all([paymentsService.listBanks(), paymentsService.getBankAccount()])
@@ -173,7 +174,7 @@ export default function PayoutBankScreen() {
 
         {/* Sticky CTA */}
         {!loading && (
-          <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}>
+          <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
             <Pressable
               onPress={onSave}
               disabled={!canSave || saving}

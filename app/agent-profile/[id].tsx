@@ -4,7 +4,7 @@ import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import agentsService from "@/api/services/agents";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
@@ -29,6 +29,7 @@ export default function PublicAgentProfileScreen() {
   const [agent, setAgent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
@@ -201,7 +202,7 @@ export default function PublicAgentProfileScreen() {
       </ScrollView>
 
       {/* Sticky CTA */}
-      <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}>
+      <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
         <Pressable
           onPress={messageAgent}
           disabled={starting}

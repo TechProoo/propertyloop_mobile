@@ -1,20 +1,24 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
+import { PLAvatar } from "@/components/brand/PLAvatar";
 import { Image } from "expo-image";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import listingsService from "@/api/services/listings";
-import type { Listing } from "@/api/types";
+import { useAuth } from "@/context/auth";
+import type { Listing, ListingType } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
+const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
@@ -28,6 +32,12 @@ const STATUS_UI: Record<string, { label: string; bg: string; fg: string }> = {
   ARCHIVED: { label: "Archived", bg: "#f0f0f0", fg: INK_3 },
 };
 
+type Scope = "mine" | "all";
+const SCOPES: { id: Scope; label: string }[] = [
+  { id: "mine", label: "My listings" },
+  { id: "all", label: "All listings" },
+];
+
 type TabId = "all" | "ACTIVE" | "PENDING_REVIEW" | "PAUSED" | "closed";
 const CLOSED = ["SOLD", "RENTED", "ARCHIVED"];
 const TABS: { id: TabId; label: string }[] = [
@@ -38,43 +48,106 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "closed", label: "Closed" },
 ];
 
-export default function AgentListingsScreen() {
-  const [tab, setTab] = useState<TabId>("all");
-  const [items, setItems] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
+type TypeFilter = "all" | ListingType;
+const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "SALE", label: "Buy" },
+  { id: "RENT", label: "Rent" },
+  { id: "SHORTLET", label: "Shortlet" },
+];
 
-  const load = useCallback(async () => {
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+export default function AgentListingsScreen() {
+  const { user } = useAuth();
+  const myId = user?.id;
+
+  const [scope, setScope] = useState<Scope>("mine");
+
+  // Mine — the agent's own portfolio (any status).
+  const [tab, setTab] = useState<TabId>("all");
+  const [mine, setMine] = useState<Listing[]>([]);
+  const [loadingMine, setLoadingMine] = useState(true);
+
+  // All — the live marketplace.
+  const [all, setAll] = useState<Listing[]>([]);
+  const [allTotal, setAllTotal] = useState(0);
+  const [loadingAll, setLoadingAll] = useState(true);
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+
+  const loadMine = useCallback(async () => {
     try {
       const res = await listingsService.listMine({ limit: 100 });
-      setItems(res.items);
+      setMine(res.items);
     } catch {
       /* leave empty */
     } finally {
-      setLoading(false);
+      setLoadingMine(false);
     }
   }, []);
 
+  const loadAll = useCallback(async () => {
+    try {
+      const res = await listingsService.list({ limit: 100, sort: "newest" });
+      setAll(res.items);
+      setAllTotal(res.total);
+    } catch {
+      /* leave empty */
+    } finally {
+      setLoadingAll(false);
+    }
+  }, []);
+
+  // Portfolio stays fresh on every focus (the agent edits/creates here).
   useFocusEffect(
     useCallback(() => {
-      load();
-    }, [load]),
+      loadMine();
+    }, [loadMine]),
   );
 
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { all: items.length };
-    c.ACTIVE = items.filter((l) => l.status === "ACTIVE").length;
-    c.PENDING_REVIEW = items.filter((l) => l.status === "PENDING_REVIEW").length;
-    c.PAUSED = items.filter((l) => l.status === "PAUSED").length;
-    c.closed = items.filter((l) => CLOSED.includes(l.status)).length;
-    return c;
-  }, [items]);
+  // The marketplace loads lazily the first time the agent switches to it.
+  useEffect(() => {
+    if (scope === "all") loadAll();
+  }, [scope, loadAll]);
 
-  const filtered =
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { all: mine.length };
+    c.ACTIVE = mine.filter((l) => l.status === "ACTIVE").length;
+    c.PENDING_REVIEW = mine.filter((l) => l.status === "PENDING_REVIEW").length;
+    c.PAUSED = mine.filter((l) => l.status === "PAUSED").length;
+    c.closed = mine.filter((l) => CLOSED.includes(l.status)).length;
+    return c;
+  }, [mine]);
+
+  const mineFiltered =
     tab === "all"
-      ? items
+      ? mine
       : tab === "closed"
-        ? items.filter((l) => CLOSED.includes(l.status))
-        : items.filter((l) => l.status === tab);
+        ? mine.filter((l) => CLOSED.includes(l.status))
+        : mine.filter((l) => l.status === tab);
+
+  const allFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return all.filter((l) => {
+      if (typeFilter !== "all" && l.type !== typeFilter) return false;
+      if (!q) return true;
+      return (
+        l.title.toLowerCase().includes(q) ||
+        l.location.toLowerCase().includes(q) ||
+        (l.agent?.name ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [all, query, typeFilter]);
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -82,19 +155,28 @@ export default function AgentListingsScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View className="px-5 pt-1 pb-3 bg-cream">
           <View className="flex-row items-end justify-between">
-            <View>
+            <View className="flex-1">
               <Text className="text-[11px] font-sans-bold text-primary tracking-widest uppercase">
-                Your portfolio
+                {scope === "mine" ? "Your portfolio" : "The marketplace"}
               </Text>
               <Text
                 className="font-serif text-ink mt-1"
                 style={{ fontSize: 30, letterSpacing: -0.7, lineHeight: 32 }}
               >
-                Your <Text className="font-serif-italic">listings</Text>
+                {scope === "mine" ? (
+                  <>
+                    Your <Text className="font-serif-italic">listings</Text>
+                  </>
+                ) : (
+                  <>
+                    All <Text className="font-serif-italic">listings</Text>
+                  </>
+                )}
               </Text>
             </View>
             <Pressable
@@ -106,62 +188,161 @@ export default function AgentListingsScreen() {
           </View>
         </View>
 
-        {/* Sticky tabs */}
-        <View className="bg-cream" style={{ borderBottomWidth: 0.5, borderBottomColor: LINE }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 18 }}
-          >
-            {TABS.map((t) => {
-              const on = tab === t.id;
+        {/* Sticky controls: scope toggle + scope-specific filters */}
+        <View className="bg-cream px-5 pt-1 pb-2" style={{ borderBottomWidth: 0.5, borderBottomColor: LINE }}>
+          {/* Scope toggle */}
+          <View className="flex-row rounded-full p-1" style={{ backgroundColor: "#ece6df" }}>
+            {SCOPES.map((s) => {
+              const on = scope === s.id;
               return (
                 <Pressable
-                  key={t.id}
-                  onPress={() => setTab(t.id)}
+                  key={s.id}
+                  onPress={() => setScope(s.id)}
+                  className="flex-1 rounded-full items-center"
                   style={{
-                    paddingBottom: 12,
-                    paddingTop: 4,
-                    borderBottomWidth: on ? 2 : 0,
-                    borderBottomColor: "#1a2120",
+                    paddingVertical: 9,
+                    backgroundColor: on ? PRIMARY : "transparent",
                   }}
                 >
                   <Text
-                    className={`text-[13px] ${on ? "font-sans-bold text-ink" : "font-sans-semibold text-ink-3"}`}
+                    className="text-[13px]"
+                    style={{
+                      fontFamily: "Inter_700Bold",
+                      color: on ? "#ffffff" : INK_2,
+                    }}
                   >
-                    {t.label} · {counts[t.id] ?? 0}
+                    {s.label}
                   </Text>
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
+
+          {/* Mine: status tabs */}
+          {scope === "mine" && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 18, paddingTop: 12, paddingBottom: 2 }}
+            >
+              {TABS.map((t) => {
+                const on = tab === t.id;
+                return (
+                  <Pressable
+                    key={t.id}
+                    onPress={() => setTab(t.id)}
+                    style={{
+                      paddingBottom: 6,
+                      borderBottomWidth: on ? 2 : 0,
+                      borderBottomColor: INK,
+                    }}
+                  >
+                    <Text
+                      className={`text-[13px] ${on ? "font-sans-bold text-ink" : "font-sans-semibold text-ink-3"}`}
+                    >
+                      {t.label} · {counts[t.id] ?? 0}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          {/* All: search + type chips */}
+          {scope === "all" && (
+            <View style={{ paddingTop: 12 }}>
+              <View
+                className="flex-row items-center bg-white rounded-full px-3.5 border-line"
+                style={{ borderWidth: 0.5, height: 40 }}
+              >
+                <Ionicons name="search" size={16} color={INK_3} />
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search title, area or agent"
+                  placeholderTextColor={INK_3}
+                  className="flex-1 ml-2 text-ink text-[13.5px]"
+                  returnKeyType="search"
+                />
+                {query.length > 0 && (
+                  <Pressable onPress={() => setQuery("")} hitSlop={8}>
+                    <Ionicons name="close-circle" size={16} color={INK_3} />
+                  </Pressable>
+                )}
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8, paddingTop: 10, paddingBottom: 2 }}
+              >
+                {TYPE_FILTERS.map((f) => {
+                  const on = typeFilter === f.id;
+                  return (
+                    <Pressable
+                      key={f.id}
+                      onPress={() => setTypeFilter(f.id)}
+                      className="px-3.5 py-1.5 rounded-full"
+                      style={{
+                        backgroundColor: on ? INK : "#ffffff",
+                        borderWidth: on ? 0 : 1,
+                        borderColor: LINE,
+                      }}
+                    >
+                      <Text
+                        className="text-[12.5px] font-sans-bold"
+                        style={{ color: on ? "#ffffff" : INK_2 }}
+                      >
+                        {f.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
         </View>
 
         {/* List */}
-        {loading ? (
-          <View className="py-16 items-center">
-            <BouncyLoader color={PRIMARY} />
-          </View>
+        {scope === "mine" ? (
+          loadingMine && mine.length === 0 ? (
+            <Loader />
+          ) : (
+            <View className="px-4 pt-3 gap-3">
+              {mineFiltered.map((l) => (
+                <PortfolioCard key={l.id} listing={l} />
+              ))}
+              {mineFiltered.length === 0 && (
+                <EmptyState
+                  icon="albums-outline"
+                  title={mine.length === 0 ? "No listings yet" : "Nothing here"}
+                  detail={
+                    mine.length === 0
+                      ? "Tap + to create your first listing."
+                      : "No listings in this tab."
+                  }
+                />
+              )}
+            </View>
+          )
+        ) : loadingAll && all.length === 0 ? (
+          <Loader />
         ) : (
-          <View className="px-4 pt-3 gap-3">
-            {filtered.map((l) => (
-              <ListingCard key={l.id} listing={l} />
+          <View className="px-4 pt-3 gap-3.5">
+            {allFiltered.length > 0 && (
+              <Text className="text-[11.5px] font-sans-semibold text-ink-3 px-1">
+                {allFiltered.length} of {allTotal} live{" "}
+                {allTotal === 1 ? "listing" : "listings"}
+              </Text>
+            )}
+            {allFiltered.map((l) => (
+              <MarketCard key={l.id} listing={l} mine={l.agent?.id === myId} />
             ))}
-            {filtered.length === 0 && (
-              <View
-                className="bg-white rounded-2xl py-12 items-center border-line"
-                style={{ borderWidth: 0.5 }}
-              >
-                <Ionicons name="albums-outline" size={28} color={INK_3} />
-                <Text className="text-[13px] font-sans-bold text-ink mt-2">
-                  {items.length === 0 ? "No listings yet" : "Nothing here"}
-                </Text>
-                <Text className="text-[11.5px] text-ink-3 mt-1 text-center px-8">
-                  {items.length === 0
-                    ? "Tap + to create your first listing."
-                    : "No listings in this tab."}
-                </Text>
-              </View>
+            {allFiltered.length === 0 && (
+              <EmptyState
+                icon="search-outline"
+                title="No matches"
+                detail="Try a different search or filter."
+              />
             )}
           </View>
         )}
@@ -170,7 +351,37 @@ export default function AgentListingsScreen() {
   );
 }
 
-function ListingCard({ listing }: { listing: Listing }) {
+function Loader() {
+  return (
+    <View className="py-16 items-center">
+      <BouncyLoader color={PRIMARY} />
+    </View>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  detail,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <View
+      className="bg-white rounded-2xl py-12 items-center border-line"
+      style={{ borderWidth: 0.5 }}
+    >
+      <Ionicons name={icon} size={28} color={INK_3} />
+      <Text className="text-[13px] font-sans-bold text-ink mt-2">{title}</Text>
+      <Text className="text-[11.5px] text-ink-3 mt-1 text-center px-8">{detail}</Text>
+    </View>
+  );
+}
+
+/** The agent's own listing — status header, compact row, opens the manage screen. */
+function PortfolioCard({ listing }: { listing: Listing }) {
   const meta = STATUS_UI[listing.status] ?? STATUS_UI.PAUSED;
   return (
     <Pressable
@@ -224,6 +435,96 @@ function ListingCard({ listing }: { listing: Listing }) {
             )}
           </View>
         </View>
+      </View>
+    </Pressable>
+  );
+}
+
+/** A marketplace listing — photo-led, agent attribution, opens the public page. */
+function MarketCard({ listing, mine }: { listing: Listing; mine: boolean }) {
+  const agent = listing.agent;
+  return (
+    <Pressable
+      onPress={() => router.push(`/property/${listing.id}` as Href)}
+      className="bg-white rounded-2xl overflow-hidden border-line active:opacity-95"
+      style={{ borderWidth: 0.5 }}
+    >
+      {/* Cover */}
+      <View>
+        <Image
+          source={listing.coverImage}
+          style={{ width: "100%", height: 168 }}
+          contentFit="cover"
+        />
+        {/* Price */}
+        <View className="absolute left-3 bottom-3 bg-ink/90 rounded-full px-3 py-1.5">
+          <Text className="text-white font-sans-bold text-[13px]">
+            {listing.priceLabel}
+            {listing.period ? (
+              <Text className="text-white/70 font-sans-medium"> {listing.period}</Text>
+            ) : null}
+          </Text>
+        </View>
+        {/* Yours / type badge */}
+        <View className="absolute right-3 top-3 flex-row gap-1.5">
+          {mine && (
+            <View className="bg-primary rounded-full px-2.5 py-1">
+              <Text className="text-white font-sans-bold text-[10px] tracking-widest uppercase">
+                Yours
+              </Text>
+            </View>
+          )}
+          {listing.verified && (
+            <View className="bg-white/90 rounded-full w-6 h-6 items-center justify-center">
+              <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Body */}
+      <View className="p-3.5">
+        <View className="flex-row items-baseline justify-between">
+          <Text className="text-[15px] font-sans-bold text-ink flex-1" numberOfLines={1}>
+            {listing.title}
+          </Text>
+          {listing.rating > 0 && (
+            <View className="flex-row items-center gap-1 ml-2">
+              <Ionicons name="star" size={11} color="#b9842c" />
+              <Text className="text-[11.5px] font-sans-bold text-ink">
+                {listing.rating.toFixed(1)}
+              </Text>
+            </View>
+          )}
+        </View>
+        <Text className="text-[12px] text-ink-3 mt-0.5" numberOfLines={1}>
+          {listing.location}
+        </Text>
+
+        <View className="flex-row gap-3.5 mt-2.5">
+          <MetricChip icon="bed-outline" value={`${listing.beds}`} label="bed" />
+          <MetricChip icon="water-outline" value={`${listing.baths}`} label="bath" />
+          {!!listing.sqft && (
+            <MetricChip icon="resize-outline" value={`${listing.sqft}`} label="m²" />
+          )}
+        </View>
+
+        {/* Agent */}
+        {agent && (
+          <View
+            className="flex-row items-center gap-2 mt-3 pt-3"
+            style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}
+          >
+            <PLAvatar initials={initialsOf(agent.name)} uri={agent.avatarUrl} size={26} tone="primary" />
+            <Text className="text-[12px] font-sans-semibold text-ink-2 flex-1" numberOfLines={1}>
+              {agent.name}
+              {agent.agency ? (
+                <Text className="text-ink-3 font-sans-medium"> · {agent.agency}</Text>
+              ) : null}
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={INK_3} />
+          </View>
+        )}
       </View>
     </Pressable>
   );

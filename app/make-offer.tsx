@@ -13,7 +13,7 @@ import { Image } from "expo-image";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import listingsService from "@/api/services/listings";
 import offersService from "@/api/services/offers";
 import type { Listing } from "@/api/types";
@@ -43,6 +43,7 @@ export default function MakeOfferScreen() {
   const [financing, setFinancing] = useState<Financing>("cash");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!listingId) {
@@ -280,7 +281,7 @@ export default function MakeOfferScreen() {
             borderTopWidth: 0.5,
             paddingHorizontal: 16,
             paddingTop: 14,
-            paddingBottom: 30,
+            paddingBottom: Math.max(insets.bottom, 20) + 10,
           }}
         >
           <Pressable

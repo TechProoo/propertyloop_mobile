@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -75,7 +74,7 @@ export default function SignupScreen() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { signUp } = useAuth();
+  const { signUp, signOut } = useAuth();
 
   const validate = (): string | null => {
     if (!name.trim()) return "Please enter your full name.";
@@ -140,14 +139,22 @@ export default function SignupScreen() {
 
     try {
       await signUp(payload);
-      // Agents finish onboarding via verification → plan → payment; vendors
-      // continue the 4-step wizard; buyers land straight in the app.
+      // Signup creates the account unverified and the backend emails a
+      // verification link. Agents finish onboarding via verification → plan →
+      // payment and vendors continue the 4-step wizard (both stay signed in so
+      // those authenticated wizards work; the email-verified gate is enforced
+      // at login). Buyers must verify their email and log in before entering —
+      // so we drop the just-created session and send them to "Check your inbox".
       if (role === "AGENT") {
         router.replace("/agent-verify" as Href);
       } else if (role === "VENDOR") {
         router.replace("/vendor-setup" as Href);
       } else {
-        router.replace("/(tabs)" as Href);
+        await signOut();
+        router.replace({
+          pathname: "/verify-email-sent",
+          params: { email: payload.email },
+        });
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? "Signup failed. Please try again.";
@@ -156,9 +163,6 @@ export default function SignupScreen() {
       setSubmitting(false);
     }
   };
-
-  const comingSoon = (provider: string) =>
-    Alert.alert("Coming soon", `${provider} sign-in is not available yet.`);
 
   return (
     <View className="flex-1 bg-cream">
@@ -322,27 +326,6 @@ export default function SignupScreen() {
               </Text>
             </Pressable>
 
-            {/* Divider */}
-            <View className="flex-row items-center gap-3 my-6">
-              <View className="flex-1 h-px bg-slate-300" />
-              <Text className="text-ink-3 text-xs font-sans-semibold">OR</Text>
-              <View className="flex-1 h-px bg-slate-300" />
-            </View>
-
-            {/* Social stubs */}
-            <View className="gap-2.5">
-              <SocialButton
-                label="Continue with Google"
-                glyph="G"
-                onPress={() => comingSoon("Google")}
-              />
-              <SocialButton
-                label="Continue with Apple"
-                glyph=""
-                onPress={() => comingSoon("Apple")}
-              />
-            </View>
-
             <Text className="text-ink-3 text-[11px] text-center mt-6">
               By continuing, you agree to our Terms &amp; Privacy Policy.
             </Text>
@@ -389,24 +372,3 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SocialButton({
-  label,
-  glyph,
-  onPress,
-}: {
-  label: string;
-  glyph: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="bg-white border border-line rounded-full py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
-    >
-      <Text className="text-ink text-base font-sans-bold w-5 text-center">
-        {glyph}
-      </Text>
-      <Text className="text-ink font-sans-semibold text-base">{label}</Text>
-    </Pressable>
-  );
-}

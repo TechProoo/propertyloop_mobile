@@ -3,7 +3,7 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import listingsService from "@/api/services/listings";
 
 const PRIMARY = "#1f6f43";
@@ -36,6 +36,7 @@ const STEPS = [
 
 export default function LogbookInfoScreen() {
   const [opening, setOpening] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Open the logbook for the first available listing as a live sample.
   const openSample = async () => {
@@ -194,7 +195,7 @@ export default function LogbookInfoScreen() {
       {/* Sticky CTA */}
       <View
         className="absolute left-0 right-0 bottom-0 bg-cream"
-        style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28 }}
+        style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
       >
         <Pressable
           onPress={openSample}

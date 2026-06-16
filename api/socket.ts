@@ -6,7 +6,7 @@ import { tokenStore } from "./tokenStore";
 // (handshake query `token`, see ChatGateway.extractToken).
 const baseURL =
   process.env.EXPO_PUBLIC_API_URL ??
-  "https://propertyloop-backend.up.railway.app/api";
+  "https://propertyloopbackend-production.up.railway.app/api";
 const origin = baseURL.replace(/\/api\/?$/, "");
 
 let socket: Socket | null = null;

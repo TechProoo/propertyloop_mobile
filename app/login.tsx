@@ -20,7 +20,7 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
 export default function LoginScreen() {
-  const { signIn } = useAuth();
+  const { signIn, signOut } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +39,16 @@ export default function LoginScreen() {
         email: email.trim().toLowerCase(),
         password,
       });
+      // Gate: an unverified email can't enter. Drop the session we just
+      // established and route to the verification screen with a resend option.
+      if (!user.emailVerifiedAt) {
+        await signOut();
+        router.replace({
+          pathname: "/verify-email-sent",
+          params: { email: user.email, from: "login" },
+        });
+        return;
+      }
       router.replace(roleHome(user.role) as Href);
     } catch (e: any) {
       const msg =
