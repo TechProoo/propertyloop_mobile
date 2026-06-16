@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
+import paymentsService from "@/api/services/payments";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -72,6 +73,25 @@ export default function ServiceJobScreen() {
     ]);
   };
 
+  const payEscrow = async () => {
+    if (!id || busy) return;
+    setBusy(true);
+    try {
+      const { paymentUrl } = await paymentsService.initJobEscrow(id);
+      await Linking.openURL(paymentUrl);
+      Alert.alert(
+        "Complete payment",
+        "Finish checkout in your browser. Your escrow is secured once payment confirms — reopen this screen to see the update.",
+        [{ text: "Done", onPress: () => load() }],
+      );
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again.";
+      Alert.alert("Couldn't start payment", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submitDispute = async () => {
     if (!id) return;
     if (reason.trim().length < 10) {
@@ -111,10 +131,19 @@ export default function ServiceJobScreen() {
   }
 
   const isDisputed = job.status === "DISPUTED";
+  const escrowStatus = job.escrowStatus ?? "NONE";
+  // Buyer must fund escrow once the vendor has accepted (and any time before
+  // they confirm). Released/locked/disputed all mean the money is already in.
+  const needsPayment =
+    escrowStatus === "NONE" &&
+    ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(job.status);
+  // Total the buyer pays = vendor fee + 10% platform fee (held in escrow).
+  const escrowTotal = job.escrowAmount ?? Math.round(job.vendorFee * 1.1);
   // A dispute can only be raised after completion, so keep the tracker at the
   // "Complete" stage instead of letting indexOf(-1) reset it to "Booked".
   const stageIdx = Math.max(0, ORDER.indexOf(isDisputed ? "COMPLETED" : job.status));
-  const awaitingConfirm = job.status === "COMPLETED";
+  // Only offer "confirm & release" once the work is done AND escrow is funded.
+  const awaitingConfirm = job.status === "COMPLETED" && escrowStatus === "LOCKED";
   const photos = job.completionProofImages ?? [];
 
   return (
@@ -142,18 +171,32 @@ export default function ServiceJobScreen() {
         {/* Status hero */}
         <View className="mt-4 rounded-2xl px-4 py-5" style={{ backgroundColor: INK }}>
           <View className="flex-row items-center gap-2">
-            <Ionicons name={isDisputed ? "alert-circle" : "shield-checkmark"} size={14} color={isDisputed ? "#f0a98e" : "#7ad296"} />
+            <Ionicons name={isDisputed ? "alert-circle" : needsPayment ? "lock-open" : "shield-checkmark"} size={14} color={isDisputed ? "#f0a98e" : needsPayment ? "#f0c98e" : "#7ad296"} />
             <Text className="text-[11px] font-sans-bold tracking-widest uppercase text-white/70">
-              {job.status === "CONFIRMED" ? "Released · paid" : isDisputed ? "Disputed · under review" : awaitingConfirm ? "Complete · awaiting your confirmation" : "In escrow"}
+              {job.status === "CONFIRMED"
+                ? "Released · paid"
+                : isDisputed
+                  ? "Disputed · under review"
+                  : needsPayment
+                    ? "Action needed · secure escrow"
+                    : awaitingConfirm
+                      ? "Complete · awaiting your confirmation"
+                      : escrowStatus === "LOCKED"
+                        ? "In escrow"
+                        : "Requested · awaiting vendor"}
             </Text>
           </View>
-          <Text className="font-serif text-white mt-2" style={{ fontSize: 34, letterSpacing: -0.6 }}>{naira(job.vendorFee)}</Text>
+          <Text className="font-serif text-white mt-2" style={{ fontSize: 34, letterSpacing: -0.6 }}>{naira(needsPayment ? escrowTotal : job.vendorFee)}</Text>
           <Text className="text-[12.5px] text-white/70 mt-1 leading-5">
             {job.status === "CONFIRMED"
               ? "You released this payment to the vendor."
               : isDisputed
                 ? "Payment is paused while our team reviews your dispute."
-                : "Held in escrow until you confirm. The vendor only gets paid when you say the work is good."}
+                : needsPayment
+                  ? "Pay now to lock the funds in escrow. The vendor only gets paid after you confirm the work is done."
+                  : escrowStatus === "LOCKED"
+                    ? "Held in escrow until you confirm. The vendor only gets paid when you say the work is good."
+                    : "Waiting for the vendor to accept your request. You'll pay to secure escrow once they do."}
           </Text>
         </View>
 
@@ -217,7 +260,25 @@ export default function ServiceJobScreen() {
         )}
       </ScrollView>
 
-      {/* Sticky footer */}
+      {/* Sticky footer — fund escrow */}
+      {needsPayment && (
+        <View className="absolute left-0 right-0 bottom-0 border-line bg-cream" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10, gap: 8 }}>
+          {busy ? (
+            <View className="items-center" style={{ paddingVertical: 12 }}><BouncyLoader color={PRIMARY} /></View>
+          ) : (
+            <>
+              <Pressable onPress={payEscrow} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>
+                <Text className="text-white font-sans-bold text-[15px]">Pay {naira(escrowTotal)} to secure escrow</Text>
+              </Pressable>
+              <Text className="text-[11px] text-ink-3 text-center">
+                {naira(job.vendorFee)} to the vendor + 10% platform fee · held until you confirm · Paystack
+              </Text>
+            </>
+          )}
+        </View>
+      )}
+
+      {/* Sticky footer — confirm / dispute */}
       {awaitingConfirm && (
         <View className="absolute left-0 right-0 bottom-0 border-line bg-cream" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10, gap: 10 }}>
           {busy ? (
