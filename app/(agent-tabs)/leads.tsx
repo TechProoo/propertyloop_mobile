@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   Pressable,
@@ -8,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -166,7 +166,7 @@ export default function AgentLeadsScreen() {
 
         {loading ? (
           <View className="py-16 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : (
           <View className="px-4 pt-3 gap-3">
@@ -243,7 +243,7 @@ function LeadCard({ lead, viewerRole, onChanged }: { lead: Lead; viewerRole?: Co
       </View>
 
       {busy ? (
-        <View className="py-2.5 items-center" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}><ActivityIndicator color={PRIMARY} /></View>
+        <View className="py-2.5 items-center" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}><BouncyLoader color={PRIMARY} /></View>
       ) : (
         <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
           {lead.status === "NEW" && <ActionBtn label="Mark contacted" soft onPress={markContacted} />}
@@ -288,7 +288,7 @@ function OfferCard({ offer, onChanged }: { offer: Offer; onChanged: () => void }
       </Pressable>
 
       {busy ? (
-        <View className="py-2.5 items-center" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}><ActivityIndicator color={PRIMARY} /></View>
+        <View className="py-2.5 items-center" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}><BouncyLoader color={PRIMARY} /></View>
       ) : myTurn ? (
         <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
           <ActionBtn label="Decline" soft onPress={() => act(() => offersService.decline(offer.id), "Decline")} />

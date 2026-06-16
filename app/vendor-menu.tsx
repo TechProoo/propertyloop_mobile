@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -57,7 +58,7 @@ export default function VendorMenuScreen() {
 
       {loading ? (
         <View className="py-16 items-center">
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
@@ -146,7 +147,7 @@ function ServiceCard({ service, onChanged }: { service: VendorService; onChanged
       </View>
       {busy ? (
         <View className="py-2.5 items-center" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : (
         <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>

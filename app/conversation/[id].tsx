@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Linking,
@@ -11,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -349,7 +349,7 @@ export default function ConversationScreen() {
         {/* Messages */}
         {loading ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : (
           <ScrollView

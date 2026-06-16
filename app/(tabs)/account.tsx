@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import bookmarksService from "@/api/services/bookmarks";
@@ -262,7 +263,7 @@ export default function AccountScreen() {
           <SectionLabel className="px-5 pt-3.5">Up next</SectionLabel>
           {loading ? (
             <View className="py-8 items-center">
-              <ActivityIndicator color={PRIMARY} />
+              <BouncyLoader color={PRIMARY} />
             </View>
           ) : upNext.length === 0 ? (
             <Text className="px-5 pt-2 text-[12.5px] text-ink-3 leading-5">
@@ -280,7 +281,7 @@ export default function AccountScreen() {
           <SectionLabel className="px-5 pt-4">Service Loop · open jobs</SectionLabel>
           {loading ? (
             <View className="py-8 items-center">
-              <ActivityIndicator color={PRIMARY} />
+              <BouncyLoader color={PRIMARY} />
             </View>
           ) : openJobs.length === 0 ? (
             <Text className="px-5 pt-2 text-[12.5px] text-ink-3">

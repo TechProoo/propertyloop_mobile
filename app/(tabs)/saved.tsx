@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -8,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -89,7 +89,7 @@ export default function SavedScreen() {
 
         {loading ? (
           <View className="py-20 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : error ? (
           <EmptyBlock

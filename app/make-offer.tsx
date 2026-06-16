@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -140,7 +140,7 @@ export default function MakeOfferScreen() {
                 className="items-center justify-center"
                 style={{ width: 60, height: 60, borderRadius: 10 }}
               >
-                <ActivityIndicator color={PRIMARY} />
+                <BouncyLoader color={PRIMARY} />
               </View>
             ) : (
               <Image

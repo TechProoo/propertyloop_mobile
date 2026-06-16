@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Linking,
   Pressable,
@@ -9,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import {
   Stack,
@@ -130,7 +130,7 @@ export default function VendorActiveJobScreen() {
     return (
       <View className="flex-1 bg-cream items-center justify-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       </View>
     );
   }
@@ -306,7 +306,7 @@ export default function VendorActiveJobScreen() {
       >
         {busy ? (
           <View className="items-center" style={{ paddingVertical: 16 }}>
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : job.status === "ACCEPTED" ? (
           <Pressable onPress={startJob} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>

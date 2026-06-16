@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import {
   CREATE_LISTING_AMENITIES,
   CREATE_LISTING_TYPES,
@@ -157,6 +157,12 @@ export default function CreateListingScreen() {
       arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v],
     );
 
+  // Description must reach a minimum word count so buyers get a real picture
+  // of the home — short blurbs hurt match quality and listing trust.
+  const MIN_WORDS = 15;
+  const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0;
+  const wordsLeft = Math.max(0, MIN_WORDS - wordCount);
+
   const canNext =
     step === "Basics"
       ? !!type &&
@@ -168,7 +174,7 @@ export default function CreateListingScreen() {
       : step === "Photos"
         ? photos.length >= 1
         : step === "Details"
-          ? !!beds && !!baths && !!sqm.trim() && description.trim().length >= 20
+          ? !!beds && !!baths && !!sqm.trim() && wordCount >= MIN_WORDS
           : true;
 
   const buildPayload = (urls: string[]) => ({
@@ -228,7 +234,7 @@ export default function CreateListingScreen() {
     return (
       <View className="flex-1 bg-cream items-center justify-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       </View>
     );
   }
@@ -487,8 +493,13 @@ export default function CreateListingScreen() {
                 className="bg-white border border-line rounded-2xl px-4 py-3 text-ink text-[14px] mt-2"
                 style={{ minHeight: 120 }}
               />
-              <Text className="text-[11px] text-ink-3 mt-1.5">
-                {description.trim().length}/500 · minimum 20
+              <Text
+                className="text-[11px] mt-1.5"
+                style={{ color: wordCount < MIN_WORDS ? "#b3261e" : INK_3 }}
+              >
+                {wordCount < MIN_WORDS
+                  ? `Add at least ${MIN_WORDS} words so buyers get the full picture — ${wordsLeft} more to go.`
+                  : `${wordCount} words · looks good`}
               </Text>
             </>
           )}

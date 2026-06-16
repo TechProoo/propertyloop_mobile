@@ -102,7 +102,7 @@ export default function SettingsScreen() {
           className="bg-white rounded-2xl px-4 py-4 flex-row items-center gap-3 border-line mt-1"
           style={{ borderWidth: 0.5 }}
         >
-          <PLAvatar initials={initialsOf(user?.name)} size={56} tone="primary" />
+          <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={56} tone="primary" />
           <View className="flex-1">
             <Text className="text-[15px] font-sans-bold text-ink">
               {user?.name ?? "Your account"}

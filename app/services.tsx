@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -131,7 +132,7 @@ export default function ServicesScreen() {
         {/* Vendor rows */}
         {loading ? (
           <View className="py-10 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : vendors.length === 0 ? (
           <Text className="px-5 pt-3 text-[12.5px] text-ink-3">

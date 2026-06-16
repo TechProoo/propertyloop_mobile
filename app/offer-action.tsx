@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -73,7 +73,7 @@ export default function OfferActionScreen() {
     return (
       <View className="flex-1 bg-cream items-center justify-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       </View>
     );
   }
@@ -187,7 +187,7 @@ export default function OfferActionScreen() {
         {/* Actions */}
         {busy ? (
           <View className="mt-6 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : (
           <View className="mt-5 gap-2.5">

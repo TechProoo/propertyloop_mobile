@@ -3,9 +3,10 @@ import { Stack, router, useRootNavigationState, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth, roleHome } from '@/context/auth';
+import { BootAnimation } from '@/components/brand/BootAnimation';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
 // bundle the weights you actually use (instead of all 18 variants).
 import { useFonts } from '@expo-google-fonts/inter/useFonts';
@@ -140,8 +141,24 @@ export default function RootLayout() {
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />
+        <BootGate />
       </ThemeProvider>
     </AuthProvider>
+  );
+}
+
+/**
+ * Renders the animated PropertyLoop boot overlay on top of the navigator from
+ * cold start, then unmounts it once the session has resolved (and the boot
+ * animation has played its minimum beat + fade-out). Lives inside AuthProvider
+ * so it can read session status.
+ */
+function BootGate() {
+  const { status } = useAuth();
+  const [done, setDone] = useState(false);
+  if (done) return null;
+  return (
+    <BootAnimation authReady={status !== 'loading'} onDone={() => setDone(true)} />
   );
 }
 

@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorJobsService, {
   type JobStatus,
@@ -114,7 +114,7 @@ export default function VendorJobsScreen() {
 
       {loading ? (
         <View className="py-16 items-center">
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
@@ -179,7 +179,7 @@ function JobCard({ job, onChanged }: { job: VendorJob; onChanged: () => void }) 
 
       {busy ? (
         <View className="py-2.5 items-center" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : job.status === "PENDING" ? (
         <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>

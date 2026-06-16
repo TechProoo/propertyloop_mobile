@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   Share,
   Text,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -71,7 +71,7 @@ export default function ShortletDetailScreen() {
     return (
       <View className="flex-1 bg-cream items-center justify-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       </View>
     );
   }

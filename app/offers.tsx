@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -142,7 +142,7 @@ export default function OffersScreen() {
         {/* Body */}
         {loading ? (
           <View className="py-20 items-center">
-            <ActivityIndicator color={PRIMARY} />
+            <BouncyLoader color={PRIMARY} />
           </View>
         ) : error ? (
           <Empty
@@ -262,7 +262,7 @@ function OfferCard({ offer, onChanged }: { offer: Offer; onChanged: () => void }
           className="py-3 items-center"
           style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}
         >
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : agentCountered ? (
         <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>

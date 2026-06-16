@@ -39,7 +39,7 @@ export default function EditProfileScreen() {
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [location, setLocation] = useState("");
   const [bio, setBio]     = useState("");
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatarUrl ?? null);
   const [saving, setSaving] = useState(false);
 
   // Bio / location aren't on the lightweight auth user — pull the full profile.

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -62,7 +63,7 @@ export default function NotificationSettingsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : !settings ? (
         <View className="flex-1 items-center justify-center px-8">

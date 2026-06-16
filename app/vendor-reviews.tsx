@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -76,7 +77,7 @@ export default function VendorReviewsScreen() {
 
       {loading ? (
         <View className="py-16 items-center">
-          <ActivityIndicator color={PRIMARY} />
+          <BouncyLoader color={PRIMARY} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>

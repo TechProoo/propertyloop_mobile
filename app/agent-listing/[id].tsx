@@ -1,12 +1,12 @@
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import {
   Stack,
@@ -106,7 +106,7 @@ export default function AgentListingDetailScreen() {
     return (
       <View className="flex-1 bg-cream items-center justify-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       </View>
     );
   }
@@ -214,7 +214,7 @@ export default function AgentListingDetailScreen() {
           </Text>
           {busy ? (
             <View className="py-4 items-center">
-              <ActivityIndicator color={PRIMARY} />
+              <BouncyLoader color={PRIMARY} />
             </View>
           ) : (
             <View className="gap-2">

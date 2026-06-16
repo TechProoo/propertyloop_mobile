@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -92,7 +93,7 @@ export default function ServiceJobScreen() {
     return (
       <View className="flex-1 bg-cream items-center justify-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={PRIMARY} />
+        <BouncyLoader color={PRIMARY} />
       </View>
     );
   }
@@ -201,7 +202,7 @@ export default function ServiceJobScreen() {
       {awaitingConfirm && (
         <View className="absolute left-0 right-0 bottom-0 border-line bg-cream" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28, gap: 10 }}>
           {busy ? (
-            <View className="items-center" style={{ paddingVertical: 12 }}><ActivityIndicator color={PRIMARY} /></View>
+            <View className="items-center" style={{ paddingVertical: 12 }}><BouncyLoader color={PRIMARY} /></View>
           ) : disputing ? (
             <>
               <TextInput

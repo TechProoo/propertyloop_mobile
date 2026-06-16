@@ -12,6 +12,18 @@ import { toggleSaved, useIsSaved } from "@/lib/favourites";
 import { MODES, type Mode } from "@/mocks/home";
 import listingsService from "@/api/services/listings";
 import type { Listing, ListingType } from "@/api/types";
+import { useAuth } from "@/context/auth";
+
+function initialsOf(name?: string | null) {
+  if (!name) return "PL";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
 
 const PRIMARY = "#1f6f43"; // brand green — accent (was blue in the reference)
 const ACCENT = "#b9842c"; // gold — rating stars only
@@ -118,6 +130,7 @@ export default function HomeScreen() {
 // Header — location pill + bell + avatar
 // ─────────────────────────────────────────────────────────────────
 function Header() {
+  const { user } = useAuth();
   return (
     <View className="px-5 pt-1 flex-row items-center justify-between">
       <Pressable
@@ -153,7 +166,7 @@ function Header() {
             style={{ backgroundColor: PRIMARY, borderWidth: 2, borderColor: "#ffffff" }}
           />
         </Pressable>
-        <PLAvatar initials="AO" size={40} tone="neutral" />
+        <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
       </View>
     </View>
   );
