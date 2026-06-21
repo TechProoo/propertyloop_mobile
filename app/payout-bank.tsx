@@ -29,6 +29,7 @@ export default function PayoutBankScreen() {
   const [holder, setHolder] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showAcct, setShowAcct] = useState(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -105,9 +106,31 @@ export default function PayoutBankScreen() {
               <Text className="font-serif text-white mt-1.5" style={{ fontSize: 22, letterSpacing: -0.4 }}>
                 {bankName || "Choose a bank"}
               </Text>
-              <Text className="font-serif text-white mt-2" style={{ fontSize: 18, letterSpacing: 2 }}>
-                •• {acct.slice(-4).padStart(4, "•")}
-              </Text>
+              <View className="flex-row items-center justify-between mt-2">
+                <Text className="font-serif text-white" style={{ fontSize: 18, letterSpacing: 2 }}>
+                  {acct.length === 0
+                    ? "••••••••••"
+                    : showAcct
+                      ? acct
+                      : `${"•".repeat(Math.max(0, acct.length - 4))}${acct.slice(-4)}`}
+                </Text>
+                {acct.length > 0 && (
+                  <Pressable
+                    onPress={() => setShowAcct((v) => !v)}
+                    hitSlop={10}
+                    className="flex-row items-center gap-1.5"
+                  >
+                    <Ionicons
+                      name={showAcct ? "eye-off-outline" : "eye-outline"}
+                      size={17}
+                      color="rgba(255,255,255,0.7)"
+                    />
+                    <Text className="text-[12px] font-sans-bold" style={{ color: "rgba(255,255,255,0.7)" }}>
+                      {showAcct ? "Hide" : "Show"}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
 
             {/* Bank picker */}

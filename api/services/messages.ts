@@ -91,7 +91,14 @@ const messagesService = {
     const { data } = await api.post<{ url: string; mimeType: string }>(
       "/upload/message-attachment",
       form,
-      { headers: { "Content-Type": "multipart/form-data" } },
+      {
+        // See listings.uploadPhoto: let React Native set the multipart
+        // boundary by removing the JSON default Content-Type header.
+        transformRequest: (d, headers) => {
+          headers.delete("Content-Type");
+          return d;
+        },
+      },
     );
     return { url: data.url, mimeType: data.mimeType };
   },

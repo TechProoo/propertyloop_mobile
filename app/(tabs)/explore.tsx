@@ -3,41 +3,26 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, type MapType } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useListings } from "@/api/hooks/useListings";
+import {
+  PropertyMap,
+  type MapLayer,
+  type PropertyMapHandle,
+} from "@/components/explore/PropertyMap";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 
-// Default map viewport — Lekki Phase 1 / Lagos. Listings don't yet carry
-// geocoordinates from the backend, so markers are spread deterministically
-// around this region (stable per index). Swap to real lat/long once the
-// listings API returns them.
-const DEFAULT_REGION = {
-  latitude: 6.454,
-  longitude: 3.473,
-  latitudeDelta: 0.018,
-  longitudeDelta: 0.014,
-};
-function spreadCoord(i: number) {
-  const angle = i * 2.39996323; // golden angle — even, non-overlapping spiral
-  const radius = 0.0016 + (i % 5) * 0.0014;
-  return {
-    latitude: DEFAULT_REGION.latitude + radius * Math.cos(angle),
-    longitude: DEFAULT_REGION.longitude + radius * Math.sin(angle),
-  };
-}
-
 export default function ExploreMapScreen() {
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
-  const [mapType, setMapType] = useState<MapType>("standard");
-  const mapRef = useRef<MapView | null>(null);
+  const [mapType, setMapType] = useState<MapLayer>("standard");
+  const mapRef = useRef<PropertyMapHandle | null>(null);
   const { items, total } = useListings({ sort: "newest", limit: 12 });
 
   const recenter = () => {
-    mapRef.current?.animateToRegion(DEFAULT_REGION, 600);
+    mapRef.current?.recenter();
   };
   const toggleLayer = () => {
     setMapType((t) => (t === "standard" ? "satellite" : "standard"));
@@ -46,52 +31,13 @@ export default function ExploreMapScreen() {
   return (
     <View className="flex-1 bg-cream">
       {/* Map fills the entire screen */}
-      <MapView
+      <PropertyMap
         ref={mapRef}
-        style={{ flex: 1 }}
-        initialRegion={DEFAULT_REGION}
+        items={items}
         mapType={mapType}
-        showsCompass={false}
-        toolbarEnabled={false}
-      >
-        {items.map((listing, i) => {
-          const isOn = selectedPin === listing.id;
-          return (
-            <Marker
-              key={listing.id}
-              coordinate={spreadCoord(i)}
-              onPress={() => setSelectedPin(listing.id)}
-              anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges={false}
-            >
-              {/* Custom marker — price pill, dark when active */}
-              <View
-                style={{
-                  paddingHorizontal: isOn ? 12 : 11,
-                  paddingVertical: isOn ? 8 : 6,
-                  borderRadius: 100,
-                  backgroundColor: isOn ? INK : "#ffffff",
-                  shadowColor: "#000",
-                  shadowOpacity: 0.16,
-                  shadowRadius: 8,
-                  shadowOffset: { width: 0, height: 2 },
-                  elevation: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Inter_700Bold",
-                    fontSize: isOn ? 13 : 12,
-                    color: isOn ? "#ffffff" : INK,
-                  }}
-                >
-                  {listing.priceLabel}
-                </Text>
-              </View>
-            </Marker>
-          );
-        })}
-      </MapView>
+        selectedPin={selectedPin}
+        onSelectPin={setSelectedPin}
+      />
 
       {/* Top floating search */}
       <SafeAreaView

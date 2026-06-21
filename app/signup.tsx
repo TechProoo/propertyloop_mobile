@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import {
   Stack,
   router,
@@ -18,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/context/auth";
 import { type SignupPayload } from "@/api/services/auth";
+import { seedLocationIfUnset } from "@/lib/location";
 
 type Role = "BUYER" | "AGENT" | "VENDOR";
 
@@ -140,16 +142,20 @@ export default function SignupScreen() {
     try {
       await signUp(payload);
       // Signup creates the account unverified and the backend emails a
-      // verification link. Agents finish onboarding via verification → plan →
-      // payment and vendors continue the 4-step wizard (both stay signed in so
-      // those authenticated wizards work; the email-verified gate is enforced
-      // at login). Buyers must verify their email and log in before entering —
-      // so we drop the just-created session and send them to "Check your inbox".
+      // verification link. Agents stay signed in to finish onboarding via
+      // verification → plan → payment (those wizards need auth; the email-
+      // verified gate is enforced at their next login). Buyers and vendors must
+      // verify their email before entering — we drop the just-created session
+      // and send them to "Check your inbox". After verifying and logging back
+      // in, vendors are routed into the setup wizard (see login.tsx /
+      // SessionRedirect in _layout.tsx).
       if (role === "AGENT") {
         router.replace("/agent-verify" as Href);
-      } else if (role === "VENDOR") {
-        router.replace("/vendor-setup" as Href);
       } else {
+        // Seed the Home feed location from the buyer's preferred areas. Stored
+        // device-locally, so it survives the sign-out below and is there when
+        // they log back in. Only seeds if they've never picked one themselves.
+        if (preferredLocations) await seedLocationIfUnset(preferredLocations);
         await signOut();
         router.replace({
           pathname: "/verify-email-sent",
@@ -239,7 +245,7 @@ export default function SignupScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="8+ chars · upper, lower, number"
-                secureTextEntry
+                secureToggle
                 autoComplete="new-password"
                 textContentType="newPassword"
               />
@@ -349,17 +355,50 @@ export default function SignupScreen() {
 
 // ─── Small primitives ──────────────────────────────────────────────────────
 
-type FieldProps = React.ComponentProps<typeof TextInput> & { label: string };
+type FieldProps = React.ComponentProps<typeof TextInput> & {
+  label: string;
+  // When set, masks input by default and shows an eye toggle to reveal it.
+  secureToggle?: boolean;
+};
 
-function Field({ label, ...inputProps }: FieldProps) {
+function Field({ label, secureToggle, ...inputProps }: FieldProps) {
+  const [hidden, setHidden] = useState(true);
+
+  if (!secureToggle) {
+    return (
+      <View>
+        <Text className="text-ink-2 text-xs font-sans-semibold mb-1.5">{label}</Text>
+        <TextInput
+          {...inputProps}
+          placeholderTextColor="#7f857f"
+          className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-base"
+        />
+      </View>
+    );
+  }
+
   return (
     <View>
       <Text className="text-ink-2 text-xs font-sans-semibold mb-1.5">{label}</Text>
-      <TextInput
-        {...inputProps}
-        placeholderTextColor="#7f857f"
-        className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-base"
-      />
+      <View className="bg-white border border-line rounded-2xl px-4 flex-row items-center">
+        <TextInput
+          {...inputProps}
+          secureTextEntry={hidden}
+          placeholderTextColor="#7f857f"
+          className="flex-1 py-3.5 text-ink text-base"
+        />
+        <Pressable
+          onPress={() => setHidden((v) => !v)}
+          hitSlop={8}
+          className="pl-2"
+        >
+          <Ionicons
+            name={hidden ? "eye-outline" : "eye-off-outline"}
+            size={20}
+            color="#7f857f"
+          />
+        </Pressable>
+      </View>
     </View>
   );
 }

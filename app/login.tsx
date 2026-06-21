@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth, roleHome } from "@/context/auth";
+import vendorsService from "@/api/services/vendors";
 
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
@@ -47,6 +48,13 @@ export default function LoginScreen() {
           pathname: "/verify-email-sent",
           params: { email: user.email, from: "login" },
         });
+        return;
+      }
+      // A verified vendor who hasn't finished the setup wizard yet (no bio on
+      // their trade profile) resumes onboarding; everyone else goes straight to
+      // their role's home.
+      if (user.role === "VENDOR" && (await vendorsService.needsOnboarding())) {
+        router.replace("/vendor-setup" as Href);
         return;
       }
       router.replace(roleHome(user.role) as Href);

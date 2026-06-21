@@ -16,6 +16,20 @@ const vendorsService = {
   getMe(): Promise<any> {
     return api.get("/vendors/me").then((r) => r.data);
   },
+  /**
+   * True when the vendor still needs to run the setup wizard. Signup never sets
+   * a bio, so an empty bio means the trade profile hasn't been set up yet. Any
+   * network/parse error resolves to false so a transient failure can't trap a
+   * returning, fully-onboarded vendor on the onboarding screen.
+   */
+  async needsOnboarding(): Promise<boolean> {
+    try {
+      const me = await this.getMe();
+      return !String(me?.bio ?? "").trim();
+    } catch {
+      return false;
+    }
+  },
   getStats(): Promise<VendorStats> {
     return api.get<VendorStats>("/vendors/me/stats").then((r) => r.data);
   },

@@ -11,7 +11,7 @@ export interface CreateListingPayload {
   location: string;
   beds: number;
   baths: number;
-  sqft: string;
+  sqft?: string;
   yearBuilt?: string;
   description: string;
   features: string[];
@@ -86,7 +86,16 @@ const listingsService = {
     const { data } = await api.post<{ fileUrl: string }>(
       "/listings/upload/photo",
       form,
-      { headers: { "Content-Type": "multipart/form-data" } },
+      {
+        // Don't set Content-Type ourselves: React Native adds
+        // `multipart/form-data; boundary=…` only when the header is absent.
+        // Hard-coding it (no boundary) makes the server's multipart parser
+        // reject the body. Strip the JSON default so RN can set it correctly.
+        transformRequest: (d, headers) => {
+          headers.delete("Content-Type");
+          return d;
+        },
+      },
     );
     return data.fileUrl;
   },
