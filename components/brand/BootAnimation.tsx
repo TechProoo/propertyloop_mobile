@@ -9,7 +9,8 @@
 // Skeleton/BouncyLoader), so it runs off the JS thread and stays smooth
 // even while the auth bootstrap is doing network work.
 import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 
 const EMERALD = "#34d27b"; // brighter than brand #1f6f43 so it glows on dark
@@ -141,13 +142,16 @@ export function BootAnimation({
           </Animated.View>
         </View>
 
-        {/* Brand block */}
+        {/* Brand block — the PropertyLoop logo on a clean card so its colours
+            read against the dark field. */}
         <Animated.View style={[styles.brand, enterStyle]}>
-          <View style={styles.wordmark}>
-            <Text style={[styles.word, { color: "#f4f1ea" }]}>property</Text>
-            <Text style={[styles.word, { color: EMERALD }]}>loop</Text>
+          <View style={styles.logoCard}>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.logo}
+              contentFit="contain"
+            />
           </View>
-          <Text style={styles.tagline}>Closing the loop</Text>
         </Animated.View>
       </View>
     </Animated.View>
@@ -194,8 +198,18 @@ const styles = StyleSheet.create({
     backgroundColor: EMERALD,
   },
   brand: { marginTop: 44, alignItems: "center" },
-  wordmark: { flexDirection: "row", alignItems: "baseline" },
-  word: { fontFamily: "Inter_700Bold", fontSize: 30, letterSpacing: -0.6 },
+  logoCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    paddingHorizontal: 22,
+    paddingVertical: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
+  logo: { width: 232, height: 86 },
   tagline: {
     fontFamily: "Inter_500Medium",
     fontSize: 12.5,
