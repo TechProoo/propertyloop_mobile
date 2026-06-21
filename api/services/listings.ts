@@ -77,26 +77,30 @@ const listingsService = {
     uri: string,
     opts?: { name?: string; type?: string },
   ): Promise<string> {
-    const form = new FormData();
-    form.append("file", {
-      uri,
-      name: opts?.name ?? `photo-${Date.now()}.jpg`,
-      type: opts?.type ?? "image/jpeg",
-    } as any);
-    const { data } = await api.post<{ fileUrl: string }>(
-      "/listings/upload/photo",
-      form,
-      {
-        // Don't set Content-Type ourselves: React Native adds
-        // `multipart/form-data; boundary=…` only when the header is absent.
-        // Hard-coding it (no boundary) makes the server's multipart parser
-        // reject the body. Strip the JSON default so RN can set it correctly.
-        transformRequest: (d, headers) => {
-          headers.delete("Content-Type");
-          return d;
-        },
-      },
+    // Presigned direct-to-R2 upload — the same path the web app and vendor
+    // image uploads use. The bytes go straight to storage instead of being
+    // proxied through the API as multipart/form-data, which on mobile networks
+    // dropped the connection mid-stream ("Network Error"). See vendors.uploadImage.
+    const contentType = opts?.type ?? "image/jpeg";
+    const filename = opts?.name ?? `photo-${Date.now()}.jpg`;
+
+    // Read the local file (file:// or content://) into a blob.
+    const blob = await (await fetch(uri)).blob();
+
+    // 1) Ask the API for a short-lived presigned PUT URL.
+    const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
+      "/listings/upload/photo/presign",
+      { filename, contentType, size: blob.size, folder: "listings" },
     );
+
+    // 2) Upload the bytes straight to storage.
+    const put = await fetch(data.uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": contentType },
+    });
+    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+
     return data.fileUrl;
   },
 

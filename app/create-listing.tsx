@@ -108,12 +108,15 @@ export default function CreateListingScreen() {
   }, [id]);
 
   // Upload only newly-picked (local) photos; keep already-hosted URLs as-is.
-  const resolvePhotos = () =>
-    Promise.all(
-      photos.map((u) =>
-        u.startsWith("http") ? Promise.resolve(u) : listingsService.uploadPhoto(u),
-      ),
-    );
+  // Sequential, not parallel: mobile radios drop concurrent upload streams
+  // (intermittent connection resets), so one-at-a-time is far more reliable.
+  const resolvePhotos = async () => {
+    const urls: string[] = [];
+    for (const u of photos) {
+      urls.push(u.startsWith("http") ? u : await listingsService.uploadPhoto(u));
+    }
+    return urls;
+  };
 
   const stepIdx = STEPS.indexOf(step);
   const progress = (stepIdx + 1) / STEPS.length;
@@ -197,7 +200,13 @@ export default function CreateListingScreen() {
   const publish = async () => {
     setSubmitting(true);
     try {
-      const urls = await resolvePhotos();
+      let urls: string[];
+      try {
+        urls = await resolvePhotos();
+      } catch (e: any) {
+        Alert.alert("Photo upload failed", errText(e));
+        return;
+      }
       await listingsService.create(buildPayload(urls));
       Alert.alert(
         "Listing published",
@@ -205,8 +214,7 @@ export default function CreateListingScreen() {
         [{ text: "OK", onPress: () => router.replace("/(agent-tabs)/listings" as Href) }],
       );
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? "Couldn't publish. Please try again.";
-      Alert.alert("Publish failed", Array.isArray(msg) ? msg.join(", ") : msg);
+      Alert.alert("Publish failed", errText(e));
     } finally {
       setSubmitting(false);
     }
@@ -216,14 +224,19 @@ export default function CreateListingScreen() {
     if (!id) return;
     setSubmitting(true);
     try {
-      const urls = await resolvePhotos();
+      let urls: string[];
+      try {
+        urls = await resolvePhotos();
+      } catch (e: any) {
+        Alert.alert("Photo upload failed", errText(e));
+        return;
+      }
       await listingsService.update(id, buildPayload(urls));
       Alert.alert("Changes saved", "Your listing has been updated.", [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? "Couldn't save. Please try again.";
-      Alert.alert("Save failed", Array.isArray(msg) ? msg.join(", ") : msg);
+      Alert.alert("Save failed", errText(e));
     } finally {
       setSubmitting(false);
     }
@@ -569,6 +582,19 @@ export default function CreateListingScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+// Surface the *actual* failure instead of a vague fallback, so upload/network
+// problems are diagnosable: server validation message → HTTP status → the
+// transport error ("Network Error", "timeout of 90000ms exceeded").
+function errText(e: any): string {
+  const m = e?.response?.data?.message;
+  if (m) return Array.isArray(m) ? m.join(", ") : String(m);
+  if (e?.response?.status) {
+    return `Server responded ${e.response.status}. Please try again.`;
+  }
+  if (e?.message) return `${e.message}. Please try again.`;
+  return "Couldn't publish. Please try again.";
 }
 
 function Heading({ title, italic }: { title: string; italic: string }) {
