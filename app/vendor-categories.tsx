@@ -15,8 +15,6 @@ const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-type VerifyState = "done" | "active" | "todo";
-
 export default function VendorCategoriesScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
   const isManage = params.mode === "manage";
@@ -26,7 +24,6 @@ export default function VendorCategoriesScreen() {
   const [area, setArea]       = useState("Lekki, Ikoyi, V.I.");
   const [radius, setRadius]   = useState("10");
   const [skillDone, setSkillDone]   = useState(false);
-  const [selfieDone, setSelfieDone] = useState(false);
   const [samples, setSamples]       = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,21 +47,6 @@ export default function VendorCategoriesScreen() {
       if (samples.length + r.assets.length >= 3) setSkillDone(true);
     }
   };
-
-  const takeSelfie = async () => {
-    const cam = await ImagePicker.requestCameraPermissionsAsync();
-    if (!cam.granted) {
-      Alert.alert("Camera", "Allow camera access in Settings.");
-      return;
-    }
-    const r = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.85,
-    });
-    if (!r.canceled && r.assets[0]) setSelfieDone(true);
-  };
-
-  const stepState = (done: boolean, prev: boolean): VerifyState =>
-    done ? "done" : prev ? "active" : "todo";
 
   // Resolve a selected chip id to the label we save. "other" maps to whatever
   // trade the vendor typed, so professions outside the preset list aren't lost.
@@ -226,30 +208,9 @@ export default function VendorCategoriesScreen() {
             <Text className="text-[12px] text-ink-3 font-sans-bold">{radius} km radius</Text>
           </View>
 
-          {/* Verification */}
+          {/* Work samples */}
           {!isManage && (
           <>
-          <Label className="mt-6">Get the verified badge</Label>
-          <View className="gap-2 mt-2">
-            <VerifyRow
-              state={stepState(skillDone, true)}
-              title="Proof of skill"
-              detail="Trade certificate or 3+ work photos"
-              icon="ribbon-outline"
-              cta="Add"
-              onPress={pickSamples}
-            />
-            <VerifyRow
-              state={stepState(selfieDone, skillDone)}
-              title="Selfie check"
-              detail="Confirm it's really you"
-              icon="happy-outline"
-              cta="Take"
-              onPress={takeSelfie}
-            />
-          </View>
-
-          {/* Work samples */}
           <View className="flex-row items-baseline justify-between mt-6 mb-2">
             <Label className="">Work samples</Label>
             <Text className="text-[11px] font-sans-semibold text-ink-3">{samples.length} of 8</Text>
@@ -317,51 +278,6 @@ export default function VendorCategoriesScreen() {
         </View>
       </SafeAreaView>
     </View>
-  );
-}
-
-function VerifyRow({
-  state, title, detail, icon, cta, onPress,
-}: {
-  state: VerifyState;
-  title: string;
-  detail: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  cta: string;
-  onPress: () => void;
-}) {
-  const done = state === "done";
-  const active = state === "active";
-  const todo = state === "todo";
-  return (
-    <Pressable
-      onPress={() => !todo && onPress()}
-      className="flex-row items-center gap-3 px-3.5 py-3 rounded-2xl"
-      style={{
-        backgroundColor: "#ffffff",
-        borderWidth: active ? 1.5 : 1,
-        borderColor: active ? PRIMARY : "#e1dcd3",
-        opacity: todo ? 0.55 : 1,
-      }}
-    >
-      <View
-        className="w-10 h-10 rounded-xl items-center justify-center"
-        style={{ backgroundColor: done ? PRIMARY : "#f0f0f0" }}
-      >
-        <Ionicons name={done ? "checkmark" : icon} size={18} color={done ? "#ffffff" : INK_2} />
-      </View>
-      <View className="flex-1">
-        <Text className="text-[13.5px] font-sans-bold text-ink">{title}</Text>
-        <Text className="text-[11.5px] text-ink-3 mt-0.5">{detail}</Text>
-      </View>
-      {done ? (
-        <Text className="text-[11px] font-sans-bold text-primary">Done</Text>
-      ) : active ? (
-        <Text className="text-[12px] font-sans-bold text-primary">{cta}</Text>
-      ) : (
-        <Text className="text-[11px] font-sans-bold text-ink-3">Locked</Text>
-      )}
-    </Pressable>
   );
 }
 

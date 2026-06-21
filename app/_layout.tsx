@@ -2,10 +2,12 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, router, useRootNavigationState, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import '../global.css';
 import { useEffect, useRef, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth, roleHome } from '@/context/auth';
+import vendorsService from '@/api/services/vendors';
 import { BootAnimation } from '@/components/brand/BootAnimation';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
@@ -58,7 +60,8 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
+    <KeyboardProvider>
+      <AuthProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <SessionRedirect />
         <Stack
@@ -158,7 +161,8 @@ export default function RootLayout() {
         <UpdatePrompt />
         <BootGate />
       </ThemeProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </KeyboardProvider>
   );
 }
 
@@ -193,7 +197,19 @@ function SessionRedirect() {
     if (status === 'loading' || done.current) return;
     done.current = true;
     if (status === 'authed' && user) {
-      router.replace(roleHome(user.role) as Href);
+      // A vendor who hasn't finished the setup wizard yet (no bio on their
+      // trade profile) resumes onboarding instead of landing on an empty
+      // dashboard; everyone else goes straight to their role's home.
+      if (user.role === 'VENDOR') {
+        vendorsService
+          .needsOnboarding()
+          .then((needs) =>
+            router.replace((needs ? '/vendor-setup' : roleHome(user.role)) as Href),
+          )
+          .catch(() => router.replace(roleHome(user.role) as Href));
+      } else {
+        router.replace(roleHome(user.role) as Href);
+      }
     }
   }, [navState?.key, status, user]);
 

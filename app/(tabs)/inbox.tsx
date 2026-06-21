@@ -41,7 +41,7 @@ function timeAgo(iso: string): string {
   return `${Math.floor(d / 7)}w`;
 }
 
-export default function InboxScreen() {
+export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {}) {
   const [items, setItems] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -93,7 +93,14 @@ export default function InboxScreen() {
                 className="font-serif text-ink mt-1.5"
                 style={{ fontSize: 32, lineHeight: 34, letterSpacing: -0.7 }}
               >
-                Your <Text className="font-serif-italic">conversations</Text>
+                {vendor && items.length === 0 ? (
+                  <Text className="font-serif-italic">Conversations</Text>
+                ) : (
+                  <>
+                    Your{" "}
+                    <Text className="font-serif-italic">conversations</Text>
+                  </>
+                )}
               </Text>
               {unreadTotal > 0 ? (
                 <Text className="text-[12px] font-sans-semibold text-primary mt-1">

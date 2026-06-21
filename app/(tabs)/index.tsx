@@ -13,6 +13,8 @@ import { MODES, type Mode } from "@/mocks/home";
 import listingsService from "@/api/services/listings";
 import type { Listing, ListingType } from "@/api/types";
 import { useAuth } from "@/context/auth";
+import { useSelectedLocation, labelForLocation } from "@/lib/location";
+import { LocationSheet } from "@/components/LocationSheet";
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
@@ -53,13 +55,19 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const location = useSelectedLocation();
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(false);
     listingsService
-      .list({ type: MODE_TO_TYPE[mode], sort: "newest", limit: 20 })
+      .list({
+        type: MODE_TO_TYPE[mode],
+        sort: "newest",
+        limit: 20,
+        ...(location ? { location } : {}),
+      })
       .then((res) => {
         if (active) setItems(res.items);
       })
@@ -72,7 +80,7 @@ export default function HomeScreen() {
     return () => {
       active = false;
     };
-  }, [mode, reloadKey]);
+  }, [mode, reloadKey, location]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -94,6 +102,7 @@ export default function HomeScreen() {
       >
         <Header />
         <Heading />
+        <ServiceLoopEntry />
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
 
@@ -121,8 +130,6 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
-
-        <ServiceLoopBanner />
       </RevealScrollView>
     </SafeAreaView>
   );
@@ -133,23 +140,35 @@ export default function HomeScreen() {
 // ─────────────────────────────────────────────────────────────────
 function Header() {
   const { user } = useAuth();
+  const location = useSelectedLocation();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const label = labelForLocation(location);
   return (
     <View className="px-5 pt-1 flex-row items-center justify-between">
       <Pressable
-        onPress={tapLight}
+        onPress={() => {
+          tapLight();
+          setPickerOpen(true);
+        }}
         hitSlop={8}
         className="flex-row items-center gap-2 active:opacity-70"
         accessibilityRole="button"
-        accessibilityLabel="Current location, Lekki, Lagos. Tap to change."
+        accessibilityLabel={`Current location, ${label}. Tap to change.`}
       >
         <Ionicons name="location-outline" size={22} color={INK} />
         <View className="flex-row items-center gap-1.5 bg-ink rounded-full pl-3 pr-2.5 py-1.5">
           <Text className="text-[12.5px] font-sans-bold text-white">
-            Lekki, Lagos
+            {label}
           </Text>
           <Ionicons name="chevron-down" size={13} color="#ffffff" />
         </View>
       </Pressable>
+
+      <LocationSheet
+        visible={pickerOpen}
+        selected={location}
+        onClose={() => setPickerOpen(false)}
+      />
 
       <View className="flex-row items-center gap-2.5">
         <Pressable
@@ -383,32 +402,51 @@ function HomeCard({ listing }: { listing: Listing }) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Service Loop — slim neutral entry (preserves the marketplace link)
+// Service Loop — compact, premium entry placed near the top of the feed
+// (not a full-width banner, so a long listing feed never buries it).
+// Soft brand-tinted card with a green icon tile + circular arrow.
 // ─────────────────────────────────────────────────────────────────
-function ServiceLoopBanner() {
+function ServiceLoopEntry() {
   return (
-    <Appear delay={120} style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+    <Appear delay={60} style={{ paddingHorizontal: 20, paddingTop: 16 }}>
       <PressableScale
         onPress={() => {
           tapLight();
           router.push("/services" as Href);
         }}
-        className="bg-primary rounded-2xl flex-row items-center gap-3 px-4 py-3.5"
+        activeScale={0.97}
+        className="flex-row items-center gap-3 rounded-2xl pl-3 pr-2.5 py-2.5"
+        style={{
+          backgroundColor: "#e3efe7", // primary.soft
+          borderWidth: 1,
+          borderColor: "rgba(31,111,67,0.16)",
+        }}
         accessibilityRole="button"
         accessibilityLabel="Service Loop — hire verified pros, paid safely via escrow"
       >
-        <View className="w-11 h-11 rounded-xl bg-white/15 items-center justify-center">
-          <Text style={{ fontSize: 22 }}>🛠️</Text>
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center"
+          style={{ backgroundColor: PRIMARY }}
+        >
+          <Ionicons name="construct" size={19} color="#ffffff" />
         </View>
         <View className="flex-1">
-          <Text className="text-[14px] font-sans-bold text-white tracking-tight">
-            Need a plumber or cleaner?
+          <Text
+            className="text-[10px] font-sans-bold text-primary uppercase"
+            style={{ letterSpacing: 1.3 }}
+          >
+            Service Loop
           </Text>
-          <Text className="text-[11.5px] text-white/70 mt-0.5">
-            Service Loop · verified pros, paid safely via escrow
+          <Text className="text-[13.5px] font-sans-bold text-ink tracking-tight mt-0.5">
+            Hire verified pros, paid via escrow
           </Text>
         </View>
-        <Ionicons name="arrow-forward" size={18} color="#ffffff" />
+        <View
+          className="w-8 h-8 rounded-full items-center justify-center"
+          style={{ backgroundColor: PRIMARY }}
+        >
+          <Ionicons name="arrow-forward" size={16} color="#ffffff" />
+        </View>
       </PressableScale>
     </Appear>
   );

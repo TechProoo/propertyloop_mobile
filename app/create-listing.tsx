@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -175,7 +173,7 @@ export default function CreateListingScreen() {
       : step === "Photos"
         ? photos.length >= 1
         : step === "Details"
-          ? !!beds && !!baths && !!sqm.trim() && wordCount >= MIN_WORDS
+          ? !!beds && !!baths && wordCount >= MIN_WORDS
           : true;
 
   const buildPayload = (urls: string[]) => ({
@@ -188,7 +186,7 @@ export default function CreateListingScreen() {
     location: area.trim(),
     beds: Number(beds) || 0,
     baths: Number(baths) || 0,
-    sqft: sqm.trim(),
+    sqft: sqm.trim() || undefined,
     yearBuilt: year.trim() || undefined,
     description: description.trim(),
     features: amenities,
@@ -243,10 +241,7 @@ export default function CreateListingScreen() {
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+      <View className="flex-1">
         {/* Top bar */}
         <View className="flex-row items-center justify-between px-5 pt-1 pb-2">
           <Pressable
@@ -279,10 +274,12 @@ export default function CreateListingScreen() {
           </Text>
         </View>
 
-        <ScrollView
+        <KeyboardAwareScrollView
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140, paddingTop: 12 }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
+          bottomOffset={24}
         >
           {step === "Basics" && (
             <>
@@ -436,7 +433,9 @@ export default function CreateListingScreen() {
 
               <View className="flex-row gap-3 mt-5">
                 <View className="flex-1">
-                  <Label>Area (m²)</Label>
+                  <Label>
+                    Area (m²) <Text className="text-ink-3">· optional</Text>
+                  </Label>
                   <Field
                     value={sqm}
                     onChangeText={(t) => setSqm(t.replace(/[^0-9]/g, ""))}
@@ -538,7 +537,7 @@ export default function CreateListingScreen() {
               </View>
             </>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         {/* Sticky CTA */}
         <View
@@ -567,7 +566,7 @@ export default function CreateListingScreen() {
             </Text>
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
