@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { router } from "expo-router";
 import authService, {
   type AuthUser,
   type LoginPayload,
@@ -59,11 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // When a mid-session refresh fails, drop the user to logged-out.
+  // When a mid-session refresh fails, drop the user to logged-out AND send them
+  // to login. Otherwise they're stranded on an authed screen where every
+  // request silently 401s (e.g. "Unauthorized" when uploading a photo).
   useEffect(() => {
     setOnSessionExpired(() => {
       setUser(null);
       setStatus("guest");
+      clearSaved();
+      disconnectChatSocket();
+      router.replace("/login");
     });
     return () => setOnSessionExpired(null);
   }, []);
