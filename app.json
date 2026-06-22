@@ -4,7 +4,7 @@
     "slug": "propertyloop-mobile",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/propertyloop-icon.png",
     "scheme": "propertyloopmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -20,10 +20,8 @@
     "android": {
       "package": "ng.propertyloop.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/propertyloop-icon.png",
+        "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -37,8 +35,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 120,
+          "image": "./assets/images/propertyloop-icon.png",
+          "imageWidth": 140,
           "resizeMode": "contain",
           "backgroundColor": "#06160d",
           "dark": {
