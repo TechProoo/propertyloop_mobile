@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, RefreshControl, Text, View } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -68,6 +68,7 @@ export default function AgentHomeScreen() {
   const [offersToReview, setOffersToReview] = useState(0);
   const [sub, setSub] = useState<AgentSubscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -100,10 +101,24 @@ export default function AgentHomeScreen() {
     }, [load]),
   );
 
-  const greeting = (() => {
-    const h = new Date().getHours();
-    return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  })();
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
+  const now = new Date();
+  const greeting =
+    now.getHours() < 12
+      ? "Good morning"
+      : now.getHours() < 17
+        ? "Good afternoon"
+        : "Good evening";
+  const dateLabel = now.toLocaleDateString("en-NG", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
   const firstName = user?.name?.split(/\s+/)[0] ?? "there";
 
   const upNext: { tag: UpNextTag; title: string; href: Href }[] = [];
@@ -151,6 +166,14 @@ export default function AgentHomeScreen() {
       <RevealScrollView
         contentContainerStyle={{ paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={PRIMARY}
+            colors={[PRIMARY]}
+          />
+        }
       >
         {/* Hero — full-bleed emerald gradient */}
         <LinearGradient
@@ -198,6 +221,12 @@ export default function AgentHomeScreen() {
                 }}
               >
                 <Text className="font-serif-italic">{firstName}</Text>
+              </Text>
+              <Text
+                className="font-sans-medium mt-1"
+                style={{ fontSize: 11.5, color: "rgba(255,255,255,0.6)" }}
+              >
+                {dateLabel}
               </Text>
             </View>
             <Pressable
@@ -260,18 +289,21 @@ export default function AgentHomeScreen() {
             icon="business"
             n={stats?.listings.active ?? 0}
             label="Live"
+            onPress={() => router.push("/(agent-tabs)/listings" as Href)}
           />
           <Divider />
           <StatColumn
             icon="people"
             n={stats?.leads.total ?? 0}
             label="Leads"
+            onPress={() => router.push("/(agent-tabs)/leads" as Href)}
           />
           <Divider />
           <StatColumn
             icon="eye"
             n={stats?.listings.totalViews ?? 0}
             label="Views"
+            onPress={() => router.push("/(agent-tabs)/listings" as Href)}
           />
         </View>
 
@@ -540,13 +572,19 @@ function StatColumn({
   icon,
   n,
   label,
+  onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   n: number;
   label: string;
+  onPress?: () => void;
 }) {
   return (
-    <View className="flex-1 items-center">
+    <PressableScale
+      onPress={onPress}
+      activeScale={0.93}
+      style={{ flex: 1, alignItems: "center" }}
+    >
       <Ionicons name={icon} size={15} color={PRIMARY} />
       <CountUp
         value={n}
@@ -556,7 +594,7 @@ function StatColumn({
       <Text className="text-[10px] font-sans-bold text-ink-3 uppercase mt-0.5" style={{ letterSpacing: 0.8 }}>
         {label}
       </Text>
-    </View>
+    </PressableScale>
   );
 }
 
