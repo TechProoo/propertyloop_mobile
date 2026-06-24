@@ -39,7 +39,7 @@ const CARDS: RoleCard[] = [
     iconName: "key-outline",
     iconColor: "#1f6f43", // emerald-700
     title: "I'm looking for a home",
-    desc: "Search verified listings, save favourites, make offers, and book viewings.",
+    desc: "Search verified listings, save favourites, make offers, book viewings, and hire property service vendors.",
     chips: ["Search & save", "Mortgage tools", "Make offers"],
     ctaLabel: "Continue as buyer",
   },

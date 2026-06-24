@@ -82,7 +82,7 @@ export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {
         {/* Header */}
         <Appear from="down">
           <View className="px-5 pt-1 flex-row items-end justify-between">
-            <View>
+            <View className="flex-1 pr-3">
               <Text
                 className="text-[11px] font-sans-bold text-ink-3 uppercase"
                 style={{ letterSpacing: 1.3 }}
@@ -91,7 +91,7 @@ export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {
               </Text>
               <Text
                 className="font-serif text-ink mt-1.5"
-                style={{ fontSize: 32, lineHeight: 34, letterSpacing: -0.7 }}
+                style={{ fontSize: 28, lineHeight: 32, letterSpacing: -0.7 }}
               >
                 {vendor && items.length === 0 ? (
                   <Text className="font-serif-italic">Conversations</Text>
