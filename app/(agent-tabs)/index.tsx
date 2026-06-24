@@ -12,7 +12,12 @@ import {
   CountUp,
   Reveal,
   RevealScrollView,
+  Appear,
+  HeaderTransform,
+  useHeaderTransform,
+  stagger,
 } from "@/components/anim";
+import { useStaggeredEntrance } from "@/hooks/useStaggeredEntrance";
 import { useAuth } from "@/context/auth";
 import agentsService, {
   type AgentStats,
@@ -63,6 +68,7 @@ const UPNEXT_UI: Record<
 export default function AgentHomeScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { scrollOffset, handleScroll } = useHeaderTransform();
   const [stats, setStats] = useState<AgentStats | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [offersToReview, setOffersToReview] = useState(0);
@@ -164,6 +170,8 @@ export default function AgentHomeScreen() {
   return (
     <View className="flex-1 bg-cream">
       <RevealScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -176,7 +184,8 @@ export default function AgentHomeScreen() {
         }
       >
         {/* Hero — full-bleed emerald gradient */}
-        <LinearGradient
+        <Appear from="fade" delay={0}>
+          <LinearGradient
           colors={["#247a4b", PRIMARY, "#13502f"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -270,9 +279,11 @@ export default function AgentHomeScreen() {
               <HeroChip icon="trending-up" label={`${conversion}% converted`} />
             ) : null}
           </View>
-        </LinearGradient>
+          </LinearGradient>
+        </Appear>
 
         {/* Overlapping stat card */}
+        <Appear delay={stagger(0, 200)}>
         <View
           className="mx-4 bg-white rounded-3xl flex-row"
           style={{
@@ -305,7 +316,8 @@ export default function AgentHomeScreen() {
             label="Views"
             onPress={() => router.push("/(agent-tabs)/listings" as Href)}
           />
-        </View>
+          </View>
+        </Appear>
 
         {/* Subscription alert — surfaces a lapsed/cancelling plan up front */}
         <SubscriptionBanner sub={sub} />
@@ -319,12 +331,14 @@ export default function AgentHomeScreen() {
             {/* Up next */}
             {upNext.length > 0 && (
               <>
-                <SectionLabel className="px-5 pt-6">Up next</SectionLabel>
+                <Appear delay={stagger(1, 200)}>
+                  <SectionLabel className="px-5 pt-6">Up next</SectionLabel>
+                </Appear>
                 <View className="px-4 pt-2.5 gap-2.5">
-                  {upNext.map((u) => {
+                  {upNext.map((u, idx) => {
                     const ui = UPNEXT_UI[u.tag];
                     return (
-                      <Reveal key={u.tag}>
+                      <Appear key={u.tag} delay={stagger(idx + 2, 200)}>
                         <PressableScale
                           onPress={() => router.push(u.href)}
                           activeScale={0.98}
@@ -366,7 +380,7 @@ export default function AgentHomeScreen() {
                             color={INK_3}
                           />
                         </PressableScale>
-                      </Reveal>
+                      </Appear>
                     );
                   })}
                 </View>
