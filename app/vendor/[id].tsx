@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorsService from "@/api/services/vendors";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const ACCENT = "#b9842c";
@@ -20,6 +21,7 @@ function initialsOf(name?: string | null) {
 
 export default function PublicVendorProfileScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const { user } = useAuth();
   const [vendor, setVendor] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,18 +181,20 @@ export default function PublicVendorProfileScreen() {
         )}
       </ScrollView>
 
-      {/* Sticky hire */}
-      <SafeAreaView edges={["bottom"]} style={{ position: "absolute", left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
-        <View className="bg-cream border-line flex-row items-center gap-3 px-4" style={{ borderTopWidth: 0.5, paddingTop: 14, paddingBottom: 14 }}>
-          <View className="flex-1">
-            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">From</Text>
-            <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>{services[0]?.priceLabel ?? "—"}</Text>
+      {/* Sticky hire — hidden when viewing your own profile (you can't book yourself) */}
+      {user?.id !== id && (
+        <SafeAreaView edges={["bottom"]} style={{ position: "absolute", left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
+          <View className="bg-cream border-line flex-row items-center gap-3 px-4" style={{ borderTopWidth: 0.5, paddingTop: 14, paddingBottom: 14 }}>
+            <View className="flex-1">
+              <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">From</Text>
+              <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>{services[0]?.priceLabel ?? "—"}</Text>
+            </View>
+            <Pressable onPress={() => router.push(`/book-service?vendorId=${id}` as Href)} className="bg-primary rounded-full px-6 py-3.5 active:opacity-80">
+              <Text className="text-white font-sans-bold text-[14px]">Hire {vendor.name?.split(/\s+/)[0] ?? "vendor"}</Text>
+            </Pressable>
           </View>
-          <Pressable onPress={() => router.push(`/book-service?vendorId=${id}` as Href)} className="bg-primary rounded-full px-6 py-3.5 active:opacity-80">
-            <Text className="text-white font-sans-bold text-[14px]">Hire {vendor.name?.split(/\s+/)[0] ?? "vendor"}</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      )}
     </View>
   );
 }

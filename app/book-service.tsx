@@ -89,9 +89,12 @@ export default function BookServiceScreen() {
   const vendorFee = service?.priceNaira ?? 0;
   const total = Math.round(vendorFee * 1.1);
   const scheduledFor = dates[dateIdx];
+  // A vendor can't book their own service (the backend rejects it too).
+  const isOwn = !!user?.id && user.id === vendorId;
 
   const book = async () => {
     if (!vendorId || !service) return;
+    if (isOwn) { Alert.alert("Not allowed", "You can't book your own service."); return; }
     if (!address.trim()) { Alert.alert("Add an address", "Where should the vendor come?"); return; }
     if (!note.trim()) { Alert.alert("Add a note", "Tell the vendor what needs doing."); return; }
     const nameToUse = name.trim();
@@ -274,9 +277,6 @@ export default function BookServiceScreen() {
               <Text className="text-[11px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>You'll pay</Text>
               <Text className="font-serif text-white" style={{ fontSize: 24, letterSpacing: -0.5 }}>{naira(total)}</Text>
             </View>
-            <Text className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
-              {naira(vendorFee)} to the vendor + 10% platform fee
-            </Text>
             <View className="flex-row gap-1.5 mt-2.5 items-start">
               <Ionicons name="shield-checkmark" size={13} color="#7ad296" style={{ marginTop: 2 }} />
               <Text className="flex-1 text-[11.5px] leading-4" style={{ color: "rgba(255,255,255,0.75)" }}>
@@ -289,13 +289,19 @@ export default function BookServiceScreen() {
         {/* Sticky CTA */}
         <View className="absolute left-0 right-0 bottom-0 border-line" style={{ backgroundColor: "rgba(245,240,235,0.96)", borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
           <Pressable
-            disabled={submitting || !service}
+            disabled={submitting || !service || isOwn}
             className="bg-primary rounded-full items-center active:opacity-80"
-            style={{ paddingVertical: 17, opacity: submitting || !service ? 0.6 : 1 }}
+            style={{ paddingVertical: 17, opacity: submitting || !service || isOwn ? 0.6 : 1 }}
             onPress={book}
           >
             <Text className="text-white font-sans-bold text-[15px]">
-              {submitting ? "Sending…" : service ? `Request booking · ${naira(total)}` : "Select a service"}
+              {isOwn
+                ? "This is your own service"
+                : submitting
+                  ? "Sending…"
+                  : service
+                    ? `Request booking · ${naira(total)}`
+                    : "Select a service"}
             </Text>
           </Pressable>
         </View>
