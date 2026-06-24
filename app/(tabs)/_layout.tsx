@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { Tabs, useRoute } from "expo-router";
+import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
 import { TabBarIcon, MorphingTabIndicator } from "@/components/anim";
@@ -29,7 +29,6 @@ function getTabIndex(routeName: string): number {
 export default function TabLayout() {
   const { tabBarStyle } = useTabBarStyle("#ffffff");
   const { width: screenWidth } = useWindowDimensions();
-  const route = useRoute();
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
