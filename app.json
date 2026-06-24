@@ -4,7 +4,7 @@
     "slug": "propertyloop-mobile",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/propertyloop-icon.png",
+    "icon": "./assets/images/app-icon.png",
     "scheme": "propertyloopmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -20,7 +20,7 @@
     "android": {
       "package": "ng.propertyloop.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/propertyloop-icon.png",
+        "foregroundImage": "./assets/images/adaptive-foreground.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
