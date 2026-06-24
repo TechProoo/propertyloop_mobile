@@ -11,6 +11,7 @@ import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import {
@@ -18,7 +19,7 @@ import {
   CREATE_LISTING_TYPES,
 } from "@/mocks/agent";
 import listingsService from "@/api/services/listings";
-import type { ListingType } from "@/api/types";
+import type { DocumentType, ListingType } from "@/api/types";
 
 const TYPE_TO_ID: Record<string, string> = {
   SALE: "sale",
@@ -31,8 +32,50 @@ const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-const STEPS = ["Basics", "Photos", "Details", "Publish"] as const;
+const STEPS = ["Basics", "Media", "Details", "Publish"] as const;
 type Step = (typeof STEPS)[number];
+
+const MAX_PHOTOS = 8;
+const MAX_VIDEOS = 3;
+const MAX_DOCS = 6;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // backend video presign cap
+const MAX_DOC_BYTES = 10 * 1024 * 1024; // backend doc presign cap
+
+// A local (not-yet-uploaded) or already-hosted video.
+type VideoItem = { uri: string; mimeType?: string };
+
+// A title document. `existingId` is set for docs already attached to the
+// listing (edit mode) — those are removed via the API, never re-uploaded.
+type DocItem = {
+  key: string;
+  uri: string;
+  name: string;
+  type: DocumentType;
+  mimeType?: string;
+  existingId?: string;
+};
+
+const DOC_TYPE_ORDER: DocumentType[] = [
+  "C_OF_O",
+  "SURVEY_PLAN",
+  "BUILDING_PERMIT",
+  "RECEIPT",
+];
+const DOC_TYPE_LABELS: Record<DocumentType, string> = {
+  C_OF_O: "C of O",
+  SURVEY_PLAN: "Survey Plan",
+  BUILDING_PERMIT: "Building Permit",
+  RECEIPT: "Receipt",
+};
+
+// Best-effort initial category from the file name (the agent can change it).
+const inferDocType = (name: string): DocumentType => {
+  const n = name.toLowerCase();
+  if (n.includes("survey")) return "SURVEY_PLAN";
+  if (n.includes("permit")) return "BUILDING_PERMIT";
+  if (n.includes("receipt")) return "RECEIPT";
+  return "C_OF_O";
+};
 
 const PROPERTY_TYPES = [
   "Apartment",
@@ -71,6 +114,10 @@ export default function CreateListingScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [price, setPrice] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [docs, setDocs] = useState<DocItem[]>([]);
+  // Ids of already-attached documents the agent removed while editing.
+  const [removedDocIds, setRemovedDocIds] = useState<string[]>([]);
   const [beds, setBeds] = useState("3");
   const [baths, setBaths] = useState("3");
   const [sqm, setSqm] = useState("");
@@ -99,6 +146,18 @@ export default function CreateListingScreen() {
         setAmenities(l.features ?? []);
         setDescription(l.description ?? "");
         setPhotos(l.images?.length ? l.images : l.coverImage ? [l.coverImage] : []);
+        setVideos((l.videoUrls ?? []).map((uri) => ({ uri })));
+        setDocs(
+          (l.documents ?? [])
+            .filter((d) => !!d.url)
+            .map((d) => ({
+              key: d.id,
+              uri: d.url as string,
+              name: d.name,
+              type: d.type,
+              existingId: d.id,
+            })),
+        );
       })
       .catch(() => {})
       .finally(() => active && setLoadingEdit(false));
@@ -116,6 +175,39 @@ export default function CreateListingScreen() {
       urls.push(u.startsWith("http") ? u : await listingsService.uploadPhoto(u));
     }
     return urls;
+  };
+
+  // Same sequential strategy as photos — upload only newly-picked videos.
+  const resolveVideos = async () => {
+    const urls: string[] = [];
+    for (const v of videos) {
+      urls.push(
+        v.uri.startsWith("http")
+          ? v.uri
+          : await listingsService.uploadVideo(v.uri, { type: v.mimeType }),
+      );
+    }
+    return urls;
+  };
+
+  // Documents are attached after the listing exists (they need its id).
+  // In edit mode, remove the ones the agent deleted and upload any new ones.
+  const syncDocuments = async (listingId: string) => {
+    for (const docId of removedDocIds) {
+      await listingsService.removeDocument(listingId, docId);
+    }
+    for (const d of docs) {
+      if (d.existingId) continue; // already attached
+      const url = await listingsService.uploadDocument(d.uri, {
+        name: d.name,
+        type: d.mimeType,
+      });
+      await listingsService.addDocument(listingId, {
+        name: d.name,
+        type: d.type,
+        url,
+      });
+    }
   };
 
   const stepIdx = STEPS.indexOf(step);
@@ -150,9 +242,82 @@ export default function CreateListingScreen() {
       quality: 0.85,
     });
     if (!r.canceled) {
-      setPhotos((p) => [...p, ...r.assets.map((a) => a.uri)].slice(0, 8));
+      setPhotos((p) => [...p, ...r.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
     }
   };
+
+  const pickVideos = async () => {
+    const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!lib.granted) {
+      Alert.alert("Photo library", "Allow library access in Settings.");
+      return;
+    }
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["videos"],
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_VIDEOS - videos.length,
+      quality: 1,
+    });
+    if (r.canceled) return;
+    const ok = r.assets.filter((a) => (a.fileSize ?? 0) <= MAX_VIDEO_BYTES);
+    if (ok.length < r.assets.length) {
+      Alert.alert("Video too large", "Each video must be 50MB or smaller.");
+    }
+    setVideos((v) =>
+      [...v, ...ok.map((a) => ({ uri: a.uri, mimeType: a.mimeType }))].slice(
+        0,
+        MAX_VIDEOS,
+      ),
+    );
+  };
+
+  const pickDocuments = async () => {
+    const r = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "image/*"],
+      multiple: true,
+      copyToCacheDirectory: true,
+    });
+    if (r.canceled) return;
+    const ok = r.assets.filter((a) => (a.size ?? 0) <= MAX_DOC_BYTES);
+    if (ok.length < r.assets.length) {
+      Alert.alert("File too large", "Each document must be 10MB or smaller.");
+    }
+    setDocs((d) =>
+      [
+        ...d,
+        ...ok.map((a) => ({
+          key: `${a.uri}-${a.lastModified}`,
+          uri: a.uri,
+          name: a.name,
+          type: inferDocType(a.name),
+          mimeType: a.mimeType,
+        })),
+      ].slice(0, MAX_DOCS),
+    );
+  };
+
+  const removeDoc = (key: string) =>
+    setDocs((arr) => {
+      const target = arr.find((d) => d.key === key);
+      if (target?.existingId) {
+        setRemovedDocIds((ids) => [...ids, target.existingId as string]);
+      }
+      return arr.filter((d) => d.key !== key);
+    });
+
+  // Cycle a new doc through the four categories (existing docs aren't editable —
+  // the API has no update-document route, only add/remove).
+  const cycleDocType = (key: string) =>
+    setDocs((arr) =>
+      arr.map((d) => {
+        if (d.key !== key || d.existingId) return d;
+        const next =
+          DOC_TYPE_ORDER[
+            (DOC_TYPE_ORDER.indexOf(d.type) + 1) % DOC_TYPE_ORDER.length
+          ];
+        return { ...d, type: next };
+      }),
+    );
 
   const toggleAmenity = (v: string) =>
     setAmenities((arr) =>
@@ -173,13 +338,13 @@ export default function CreateListingScreen() {
         !!address.trim() &&
         !!area.trim() &&
         !!price.trim()
-      : step === "Photos"
+      : step === "Media"
         ? photos.length >= 1
         : step === "Details"
           ? !!beds && !!baths && wordCount >= MIN_WORDS
           : true;
 
-  const buildPayload = (urls: string[]) => ({
+  const buildPayload = (urls: string[], videoUrls: string[]) => ({
     title: title.trim(),
     type: TYPE_MAP[type] ?? "SALE",
     propertyType,
@@ -195,22 +360,34 @@ export default function CreateListingScreen() {
     features: amenities,
     coverImage: urls[0],
     images: urls,
+    videoUrl: videoUrls[0],
+    videoUrls,
   });
 
   const publish = async () => {
     setSubmitting(true);
     try {
       let urls: string[];
+      let videoUrls: string[];
       try {
         urls = await resolvePhotos();
+        videoUrls = await resolveVideos();
       } catch (e: any) {
-        Alert.alert("Photo upload failed", errText(e));
+        Alert.alert("Media upload failed", errText(e));
         return;
       }
-      await listingsService.create(buildPayload(urls));
+      const created = await listingsService.create(buildPayload(urls, videoUrls));
+      // The listing is live even if a document fails — attach them after, and
+      // only soften the success message if something didn't go through.
+      let docWarning = "";
+      try {
+        await syncDocuments(created.id);
+      } catch (e: any) {
+        docWarning = ` Some documents didn't upload (${errText(e)}) — add them again from the listing.`;
+      }
       Alert.alert(
         "Listing published",
-        "Your listing is now live for buyers in matching searches.",
+        `Your listing is now live for buyers in matching searches.${docWarning}`,
         [{ text: "OK", onPress: () => router.replace("/(agent-tabs)/listings" as Href) }],
       );
     } catch (e: any) {
@@ -225,14 +402,22 @@ export default function CreateListingScreen() {
     setSubmitting(true);
     try {
       let urls: string[];
+      let videoUrls: string[];
       try {
         urls = await resolvePhotos();
+        videoUrls = await resolveVideos();
       } catch (e: any) {
-        Alert.alert("Photo upload failed", errText(e));
+        Alert.alert("Media upload failed", errText(e));
         return;
       }
-      await listingsService.update(id, buildPayload(urls));
-      Alert.alert("Changes saved", "Your listing has been updated.", [
+      await listingsService.update(id, buildPayload(urls, videoUrls));
+      let docWarning = "";
+      try {
+        await syncDocuments(id);
+      } catch (e: any) {
+        docWarning = ` Some documents didn't update (${errText(e)}).`;
+      }
+      Alert.alert("Changes saved", `Your listing has been updated.${docWarning}`, [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (e: any) {
@@ -378,14 +563,16 @@ export default function CreateListingScreen() {
             </>
           )}
 
-          {step === "Photos" && (
+          {step === "Media" && (
             <>
-              <Heading title="Add up to 8" italic=" photos" />
+              <Heading title="Photos, video" italic=" & docs" />
               <Text className="text-[13px] text-ink-2 mt-2 leading-5">
-                Bright, level, taken in landscape. The first photo is the cover.
+                Bright, level photos taken in landscape. The first photo is the
+                cover. Video and documents are optional but build buyer trust.
               </Text>
 
-              <View className="flex-row flex-wrap gap-2 mt-4">
+              <Label className="mt-5">Photos</Label>
+              <View className="flex-row flex-wrap gap-2 mt-1">
                 {photos.map((uri, i) => (
                   <View key={uri} className="relative" style={{ width: "31.5%" }}>
                     <Image
@@ -410,7 +597,7 @@ export default function CreateListingScreen() {
                     </Pressable>
                   </View>
                 ))}
-                {photos.length < 8 && (
+                {photos.length < MAX_PHOTOS && (
                   <Pressable
                     onPress={pickPhotos}
                     className="items-center justify-center bg-white border-line"
@@ -430,9 +617,120 @@ export default function CreateListingScreen() {
                   </Pressable>
                 )}
               </View>
-              <Text className="text-[11.5px] text-ink-3 mt-3">
-                {photos.length}/8 added · drag to reorder coming soon
+              <Text className="text-[11.5px] text-ink-3 mt-2">
+                {photos.length}/{MAX_PHOTOS} added · the first is the cover
               </Text>
+
+              <Label className="mt-6">
+                Video <Text className="text-ink-3">· optional</Text>
+              </Label>
+              <View className="flex-row flex-wrap gap-2 mt-1">
+                {videos.map((v) => (
+                  <View key={v.uri} className="relative" style={{ width: "31.5%" }}>
+                    <View
+                      className="items-center justify-center bg-ink"
+                      style={{ width: "100%", height: 100, borderRadius: 12 }}
+                    >
+                      <Ionicons name="play-circle" size={30} color="#ffffff" />
+                    </View>
+                    <Pressable
+                      onPress={() =>
+                        setVideos((p) => p.filter((x) => x.uri !== v.uri))
+                      }
+                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-white items-center justify-center"
+                      hitSlop={6}
+                      style={{ borderWidth: 1, borderColor: "#e1dcd3" }}
+                    >
+                      <Ionicons name="close" size={12} color={INK_2} />
+                    </Pressable>
+                  </View>
+                ))}
+                {videos.length < MAX_VIDEOS && (
+                  <Pressable
+                    onPress={pickVideos}
+                    className="items-center justify-center bg-white border-line"
+                    style={{
+                      width: "31.5%",
+                      height: 100,
+                      borderRadius: 12,
+                      borderWidth: 1.5,
+                      borderStyle: "dashed",
+                      borderColor: "#d3cdc1",
+                    }}
+                  >
+                    <Ionicons name="videocam-outline" size={22} color={INK_2} />
+                    <Text className="text-[11px] font-sans-bold text-ink-2 mt-1">
+                      Add
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+              <Text className="text-[11.5px] text-ink-3 mt-2">
+                {videos.length}/{MAX_VIDEOS} added · up to 50MB each
+              </Text>
+
+              <Label className="mt-6">
+                Documents <Text className="text-ink-3">· optional</Text>
+              </Label>
+              <Text className="text-[11.5px] text-ink-3 mb-2">
+                Title docs (C of O, survey plan, permits, receipts). Tap the tag
+                to set each one's type.
+              </Text>
+              {docs.map((d) => (
+                <View
+                  key={d.key}
+                  className="flex-row items-center bg-white border-line rounded-2xl px-3 py-2.5 mb-2"
+                  style={{ borderWidth: 1 }}
+                >
+                  <Ionicons name="document-text-outline" size={20} color={INK_2} />
+                  <View className="flex-1 ml-2.5">
+                    <Text
+                      className="text-[13px] font-sans-bold text-ink"
+                      numberOfLines={1}
+                    >
+                      {d.name}
+                    </Text>
+                    <Pressable
+                      onPress={() => cycleDocType(d.key)}
+                      disabled={!!d.existingId}
+                      hitSlop={6}
+                      className="self-start mt-1 px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: "#e3efe7" }}
+                    >
+                      <Text
+                        className="text-[10.5px] font-sans-bold"
+                        style={{ color: "#134a2d" }}
+                      >
+                        {DOC_TYPE_LABELS[d.type]}
+                        {d.existingId ? "" : " ›"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Pressable
+                    onPress={() => removeDoc(d.key)}
+                    hitSlop={8}
+                    className="w-7 h-7 rounded-full bg-cream-2 items-center justify-center ml-2"
+                  >
+                    <Ionicons name="close" size={14} color={INK_2} />
+                  </Pressable>
+                </View>
+              ))}
+              {docs.length < MAX_DOCS && (
+                <Pressable
+                  onPress={pickDocuments}
+                  className="flex-row items-center justify-center bg-white border-line rounded-2xl py-3"
+                  style={{
+                    borderWidth: 1.5,
+                    borderStyle: "dashed",
+                    borderColor: "#d3cdc1",
+                  }}
+                >
+                  <Ionicons name="add" size={18} color={INK_2} />
+                  <Text className="text-[12.5px] font-sans-bold text-ink-2 ml-1">
+                    Add document
+                  </Text>
+                </Pressable>
+              )}
             </>
           )}
 
@@ -534,7 +832,9 @@ export default function CreateListingScreen() {
                 <Summary label="Area"        value={area || "—"} />
                 <Summary label="Price"       value={price ? `₦${Number(price).toLocaleString()}` : "—"} />
                 <Summary label="Bed / bath"  value={`${beds} bed · ${baths} bath${sqm ? ` · ${sqm} m²` : ""}${year ? ` · ${year}` : ""}`} />
-                <Summary label="Photos"      value={`${photos.length} of 8`} />
+                <Summary label="Photos"      value={`${photos.length} of ${MAX_PHOTOS}`} />
+                <Summary label="Video"       value={videos.length ? `${videos.length} added` : "none"} />
+                <Summary label="Documents"   value={docs.length ? `${docs.length} added` : "none"} />
                 <Summary label="Amenities"   value={amenities.length ? `${amenities.length} selected` : "none"} last />
               </View>
 

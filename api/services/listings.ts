@@ -1,5 +1,11 @@
 import api from "../client";
-import type { Listing, ListingType, Paginated } from "../types";
+import type {
+  DocumentType,
+  Listing,
+  ListingDocument,
+  ListingType,
+  Paginated,
+} from "../types";
 
 export interface CreateListingPayload {
   title: string;
@@ -17,6 +23,16 @@ export interface CreateListingPayload {
   features: string[];
   coverImage: string;
   images: string[];
+  virtualTourUrl?: string;
+  videoUrl?: string;
+  videoUrls?: string[];
+}
+
+export interface AddDocumentPayload {
+  name: string;
+  type: DocumentType;
+  url?: string;
+  date?: string;
 }
 
 export interface ListListingsParams {
@@ -102,6 +118,80 @@ const listingsService = {
     if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
 
     return data.fileUrl;
+  },
+
+  /** Upload one video (presigned direct-to-R2). Returns the hosted URL. */
+  async uploadVideo(
+    uri: string,
+    opts?: { name?: string; type?: string },
+  ): Promise<string> {
+    // Same presigned direct-to-R2 path as uploadPhoto, but the video bucket.
+    // The video presign route requires a video/* content type.
+    const contentType = opts?.type ?? "video/mp4";
+    const filename = opts?.name ?? `video-${Date.now()}.mp4`;
+
+    const blob = await (await fetch(uri)).blob();
+
+    const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
+      "/listings/upload/video/presign",
+      { filename, contentType, size: blob.size },
+    );
+
+    const put = await fetch(data.uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": contentType },
+    });
+    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+
+    return data.fileUrl;
+  },
+
+  /** Upload one listing document (presigned direct-to-R2). Returns the URL. */
+  async uploadDocument(
+    uri: string,
+    opts?: { name?: string; type?: string },
+  ): Promise<string> {
+    const contentType = opts?.type || "application/octet-stream";
+    const filename = opts?.name ?? `document-${Date.now()}`;
+
+    const blob = await (await fetch(uri)).blob();
+
+    const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
+      "/listings/upload/photo/presign",
+      { filename, contentType, size: blob.size, folder: "listing-docs" },
+    );
+
+    const put = await fetch(data.uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": contentType },
+    });
+    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+
+    return data.fileUrl;
+  },
+
+  /** Attach an uploaded document to a listing. */
+  async addDocument(
+    listingId: string,
+    payload: AddDocumentPayload,
+  ): Promise<ListingDocument> {
+    const { data } = await api.post<ListingDocument>(
+      `/listings/${listingId}/documents`,
+      payload,
+    );
+    return data;
+  },
+
+  async removeDocument(
+    listingId: string,
+    docId: string,
+  ): Promise<{ success: boolean }> {
+    const { data } = await api.delete<{ success: boolean }>(
+      `/listings/${listingId}/documents/${docId}`,
+    );
+    return data;
   },
 
   async create(payload: CreateListingPayload): Promise<Listing> {
