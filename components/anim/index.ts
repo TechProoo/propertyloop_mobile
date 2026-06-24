@@ -12,3 +12,16 @@ export {
 export { SaveHeart } from "./SaveHeart";
 export { TabBarIcon } from "./TabBarIcon";
 export { Reveal, RevealScrollView } from "./Reveal";
+export {
+  SharedElementProvider,
+  SharedElementSource,
+  SharedElementDestination,
+} from "./SharedElement";
+export { MorphingTabIndicator, MorphingPillIndicator } from "./MorphingTabBar";
+export { CarouselContainer } from "./CarouselContainer";
+export { CarouselDots } from "./CarouselDots";
+export {
+  HeaderTransform,
+  HeaderFadeLayer,
+  useHeaderTransform,
+} from "./HeaderTransform";
