@@ -261,7 +261,7 @@ export default function NotificationsScreen() {
                         {timeAgo(n.createdAt)}
                       </Text>
                     </View>
-                    <Text className="text-[11.5px] text-ink-3 mt-0.5 leading-4">
+                    <Text className="text-[11.5px] text-ink-3 mt-0.5 leading-4" numberOfLines={3}>
                       {n.body}
                     </Text>
                   </View>

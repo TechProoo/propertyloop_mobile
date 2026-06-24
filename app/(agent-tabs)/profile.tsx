@@ -58,6 +58,13 @@ type LinkRow = {
 
 const GROUPS: { label: string; rows: LinkRow[] }[] = [
   {
+    label: "Marketplace",
+    rows: [
+      { id: "browse",  icon: "home-outline",         title: "Browse properties",  detail: "Search & save listings", href: "/(tabs)" },
+      { id: "vendors", icon: "construct-outline",    title: "Hire vendors",       detail: "Find service professionals", href: "/services" },
+    ],
+  },
+  {
     label: "Practice",
     rows: [
       { id: "edit",     icon: "create-outline",          title: "Edit profile",   detail: "Name, bio, agency", href: "/edit-profile" },
