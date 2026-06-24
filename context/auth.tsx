@@ -13,8 +13,10 @@ import authService, {
   type SignupPayload,
 } from "@/api/services/auth";
 import { refreshSession, setOnSessionExpired } from "@/api/client";
+import { tokenStore } from "@/api/tokenStore";
 import { syncSavedFromServer, clearSaved } from "@/lib/favourites";
 import { getChatSocket, disconnectChatSocket } from "@/api/socket";
+import { isFirstLaunchSinceInstall } from "@/lib/firstLaunch";
 
 type Status = "loading" | "authed" | "guest";
 
@@ -38,6 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     (async () => {
+      // On a brand-new install, discard any session token the keychain carried
+      // over from a previous install. Without this, expo-secure-store can
+      // silently restore an old session (the iOS Keychain survives uninstalls),
+      // sending a returning agent straight to their home and skipping the
+      // welcome / login / sign-up flow.
+      if (isFirstLaunchSinceInstall()) {
+        await tokenStore.clear();
+      }
       const token = await refreshSession();
       if (!token) {
         if (mounted) setStatus("guest");
