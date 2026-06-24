@@ -18,6 +18,23 @@ export type ListingStatus =
   | "RENTED"
   | "ARCHIVED";
 
+export type DocumentType =
+  | "C_OF_O"
+  | "SURVEY_PLAN"
+  | "BUILDING_PERMIT"
+  | "RECEIPT";
+
+export interface ListingDocument {
+  id: string;
+  listingId: string;
+  name: string;
+  type: DocumentType;
+  url?: string | null;
+  verified: boolean;
+  date: string;
+  createdAt: string;
+}
+
 export interface AgentPublic {
   id: string;
   name: string;
@@ -55,6 +72,10 @@ export interface Listing {
   features: string[];
   coverImage: string;
   images: string[];
+  virtualTourUrl?: string | null;
+  videoUrl?: string | null;
+  videoUrls?: string[];
+  documents?: ListingDocument[];
   rating: number;
   verified: boolean;
   status: ListingStatus;
