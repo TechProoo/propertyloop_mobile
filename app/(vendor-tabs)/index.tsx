@@ -10,7 +10,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { Appear, PressableScale, CountUp, Reveal, RevealScrollView } from "@/components/anim";
+import {
+  Appear,
+  PressableScale,
+  CountUp,
+  Reveal,
+  RevealScrollView,
+  HeaderTransform,
+  useHeaderTransform,
+  stagger,
+} from "@/components/anim";
+import { useStaggeredEntrance } from "@/hooks/useStaggeredEntrance";
 import { useAuth } from "@/context/auth";
 import vendorsService, { type VendorStats } from "@/api/services/vendors";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
@@ -41,6 +51,7 @@ function whenOf(iso?: string) {
 
 export default function VendorHomeScreen() {
   const { user } = useAuth();
+  const { scrollOffset, handleScroll } = useHeaderTransform();
   const [stats, setStats] = useState<VendorStats | null>(null);
   const [jobs, setJobs] = useState<VendorJob[]>([]);
   const [available, setAvailable] = useState(true);
@@ -87,9 +98,15 @@ export default function VendorHomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
-      <RevealScrollView contentContainerStyle={{ paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
+      <RevealScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Top bar */}
-        <View className="flex-row items-center justify-between px-5 pt-1">
+        <Appear from="fade" delay={0}>
+          <View className="flex-row items-center justify-between px-5 pt-1">
           <View className="flex-row items-center gap-2.5">
             <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
             <View>
@@ -115,10 +132,11 @@ export default function VendorHomeScreen() {
               <Ionicons name="notifications-outline" size={18} color={INK} />
             </Pressable>
           </View>
-        </View>
+          </View>
+        </Appear>
 
         {/* Escrow hero */}
-        <Appear delay={40} style={{ marginHorizontal: 16, marginTop: 16 }}>
+        <Appear delay={stagger(0, 200)} style={{ marginHorizontal: 16, marginTop: 16 }}>
         <View className="rounded-2xl px-5 py-4" style={{ backgroundColor: INK }}>
           <View className="flex-row items-center gap-1.5">
             <Ionicons name="shield-checkmark" size={13} color="#7ad296" />
@@ -170,38 +188,46 @@ export default function VendorHomeScreen() {
         ) : (
           <>
             {/* New requests */}
-            <View className="px-5 pt-5 flex-row items-baseline justify-between">
-              <Text className="text-[16px] font-sans-bold text-ink">
-                New requests <Text className="text-primary">· {requests.length}</Text>
-              </Text>
-            </View>
+            <Appear delay={stagger(1, 200)}>
+              <View className="px-5 pt-5 flex-row items-baseline justify-between">
+                <Text className="text-[16px] font-sans-bold text-ink">
+                  New requests <Text className="text-primary">· {requests.length}</Text>
+                </Text>
+              </View>
+            </Appear>
             {requests.length === 0 ? (
-              <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No new requests right now.</Text>
+              <Appear delay={stagger(2, 200)}>
+                <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No new requests right now.</Text>
+              </Appear>
             ) : (
               <View className="px-4 pt-2 gap-2.5">
-                {requests.map((r) => (
-                  <Reveal key={r.id}>
+                {requests.map((r, idx) => (
+                  <Appear key={r.id} delay={stagger(idx + 2, 200)}>
                     <RequestCard job={r} onChanged={load} />
-                  </Reveal>
+                  </Appear>
                 ))}
               </View>
             )}
 
             {/* Active jobs */}
-            <View className="px-5 pt-5 flex-row items-baseline justify-between">
-              <Text className="text-[16px] font-sans-bold text-ink">Active · {active.length}</Text>
-              <Pressable onPress={() => router.push("/(vendor-tabs)/jobs" as Href)} hitSlop={6}>
-                <Text className="text-[13px] font-sans-bold text-primary">All jobs</Text>
-              </Pressable>
-            </View>
+            <Appear delay={stagger(requests.length + 2, 200)}>
+              <View className="px-5 pt-5 flex-row items-baseline justify-between">
+                <Text className="text-[16px] font-sans-bold text-ink">Active · {active.length}</Text>
+                <Pressable onPress={() => router.push("/(vendor-tabs)/jobs" as Href)} hitSlop={6}>
+                  <Text className="text-[13px] font-sans-bold text-primary">All jobs</Text>
+                </Pressable>
+              </View>
+            </Appear>
             {active.length === 0 ? (
-              <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No active jobs.</Text>
+              <Appear delay={stagger(requests.length + 3, 200)}>
+                <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No active jobs.</Text>
+              </Appear>
             ) : (
               <View className="px-4 pt-2 gap-2">
-                {active.map((j) => (
-                  <Reveal key={j.id}>
+                {active.map((j, idx) => (
+                  <Appear key={j.id} delay={stagger(idx + requests.length + 3, 200)}>
                     <JobMini job={j} />
-                  </Reveal>
+                  </Appear>
                 ))}
               </View>
             )}
