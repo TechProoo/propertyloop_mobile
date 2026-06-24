@@ -17,7 +17,15 @@ import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import { Appear, PressableScale, SaveHeart } from "@/components/anim";
+import {
+  Appear,
+  PressableScale,
+  SaveHeart,
+  SharedElementDestination,
+  SharedElementProvider,
+  stagger,
+} from "@/components/anim";
+import { useStaggeredEntrance } from "@/hooks/useStaggeredEntrance";
 import { PhotoViewer } from "@/components/PhotoViewer";
 import { RichText } from "@/lib/richText";
 import { tapLight, tapMedium } from "@/lib/haptics";
@@ -99,7 +107,11 @@ export default function ListingDetailScreen() {
     );
   }
 
-  return <ListingDetail listing={listing} listingId={id!} />;
+  return (
+    <SharedElementProvider>
+      <ListingDetail listing={listing} listingId={id!} />
+    </SharedElementProvider>
+  );
 }
 
 function ListingDetail({
@@ -220,11 +232,21 @@ function ListingDetail({
                   setViewerOpen(true);
                 }}
               >
-                <Image
-                  source={item}
-                  style={{ width: screenW, height: 360 }}
-                  contentFit="cover"
-                />
+                {index === 0 ? (
+                  <SharedElementDestination id={`property-${listingId}`}>
+                    <Image
+                      source={item}
+                      style={{ width: screenW, height: 360 }}
+                      contentFit="cover"
+                    />
+                  </SharedElementDestination>
+                ) : (
+                  <Image
+                    source={item}
+                    style={{ width: screenW, height: 360 }}
+                    contentFit="cover"
+                  />
+                )}
               </Pressable>
             )}
           />
@@ -433,21 +455,23 @@ function ListingDetail({
 
           {/* Description */}
           {!!listing.description && (
-            <>
-              <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2">
-                About this home
-              </Text>
-              <RichText
-                html={listing.description}
-                style={{
-                  fontSize: 13.5,
-                  lineHeight: 22,
-                  color: INK_2,
-                  fontFamily: "Inter_400Regular",
-                }}
-                boldStyle={{ fontFamily: "Inter_700Bold", color: "#1a2120" }}
-              />
-            </>
+            <Appear delay={stagger(5, 200)}>
+              <>
+                <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2">
+                  About this home
+                </Text>
+                <RichText
+                  html={listing.description}
+                  style={{
+                    fontSize: 13.5,
+                    lineHeight: 22,
+                    color: INK_2,
+                    fontFamily: "Inter_400Regular",
+                  }}
+                  boldStyle={{ fontFamily: "Inter_700Bold", color: "#1a2120" }}
+                />
+              </>
+            </Appear>
           )}
 
           {/* Features */}
@@ -474,56 +498,58 @@ function ListingDetail({
 
           {/* Listed by */}
           {listing.agent && (
-            <>
-              <Text className="text-[14px] font-sans-bold text-ink mt-6 mb-2.5">
-                Listed by
-              </Text>
-              <Pressable
-                onPress={() =>
-                  router.push(`/agent-profile/${listing.agent!.id}` as Href)
-                }
-                className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line active:opacity-90"
-                style={{ borderWidth: 1 }}
-              >
-                <PLAvatar initials={initialsOf(listing.agent.name)} size={46} tone="primary" />
-                <View className="flex-1">
-                  <View className="flex-row items-center gap-1.5">
-                    <Text className="text-[14px] font-sans-bold text-ink">
-                      {listing.agent.name}
-                    </Text>
-                    {listing.agent.verified && (
-                      <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
-                    )}
-                  </View>
-                  <Text className="text-xs font-sans-semibold text-ink-3 mt-0.5">
-                    {[
-                      listing.agent.agency,
-                      `${listing.agent.soldRentedCount} deals`,
-                      `⭐ ${listing.agent.rating}`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </Text>
-                </View>
+            <Appear delay={stagger(6, 200)}>
+              <>
+                <Text className="text-[14px] font-sans-bold text-ink mt-6 mb-2.5">
+                  Listed by
+                </Text>
                 <Pressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    messageAgent();
-                  }}
-                  disabled={startingChat}
-                  hitSlop={8}
-                  className="w-10 h-10 rounded-full bg-primary-soft items-center justify-center active:opacity-80"
-                  accessibilityRole="button"
-                  accessibilityLabel="Message agent"
+                  onPress={() =>
+                    router.push(`/agent-profile/${listing.agent!.id}` as Href)
+                  }
+                  className="bg-white rounded-2xl p-3 flex-row items-center gap-3 border-line active:opacity-90"
+                  style={{ borderWidth: 1 }}
                 >
-                  {startingChat ? (
-                    <BouncyLoader size="small" color={PRIMARY} />
-                  ) : (
-                    <Ionicons name="chatbubble-ellipses" size={17} color={PRIMARY} />
-                  )}
+                  <PLAvatar initials={initialsOf(listing.agent.name)} size={46} tone="primary" />
+                  <View className="flex-1">
+                    <View className="flex-row items-center gap-1.5">
+                      <Text className="text-[14px] font-sans-bold text-ink">
+                        {listing.agent.name}
+                      </Text>
+                      {listing.agent.verified && (
+                        <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
+                      )}
+                    </View>
+                    <Text className="text-xs font-sans-semibold text-ink-3 mt-0.5">
+                      {[
+                        listing.agent.agency,
+                        `${listing.agent.soldRentedCount} deals`,
+                        `⭐ ${listing.agent.rating}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      messageAgent();
+                    }}
+                    disabled={startingChat}
+                    hitSlop={8}
+                    className="w-10 h-10 rounded-full bg-primary-soft items-center justify-center active:opacity-80"
+                    accessibilityRole="button"
+                    accessibilityLabel="Message agent"
+                  >
+                    {startingChat ? (
+                      <BouncyLoader size="small" color={PRIMARY} />
+                    ) : (
+                      <Ionicons name="chatbubble-ellipses" size={17} color={PRIMARY} />
+                    )}
+                  </Pressable>
                 </Pressable>
-              </Pressable>
-            </>
+              </>
+            </Appear>
           )}
         </View>
       </ScrollView>
