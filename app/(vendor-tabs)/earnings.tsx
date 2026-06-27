@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +27,7 @@ export default function VendorEarningsScreen() {
   const [summary, setSummary] = useState<EarningsSummary | null>(null);
   const [earnings, setEarnings] = useState<VendorEarning[]>([]);
   const [loading, setLoading] = useState(true);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -48,7 +50,49 @@ export default function VendorEarningsScreen() {
     }, [load]),
   );
 
-  const releasing = earnings.filter((e) => e.status !== "PAID");
+  const available = summary?.available ?? 0;
+
+  const doWithdraw = async () => {
+    setWithdrawing(true);
+    try {
+      const res = await vendorEarningsService.withdraw();
+      await load();
+      Alert.alert(
+        "Withdrawal on its way",
+        `${naira(res.amount)} is being sent to ${res.bankName} ••${res.accountNumber.slice(-4)}. It usually lands within 24 hours.`,
+      );
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again.";
+      // No bank account yet → send them to set one up.
+      if (typeof msg === "string" && msg.toLowerCase().includes("bank")) {
+        Alert.alert("Add a payout account", msg, [
+          { text: "Not now", style: "cancel" },
+          { text: "Add bank", onPress: () => router.push("/payout-bank" as Href) },
+        ]);
+      } else {
+        Alert.alert("Couldn't withdraw", Array.isArray(msg) ? msg.join(", ") : msg);
+      }
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
+  const onWithdraw = () => {
+    if (available <= 0 || withdrawing) return;
+    Alert.alert(
+      "Withdraw to bank?",
+      `Send your available balance of ${naira(available)} to your payout account?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Withdraw", onPress: doWithdraw },
+      ],
+    );
+  };
+
+  const availableJobs = earnings.filter((e) => e.status === "AVAILABLE");
+  const clearing = earnings.filter(
+    (e) => e.status === "PENDING" || e.status === "PROCESSING",
+  );
   const paid = earnings.filter((e) => e.status === "PAID");
   const inEscrow = (summary?.pending ?? 0) + (summary?.processing ?? 0);
 
@@ -62,17 +106,46 @@ export default function VendorEarningsScreen() {
           </Text>
         </View>
 
-        {/* Balance hero */}
+        {/* Balance hero — available to withdraw */}
         <View className="mx-4 mt-4 rounded-2xl px-5 py-4" style={{ backgroundColor: INK }}>
           <Text className="text-[11px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.6)" }}>
-            Lifetime earnings
+            Available to withdraw
           </Text>
           <Text className="font-serif text-white mt-1" style={{ fontSize: 36, letterSpacing: -0.8 }}>
-            {naira(summary?.total ?? 0)}
+            {naira(available)}
           </Text>
-          <View className="flex-row gap-2.5 mt-4">
+          <Pressable
+            onPress={onWithdraw}
+            disabled={available <= 0 || withdrawing}
+            className="mt-3 rounded-full items-center justify-center flex-row gap-2"
+            style={{
+              backgroundColor: available > 0 ? PRIMARY : "rgba(255,255,255,0.12)",
+              paddingVertical: 13,
+              opacity: withdrawing ? 0.7 : 1,
+            }}
+          >
+            {withdrawing ? (
+              <BouncyLoader color="#ffffff" />
+            ) : (
+              <>
+                <Ionicons
+                  name="arrow-up-circle"
+                  size={16}
+                  color={available > 0 ? "#ffffff" : "rgba(255,255,255,0.5)"}
+                />
+                <Text
+                  className="text-[14px] font-sans-bold"
+                  style={{ color: available > 0 ? "#ffffff" : "rgba(255,255,255,0.5)" }}
+                >
+                  {available > 0 ? `Withdraw ${naira(available)}` : "Nothing to withdraw"}
+                </Text>
+              </>
+            )}
+          </Pressable>
+          <View className="flex-row gap-2.5 mt-3">
             <DarkStat label="In escrow" value={naira(inEscrow)} />
             <DarkStat label="This month" value={naira(summary?.thisMonth ?? 0)} />
+            <DarkStat label="Lifetime" value={naira(summary?.total ?? 0)} />
           </View>
         </View>
 
@@ -87,7 +160,7 @@ export default function VendorEarningsScreen() {
           </View>
           <View className="flex-1">
             <Text className="text-[13px] font-sans-bold text-ink">Payout account</Text>
-            <Text className="text-[11px] text-ink-3 mt-0.5">Payouts land ~24 hrs after each confirm</Text>
+            <Text className="text-[11px] text-ink-3 mt-0.5">Where your withdrawals are sent</Text>
           </View>
           <Text className="text-[12px] font-sans-bold text-primary">Manage</Text>
         </Pressable>
@@ -98,15 +171,46 @@ export default function VendorEarningsScreen() {
           </View>
         ) : (
           <>
-            {/* Releasing soon */}
+            {/* Available to withdraw */}
+            {availableJobs.length > 0 && (
+              <>
+                <Text className="text-[14px] font-sans-bold text-ink px-5 pt-5">
+                  Available · {availableJobs.length}
+                </Text>
+                <View className="px-4 pt-2 gap-2">
+                  {availableJobs.map((e) => (
+                    <View
+                      key={e.id}
+                      className="bg-white rounded-2xl px-3 py-3 flex-row items-center gap-3"
+                      style={{ borderWidth: 1, borderColor: "#cfe6d7" }}
+                    >
+                      <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: "#e3efe7" }}>
+                        <Ionicons name="cash-outline" size={16} color={PRIMARY} />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-[13px] font-sans-bold text-ink" numberOfLines={1}>
+                          {e.job?.clientName ? `${e.job.clientName} · ` : ""}{e.job?.title ?? "Job"}
+                        </Text>
+                        <Text className="text-[11px] font-sans-semibold mt-0.5" style={{ color: PRIMARY_INK }}>
+                          Ready to withdraw
+                        </Text>
+                      </View>
+                      <Text className="font-serif text-ink" style={{ fontSize: 15 }}>{naira(e.amount)}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* In escrow / clearing */}
             <Text className="text-[14px] font-sans-bold text-ink px-5 pt-5">
-              Releasing soon · {releasing.length}
+              In escrow · {clearing.length}
             </Text>
-            {releasing.length === 0 ? (
+            {clearing.length === 0 ? (
               <Text className="px-5 pt-2 text-[12.5px] text-ink-3">Nothing in escrow right now.</Text>
             ) : (
               <View className="px-4 pt-2 gap-2">
-                {releasing.map((e) => (
+                {clearing.map((e) => (
                   <View
                     key={e.id}
                     className="bg-white rounded-2xl px-3 py-3 flex-row items-center gap-3 border-line"
@@ -120,7 +224,7 @@ export default function VendorEarningsScreen() {
                         {e.job?.clientName ? `${e.job.clientName} · ` : ""}{e.job?.title ?? "Job"}
                       </Text>
                       <Text className="text-[11px] font-sans-semibold mt-0.5" style={{ color: INK_3 }}>
-                        {e.status === "PROCESSING" ? "Processing payout" : "Held in escrow"}
+                        {e.status === "PROCESSING" ? "Sending to your bank" : "Held until client confirms"}
                       </Text>
                     </View>
                     <Text className="font-serif text-ink" style={{ fontSize: 15 }}>{naira(e.amount)}</Text>

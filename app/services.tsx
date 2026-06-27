@@ -139,7 +139,7 @@ export default function ServicesScreen() {
             className="font-serif text-ink mt-1"
             style={{ fontSize: 28, letterSpacing: -0.6, lineHeight: 30 }}
           >
-            People who <Text className="font-serif-italic">fix things</Text>.
+            Service <Text className="font-serif-italic">providers</Text>.
           </Text>
           <Text className="text-[12.5px] text-ink-2 mt-1.5 leading-5">
             Verified vendors. Pay through escrow — released only when the job
@@ -343,7 +343,11 @@ function VendorRow({ vendor }: { vendor: any }) {
             <Ionicons name="star" size={11} color={ACCENT} />
             <Text className="text-[11.5px] font-sans-semibold text-ink">{vendor.rating ?? 0}</Text>
           </View>
-          <Text className="text-[11.5px] font-sans-semibold text-ink-3">{vendor.jobsCount ?? 0} jobs</Text>
+          {(vendor.jobsCount ?? 0) > 0 && (
+            <Text className="text-[11.5px] font-sans-semibold text-ink-3">
+              {vendor.jobsCount} {vendor.jobsCount === 1 ? "job" : "jobs"}
+            </Text>
+          )}
           {!!vendor.serviceArea && (
             <View className="ml-auto flex-row items-center gap-1 flex-shrink">
               <Ionicons name="location-outline" size={11} color={INK_3} />

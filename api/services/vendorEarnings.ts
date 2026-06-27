@@ -6,15 +6,25 @@ export interface EarningsSummary {
   paid: number;
   pending: number;
   processing: number;
+  /** Released from escrow, sitting in the vendor's wallet, withdrawable. */
+  available: number;
   thisMonth: number;
   thisYear: number;
   count: number;
 }
 
+export interface WithdrawResult {
+  success: boolean;
+  amount: number;
+  count: number;
+  bankName: string;
+  accountNumber: string;
+}
+
 export interface VendorEarning {
   id: string;
   amount: number;
-  status: "PENDING" | "PROCESSING" | "PAID";
+  status: "PENDING" | "PROCESSING" | "PAID" | "AVAILABLE";
   createdAt: string;
   paidAt?: string | null;
   job?: {
@@ -34,6 +44,10 @@ const vendorEarningsService = {
     return api
       .get<Paginated<VendorEarning>>("/vendor-earnings", { params: params ?? {} })
       .then((r) => r.data);
+  },
+  /** Move the available in-app balance to the vendor's bank account. */
+  withdraw(): Promise<WithdrawResult> {
+    return api.post<WithdrawResult>("/payments/withdraw", {}).then((r) => r.data);
   },
 };
 
