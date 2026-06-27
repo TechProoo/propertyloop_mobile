@@ -110,7 +110,7 @@ export default function PublicVendorProfileScreen() {
           <View className="mt-4 rounded-2xl overflow-hidden border-line flex-row" style={{ borderWidth: 0.5, backgroundColor: "#ffffff" }}>
             {[
               { n: `${vendor.rating ?? 0}`, l: "Rating", star: true },
-              { n: `${vendor.jobsCount ?? 0}`, l: "Jobs" },
+              { n: (vendor.jobsCount ?? 0) > 0 ? `${vendor.jobsCount}` : "—", l: "Jobs" },
               { n: `${vendor.yearsExperience ?? 0} yr`, l: "Exp." },
             ].map((s, i) => (
               <View key={s.l} className="flex-1 items-center py-3" style={{ borderLeftWidth: i > 0 ? 0.5 : 0, borderLeftColor: "#ece6df" }}>

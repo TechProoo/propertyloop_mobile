@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import {
-  Alert,
   Pressable,
   Text,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -135,44 +135,70 @@ export default function VendorHomeScreen() {
           </View>
         </Appear>
 
-        {/* Escrow hero */}
+        {/* Balance hero — available-to-withdraw front and centre */}
         <Appear delay={stagger(0, 200)} style={{ marginHorizontal: 16, marginTop: 16 }}>
         <View className="rounded-2xl px-5 py-4" style={{ backgroundColor: INK }}>
-          <View className="flex-row items-center gap-1.5">
-            <Ionicons name="shield-checkmark" size={13} color="#7ad296" />
-            <Text className="text-[11px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
-              In escrow · releasing soon
-            </Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="wallet" size={13} color="#7ad296" />
+              <Text className="text-[11px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.7)" }}>
+                Available balance
+              </Text>
+            </View>
+            {(stats?.earnings.available ?? 0) > 0 && (
+              <Pressable
+                onPress={() => router.push("/(vendor-tabs)/earnings" as Href)}
+                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full active:opacity-80"
+                style={{ backgroundColor: PRIMARY }}
+              >
+                <Ionicons name="arrow-up-circle" size={13} color="#ffffff" />
+                <Text className="text-[12px] font-sans-bold text-white">Withdraw</Text>
+              </Pressable>
+            )}
           </View>
           <CountUp
-            value={stats?.earnings.pending ?? 0}
+            value={stats?.earnings.available ?? 0}
             format={naira}
             className="font-serif text-white mt-1.5"
             style={{ fontSize: 36, letterSpacing: -0.8 }}
           />
           <Text className="text-[12px] mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>
-            Released to you once clients confirm each job.
+            {(stats?.earnings.available ?? 0) > 0
+              ? "Yours to withdraw to your bank whenever you like."
+              : "Confirmed jobs land here, ready for you to withdraw."}
           </Text>
-          <View className="flex-row gap-4 mt-3.5">
-            <View>
+          <View className="flex-row gap-3.5 mt-3.5">
+            <View className="flex-1">
               <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.55)" }}>
-                Paid this month
+                In escrow
+              </Text>
+              <CountUp
+                value={stats?.earnings.pending ?? 0}
+                format={naira}
+                className="font-serif text-white mt-0.5"
+                style={{ fontSize: 17 }}
+              />
+            </View>
+            <View style={{ width: 1, backgroundColor: "rgba(255,255,255,0.12)" }} />
+            <View className="flex-1">
+              <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.55)" }}>
+                This month
               </Text>
               <CountUp
                 value={stats?.earnings.thisMonth ?? 0}
                 format={naira}
                 className="font-serif text-white mt-0.5"
-                style={{ fontSize: 18 }}
+                style={{ fontSize: 17 }}
               />
             </View>
             <View style={{ width: 1, backgroundColor: "rgba(255,255,255,0.12)" }} />
-            <View>
+            <View className="flex-1">
               <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.55)" }}>
                 Rating · jobs
               </Text>
               <View className="flex-row items-center gap-1 mt-0.5">
                 <Ionicons name="star" size={12} color="#b9842c" />
-                <Text className="font-serif text-white" style={{ fontSize: 18 }}>
+                <Text className="font-serif text-white" style={{ fontSize: 17 }}>
                   {stats?.profile.rating ?? 0} · {stats?.jobs.completed ?? 0}
                 </Text>
               </View>

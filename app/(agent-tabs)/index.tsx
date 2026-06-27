@@ -19,12 +19,15 @@ import {
 } from "@/components/anim";
 import { useStaggeredEntrance } from "@/hooks/useStaggeredEntrance";
 import { useAuth } from "@/context/auth";
+import { NotificationBell } from "@/components/brand/NotificationBell";
 import agentsService, {
   type AgentStats,
   type AgentSubscription,
 } from "@/api/services/agents";
 import listingsService from "@/api/services/listings";
 import offersService from "@/api/services/offers";
+import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
+import notificationsService from "@/api/services/notifications";
 import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
@@ -54,7 +57,7 @@ const STATUS_UI: Record<string, { label: string; bg: string; fg: string }> = {
   ARCHIVED: { label: "Archived", bg: "#f0f0f0", fg: "#7f857f" },
 };
 
-type UpNextTag = "Offers" | "Leads" | "Viewings" | "Listings";
+type UpNextTag = "Offers" | "Leads" | "Viewings" | "Listings" | "Vendors";
 const UPNEXT_UI: Record<
   UpNextTag,
   { icon: keyof typeof Ionicons.glyphMap; bg: string; fg: string }
@@ -63,7 +66,29 @@ const UPNEXT_UI: Record<
   Leads: { icon: "people", bg: "#e3efe7", fg: PRIMARY_INK },
   Viewings: { icon: "calendar", bg: "#e3efe7", fg: PRIMARY_INK },
   Listings: { icon: "home", bg: "#f0f0f0", fg: INK_2 },
+  Vendors: { icon: "construct", bg: "#f5ead4", fg: "#6b4a16" },
 };
+
+// Per-status presentation for hired-vendor jobs on the dashboard. `action`
+// flags states that need the agent to do something (pay escrow / confirm).
+const JOB_UI: Record<
+  string,
+  { label: string; bg: string; fg: string; action?: boolean }
+> = {
+  PENDING: { label: "Awaiting vendor", bg: "#f0f0f0", fg: INK_2 },
+  ACCEPTED: { label: "Accepted", bg: "#e3efe7", fg: PRIMARY_INK },
+  IN_PROGRESS: { label: "In progress", bg: "#e3efe7", fg: PRIMARY_INK },
+  COMPLETED: { label: "Confirm & pay", bg: "#f5ead4", fg: "#6b4a16", action: true },
+  DISPUTED: { label: "Disputed", bg: "#fdecea", fg: "#7a1d12", action: true },
+};
+
+// Jobs still in flight — the ones worth keeping on the dashboard. Confirmed,
+// declined and cancelled jobs have run their course and drop off.
+const LIVE_JOB_STATUSES = ["PENDING", "ACCEPTED", "IN_PROGRESS", "COMPLETED", "DISPUTED"];
+
+function naira(n?: number) {
+  return `₦${Math.round(n ?? 0).toLocaleString("en-NG")}`;
+}
 
 export default function AgentHomeScreen() {
   const { user } = useAuth();
@@ -72,21 +97,27 @@ export default function AgentHomeScreen() {
   const [stats, setStats] = useState<AgentStats | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [offersToReview, setOffersToReview] = useState(0);
+  const [jobs, setJobs] = useState<VendorJob[]>([]);
+  const [unread, setUnread] = useState(0);
   const [sub, setSub] = useState<AgentSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [s, l, offers, subscription] = await Promise.all([
+      const [s, l, offers, subscription, myJobs, notif] = await Promise.all([
         agentsService.getStats(),
         listingsService.listMine({ limit: 5 }),
         offersService.listReceived().catch(() => ({ items: [] as any[] })),
         agentsService.getSubscription().catch(() => null),
+        vendorJobsService.listMine({ limit: 20 }).catch(() => ({ items: [] as VendorJob[] })),
+        notificationsService.unreadCount().catch(() => ({ unread: 0 })),
       ]);
       setStats(s);
       setListings(l.items);
       setSub(subscription);
+      setJobs(myJobs.items.filter((j) => LIVE_JOB_STATUSES.includes(j.status)));
+      setUnread(notif.unread);
       setOffersToReview(
         offers.items.filter(
           (o: any) =>
@@ -127,7 +158,23 @@ export default function AgentHomeScreen() {
   });
   const firstName = user?.name?.split(/\s+/)[0] ?? "there";
 
+  // Action-needed jobs (confirm & pay / disputed) float to the top of the
+  // hired-vendors list and drive the "Up next" nudge.
+  const jobsNeedingAction = jobs.filter((j) => JOB_UI[j.status]?.action);
+  const sortedJobs = [...jobs].sort(
+    (a, b) =>
+      (JOB_UI[b.status]?.action ? 1 : 0) - (JOB_UI[a.status]?.action ? 1 : 0),
+  );
+
   const upNext: { tag: UpNextTag; title: string; href: Href }[] = [];
+  if (jobsNeedingAction.length) {
+    const n = jobsNeedingAction.length;
+    upNext.push({
+      tag: "Vendors",
+      title: `${n} job${n === 1 ? "" : "s"} to confirm & pay`,
+      href: `/service-job/${jobsNeedingAction[0].id}` as Href,
+    });
+  }
   if (offersToReview) {
     upNext.push({
       tag: "Offers",
@@ -157,7 +204,6 @@ export default function AgentHomeScreen() {
     });
   }
 
-  const hasAlerts = upNext.length > 0;
   const rating = stats?.profile.rating ?? 0;
   const conversion = stats
     ? Math.round(
@@ -238,35 +284,11 @@ export default function AgentHomeScreen() {
                 {dateLabel}
               </Text>
             </View>
-            <Pressable
+            <NotificationBell
+              count={unread}
               onPress={() => router.push("/notifications" as Href)}
-              hitSlop={6}
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
-                backgroundColor: "rgba(255,255,255,0.16)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="notifications-outline" size={19} color="#ffffff" />
-              {hasAlerts ? (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 9,
-                    right: 10,
-                    width: 9,
-                    height: 9,
-                    borderRadius: 5,
-                    backgroundColor: "#ffd36e",
-                    borderWidth: 1.5,
-                    borderColor: PRIMARY,
-                  }}
-                />
-              ) : null}
-            </Pressable>
+              badgeBorderColor={PRIMARY}
+            />
           </View>
 
           {/* Credential chips */}
@@ -383,6 +405,31 @@ export default function AgentHomeScreen() {
                       </Appear>
                     );
                   })}
+                </View>
+              </>
+            )}
+
+            {/* Hired vendors — persistent home for service jobs the agent has
+                booked, so they no longer vanish into notifications. */}
+            {sortedJobs.length > 0 && (
+              <>
+                <View className="px-5 pt-6 flex-row items-baseline justify-between">
+                  <SectionLabel>Hired vendors</SectionLabel>
+                  <Pressable
+                    onPress={() => router.push("/services" as Href)}
+                    hitSlop={6}
+                  >
+                    <Text className="text-xs font-sans-bold text-primary">
+                      Find vendors
+                    </Text>
+                  </Pressable>
+                </View>
+                <View className="px-4 pt-2.5 gap-2.5">
+                  {sortedJobs.slice(0, 4).map((j, idx) => (
+                    <Appear key={j.id} delay={stagger(idx, 120)}>
+                      <JobRow job={j} />
+                    </Appear>
+                  ))}
                 </View>
               </>
             )}
@@ -669,6 +716,69 @@ function QuickAction({
         <Ionicons name={icon} size={22} color={tint} />
       </View>
       <Text className="text-[12px] font-sans-bold text-ink">{label}</Text>
+    </PressableScale>
+  );
+}
+
+function JobRow({ job }: { job: VendorJob }) {
+  const meta = JOB_UI[job.status] ?? JOB_UI.PENDING;
+  return (
+    <PressableScale
+      onPress={() => router.push(`/service-job/${job.id}` as Href)}
+      activeScale={0.98}
+      className="bg-white rounded-2xl p-2.5 flex-row items-center gap-3"
+      style={{
+        shadowColor: INK,
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
+        borderWidth: meta.action ? 1 : 0,
+        borderColor: meta.action ? "#e7d2a6" : "transparent",
+      }}
+    >
+      <View
+        style={{
+          width: 46,
+          height: 46,
+          borderRadius: 14,
+          backgroundColor: "#e3efe7",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Ionicons name="construct" size={20} color={PRIMARY} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={1}>
+          {job.vendor?.name ?? job.title ?? "Vendor"}
+        </Text>
+        <Text className="text-[11.5px] text-ink-3 mt-0.5" numberOfLines={1}>
+          {job.category ?? job.vendor?.category ?? job.title ?? "Service"}
+        </Text>
+        <View className="flex-row items-center gap-2 mt-1.5">
+          <View
+            className="px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: meta.bg }}
+          >
+            <Text
+              className="text-[9.5px] font-sans-bold uppercase"
+              style={{ color: meta.fg, letterSpacing: 0.6 }}
+            >
+              {meta.label}
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View className="items-end">
+        <Text
+          className="font-serif text-ink"
+          style={{ fontSize: 15, letterSpacing: -0.3 }}
+        >
+          {naira(job.vendorFee)}
+        </Text>
+        <Ionicons name="chevron-forward" size={15} color={INK_3} style={{ marginTop: 4 }} />
+      </View>
     </PressableScale>
   );
 }

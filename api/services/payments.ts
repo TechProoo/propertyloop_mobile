@@ -49,6 +49,21 @@ const paymentsService = {
       .then((r) => r.data ?? null)
       .catch(() => null);
   },
+  /**
+   * Ask Paystack who owns this account number at this bank. Returns the real
+   * account holder name so the vendor can confirm before saving — guarding
+   * against payouts to a mistyped / wrong account.
+   */
+  resolveAccount(
+    accountNumber: string,
+    bankCode: string,
+  ): Promise<{ accountNumber: string; accountName: string }> {
+    return api
+      .get("/payments/resolve-account", {
+        params: { account_number: accountNumber, bank_code: bankCode },
+      })
+      .then((r) => r.data);
+  },
   saveBankAccount(payload: BankAccount): Promise<any> {
     return api.post("/payments/bank-account", payload).then((r) => r.data);
   },

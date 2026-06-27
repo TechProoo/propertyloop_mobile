@@ -5,8 +5,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
+const MINT = "#7ad296";
+const ACCENT = "#e3b341";
 
+// Vendor just marked the job done → step 0 complete, step 1 (customer confirm)
+// is the active/current state, step 2 (payout) still pending.
 const ESCROW_STEPS = ["Done", "Awaiting confirm", "Paid"];
+const ACTIVE_STEP = 1;
 
 export default function VendorJobDoneScreen() {
   const { amount } = useLocalSearchParams<{ amount?: string }>();
@@ -66,56 +71,96 @@ export default function VendorJobDoneScreen() {
         </Text>
 
         {/* Escrow status */}
-        <View className="mt-5 rounded-2xl px-4 py-4" style={{ backgroundColor: INK }}>
+        <View className="mt-5 rounded-2xl px-5 pt-4 pb-5" style={{ backgroundColor: INK }}>
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-1.5">
-              <Ionicons name="shield-checkmark" size={15} color="#7ad296" />
-              <Text className="text-[12px] font-sans-bold text-white">In escrow</Text>
+              <Ionicons name="shield-checkmark" size={15} color={MINT} />
+              <Text className="text-[12px] font-sans-bold text-white tracking-wide">
+                Held in escrow
+              </Text>
             </View>
-            <Text className="font-serif text-white" style={{ fontSize: 20 }}>
+            <Text className="font-serif text-white" style={{ fontSize: 22, letterSpacing: -0.3 }}>
               {fee ? `₦${fee.toLocaleString("en-NG")}` : "—"}
             </Text>
           </View>
-          <View className="mt-3 flex-row items-center">
-            {ESCROW_STEPS.map((label, i, arr) => {
-              const done = i === 0;
-              return (
-                <View key={label} className="flex-row items-center flex-1">
-                  <View className="items-center" style={{ width: 24 }}>
+
+          {/* Stepper — circles + connectors on one track, labels on their own row */}
+          <View className="mt-4 px-1">
+            <View className="flex-row items-center">
+              {ESCROW_STEPS.map((label, i, arr) => {
+                const done = i < ACTIVE_STEP;
+                const active = i === ACTIVE_STEP;
+                return (
+                  <View
+                    key={label}
+                    className="flex-row items-center"
+                    style={{ flex: i < arr.length - 1 ? 1 : 0 }}
+                  >
                     <View
                       style={{
-                        width: 20, height: 20, borderRadius: 10,
-                        backgroundColor: done ? "#7ad296" : "rgba(255,255,255,0.15)",
+                        width: 24, height: 24, borderRadius: 12,
+                        backgroundColor: done ? MINT : INK,
+                        borderWidth: active ? 2 : done ? 0 : 1.5,
+                        borderColor: active ? ACCENT : "rgba(255,255,255,0.18)",
                         alignItems: "center", justifyContent: "center",
                       }}
                     >
                       {done ? (
-                        <Ionicons name="checkmark" size={12} color={INK} />
+                        <Ionicons name="checkmark" size={14} color={INK} />
                       ) : (
-                        <Text className="text-[9px] font-sans-bold text-white">{i + 1}</Text>
+                        <Text
+                          className="text-[10px] font-sans-bold"
+                          style={{ color: active ? ACCENT : "rgba(255,255,255,0.55)" }}
+                        >
+                          {i + 1}
+                        </Text>
                       )}
                     </View>
-                    <Text
-                      className="text-[9px] font-sans-bold text-center mt-1"
-                      style={{ color: "#ffffff", opacity: done ? 1 : 0.5 }}
-                    >
-                      {label}
-                    </Text>
+                    {i < arr.length - 1 && (
+                      <View
+                        style={{
+                          flex: 1,
+                          height: 2,
+                          marginHorizontal: 6,
+                          borderRadius: 1,
+                          backgroundColor: i < ACTIVE_STEP ? MINT : "rgba(255,255,255,0.14)",
+                        }}
+                      />
+                    )}
                   </View>
-                  {i < arr.length - 1 && (
-                    <View
-                      style={{
-                        flex: 1,
-                        height: 2,
-                        marginHorizontal: 4,
-                        marginBottom: 14,
-                        backgroundColor: "rgba(255,255,255,0.15)",
-                      }}
-                    />
-                  )}
-                </View>
-              );
-            })}
+                );
+              })}
+            </View>
+            <View className="flex-row mt-2">
+              {ESCROW_STEPS.map((label, i, arr) => {
+                const done = i < ACTIVE_STEP;
+                const active = i === ACTIVE_STEP;
+                return (
+                  <Text
+                    key={label}
+                    className="text-[10.5px] font-sans-bold"
+                    style={{
+                      flex: 1,
+                      textAlign: i === 0 ? "left" : i === arr.length - 1 ? "right" : "center",
+                      color: active ? ACCENT : "#ffffff",
+                      opacity: done || active ? 1 : 0.45,
+                    }}
+                  >
+                    {label}
+                  </Text>
+                );
+              })}
+            </View>
+          </View>
+
+          <View
+            className="flex-row items-center gap-1.5 mt-4 pt-3"
+            style={{ borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" }}
+          >
+            <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.6)" />
+            <Text className="text-[11.5px] flex-1" style={{ color: "rgba(255,255,255,0.6)" }}>
+              Funds release as soon as the customer confirms the work.
+            </Text>
           </View>
         </View>
       </ScrollView>

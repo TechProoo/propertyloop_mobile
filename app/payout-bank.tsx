@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,10 +26,15 @@ export default function PayoutBankScreen() {
   const [bankName, setBankName] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [acct, setAcct] = useState("");
-  const [holder, setHolder] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showAcct, setShowAcct] = useState(false);
+  // Account-name verification via Paystack resolve.
+  const [resolvedName, setResolvedName] = useState("");
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  // Fallback when an account legitimately can't be auto-verified.
+  const [manualMode, setManualMode] = useState(false);
+  const [manualName, setManualName] = useState("");
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -40,7 +45,7 @@ export default function PayoutBankScreen() {
           setBankName(existing.bankName);
           setBankCode(existing.bankCode);
           setAcct(existing.accountNumber);
-          setHolder(existing.accountName);
+          setResolvedName(existing.accountName);
         }
       })
       .catch(() => {})
@@ -48,7 +53,47 @@ export default function PayoutBankScreen() {
   }, []);
 
   const acctValid = /^[0-9]{10}$/.test(acct);
-  const canSave = !!bankCode && acctValid && holder.trim().length > 2;
+
+  // Auto-verify the account holder whenever a full account number + bank are
+  // present. Debounced so we don't hit Paystack on every keystroke.
+  useEffect(() => {
+    if (!acctValid || !bankCode) {
+      setResolvedName("");
+      setResolveError(null);
+      setResolving(false);
+      return;
+    }
+    let active = true;
+    setResolving(true);
+    setResolveError(null);
+    setResolvedName("");
+    const t = setTimeout(async () => {
+      try {
+        const res = await paymentsService.resolveAccount(acct, bankCode);
+        if (!active) return;
+        setResolvedName(res.accountName);
+        setManualMode(false);
+      } catch (e: any) {
+        if (!active) return;
+        setResolveError(
+          e?.response?.data?.message ??
+            "Couldn't verify this account. Check the number and bank.",
+        );
+      } finally {
+        if (active) setResolving(false);
+      }
+    }, 550);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [acct, bankCode, acctValid]);
+
+  // The name we actually save: the Paystack-verified one, or a manual fallback.
+  const accountName = manualMode ? manualName.trim() : resolvedName;
+  const verified = !manualMode && !!resolvedName;
+  const canSave =
+    !!bankCode && acctValid && accountName.length > 2 && (verified || manualMode);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,18 +103,18 @@ export default function PayoutBankScreen() {
 
   const onSave = async () => {
     if (!canSave) {
-      Alert.alert("Missing info", "Pick a bank and enter a 10-digit account number and name.");
+      Alert.alert("Confirm your account", "Pick a bank, enter your 10-digit account number, and confirm the name we find.");
       return;
     }
     setSaving(true);
     try {
       await paymentsService.saveBankAccount({
-        accountName: holder.trim(),
+        accountName,
         accountNumber: acct,
         bankCode,
         bankName,
       });
-      Alert.alert("Payout bank saved", `${bankName} •• ${acct.slice(-4)} will receive your payouts.`, [
+      Alert.alert("Payout bank saved", `${accountName} · ${bankName} (${acct}) will receive your payouts.`, [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (e: any) {
@@ -98,7 +143,7 @@ export default function PayoutBankScreen() {
           </View>
         ) : (
           <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            {/* Hero */}
+            {/* Hero — payout destination, shown in full so it can be verified */}
             <View className="rounded-2xl p-5 mt-2" style={{ backgroundColor: "#1a2120" }}>
               <Text className="text-[11px] font-sans-bold tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.6)" }}>
                 Payout destination
@@ -106,31 +151,26 @@ export default function PayoutBankScreen() {
               <Text className="font-serif text-white mt-1.5" style={{ fontSize: 22, letterSpacing: -0.4 }}>
                 {bankName || "Choose a bank"}
               </Text>
-              <View className="flex-row items-center justify-between mt-2">
-                <Text className="font-serif text-white" style={{ fontSize: 18, letterSpacing: 2 }}>
-                  {acct.length === 0
-                    ? "••••••••••"
-                    : showAcct
-                      ? acct
-                      : `${"•".repeat(Math.max(0, acct.length - 4))}${acct.slice(-4)}`}
+              <Text className="font-serif text-white mt-1" style={{ fontSize: 18, letterSpacing: 2 }}>
+                {acct.length === 0 ? "0000000000" : acct}
+              </Text>
+              {/* Verified account holder */}
+              {verified ? (
+                <View className="flex-row items-center gap-1.5 mt-2">
+                  <Ionicons name="checkmark-circle" size={15} color="#7ad296" />
+                  <Text className="text-[13px] font-sans-bold" style={{ color: "#7ad296" }} numberOfLines={1}>
+                    {resolvedName}
+                  </Text>
+                </View>
+              ) : manualMode && accountName.length > 2 ? (
+                <Text className="text-[13px] font-sans-bold mt-2" style={{ color: "rgba(255,255,255,0.85)" }} numberOfLines={1}>
+                  {accountName}
                 </Text>
-                {acct.length > 0 && (
-                  <Pressable
-                    onPress={() => setShowAcct((v) => !v)}
-                    hitSlop={10}
-                    className="flex-row items-center gap-1.5"
-                  >
-                    <Ionicons
-                      name={showAcct ? "eye-off-outline" : "eye-outline"}
-                      size={17}
-                      color="rgba(255,255,255,0.7)"
-                    />
-                    <Text className="text-[12px] font-sans-bold" style={{ color: "rgba(255,255,255,0.7)" }}>
-                      {showAcct ? "Hide" : "Show"}
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
+              ) : (
+                <Text className="text-[12px] mt-2" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  Enter your account number to confirm the name
+                </Text>
+              )}
             </View>
 
             {/* Bank picker */}
@@ -174,16 +214,66 @@ export default function PayoutBankScreen() {
               style={{ letterSpacing: 2 }}
             />
 
-            {/* Holder */}
+            {/* Account name — verified automatically, not typed */}
             <Label className="mt-5">Account name</Label>
-            <TextInput
-              value={holder}
-              onChangeText={setHolder}
-              placeholder="As shown by your bank"
-              placeholderTextColor={INK_3}
-              autoCapitalize="words"
-              className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-[15px] mt-1.5"
-            />
+            {resolving ? (
+              <View className="bg-white border border-line rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 mt-1.5">
+                <BouncyLoader color={PRIMARY} />
+                <Text className="text-[14px] text-ink-3">Checking account…</Text>
+              </View>
+            ) : verified ? (
+              <View
+                className="rounded-2xl px-4 py-3.5 flex-row items-center gap-2.5 mt-1.5"
+                style={{ backgroundColor: "#e3efe7", borderWidth: 1, borderColor: "#bfe0cb" }}
+              >
+                <Ionicons name="checkmark-circle" size={18} color={PRIMARY} />
+                <View className="flex-1">
+                  <Text className="text-[15px] font-sans-bold text-ink" numberOfLines={1}>
+                    {resolvedName}
+                  </Text>
+                  <Text className="text-[11px] font-sans-semibold mt-0.5" style={{ color: PRIMARY_INK }}>
+                    Verified with your bank
+                  </Text>
+                </View>
+              </View>
+            ) : manualMode ? (
+              <>
+                <TextInput
+                  value={manualName}
+                  onChangeText={setManualName}
+                  placeholder="As shown by your bank"
+                  placeholderTextColor={INK_3}
+                  autoCapitalize="words"
+                  className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-[15px] mt-1.5"
+                />
+                <Text className="text-[11px] text-ink-3 mt-1.5">
+                  Double-check this matches your bank exactly — payouts to a wrong name can fail or go astray.
+                </Text>
+              </>
+            ) : resolveError ? (
+              <View
+                className="rounded-2xl px-4 py-3.5 mt-1.5"
+                style={{ backgroundColor: "#fdecea", borderWidth: 1, borderColor: "#f1b5ab" }}
+              >
+                <View className="flex-row items-start gap-2.5">
+                  <Ionicons name="alert-circle" size={17} color="#b3261e" style={{ marginTop: 1 }} />
+                  <Text className="flex-1 text-[12.5px] font-sans-semibold" style={{ color: "#7a1d12" }}>
+                    {resolveError}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setManualMode(true)} hitSlop={6} className="mt-2 self-start">
+                  <Text className="text-[12.5px] font-sans-bold" style={{ color: "#b3261e" }}>
+                    Enter name manually instead
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View className="bg-white border border-line rounded-2xl px-4 py-3.5 mt-1.5">
+                <Text className="text-[14px] text-ink-3">
+                  Pick a bank and enter your account number to confirm the name.
+                </Text>
+              </View>
+            )}
 
             {/* Trust */}
             <View className="mt-5 rounded-2xl px-3.5 py-3 flex-row gap-2.5 items-start" style={{ backgroundColor: "#e3efe7" }}>
