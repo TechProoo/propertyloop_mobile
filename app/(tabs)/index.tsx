@@ -13,9 +13,6 @@ import {
   SaveHeart,
   Reveal,
   RevealScrollView,
-  SharedElementSource,
-  SharedElementProvider,
-  stagger,
 } from "@/components/anim";
 import { tapLight, tapSelection } from "@/lib/haptics";
 import { MODES, type Mode } from "@/mocks/home";
@@ -24,7 +21,6 @@ import type { Listing, ListingType } from "@/api/types";
 import { useAuth } from "@/context/auth";
 import { useSelectedLocation, labelForLocation } from "@/lib/location";
 import { LocationSheet } from "@/components/LocationSheet";
-import { useStaggeredEntrance } from "@/hooks/useStaggeredEntrance";
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
@@ -104,40 +100,44 @@ export default function HomeScreen() {
   }, [items, query]);
 
   return (
-    <SharedElementProvider>
-      <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-        <RevealScrollView
-          contentContainerStyle={{ paddingBottom: 32 }}
-          showsVerticalScrollIndicator={false}
-          keyboardDismissMode="on-drag"
-        >
-          <Header />
-          <Heading />
-          <ServiceLoopEntry />
-          <SearchRow query={query} onChange={setQuery} />
-          <ModeChips active={mode} onSelect={setMode} />
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      <RevealScrollView
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+      >
+        <Header />
+        <Heading />
+        <ServiceLoopEntry />
+        <SearchRow query={query} onChange={setQuery} />
+        <ModeChips active={mode} onSelect={setMode} />
 
-          <Text className="px-5 pt-5 text-[16px] font-sans-bold text-ink tracking-tight">
-            {MODE_HEADING[mode]}
-          </Text>
+        <Text className="px-5 pt-5 text-[16px] font-sans-bold text-ink tracking-tight">
+          {MODE_HEADING[mode]}
+        </Text>
 
-          {loading ? (
-            <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
-              <CardSkeleton />
-              <CardSkeleton />
-              <CardSkeleton />
-              <CardSkeleton />
-            </View>
-          ) : error ? (
-            <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />
-          ) : filtered.length === 0 ? (
-            <EmptyState query={query} mode={mode} />
-          ) : (
-            <PropertyCardGrid listings={filtered} />
-          )}
-        </RevealScrollView>
-      </SafeAreaView>
-    </SharedElementProvider>
+        {loading ? (
+          <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </View>
+        ) : error ? (
+          <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />
+        ) : filtered.length === 0 ? (
+          <EmptyState query={query} mode={mode} />
+        ) : (
+          <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
+            {filtered.map((h) => (
+              <Reveal key={h.id} style={{ width: "47.5%" }}>
+                <HomeCard listing={h} />
+              </Reveal>
+            ))}
+          </View>
+        )}
+      </RevealScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -319,38 +319,20 @@ function ModeChips({
 // ─────────────────────────────────────────────────────────────────
 // Home card — photo with verified badge, price pill, rating overlay
 // ─────────────────────────────────────────────────────────────────
-function PropertyCardGrid({ listings }: { listings: Listing[] }) {
-  const delays = useStaggeredEntrance(listings.length, 40, 55);
-
-  return (
-    <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
-      {listings.map((listing, i) => (
-        <Appear key={listing.id} delay={delays[i]} style={{ width: "47.5%" }}>
-          <HomeCard listing={listing} />
-        </Appear>
-      ))}
-    </View>
-  );
-}
-
 function HomeCard({ listing }: { listing: Listing }) {
   const period = listing.period ?? "";
   return (
-    <SharedElementSource
-      id={`property-${listing.id}`}
+    <PressableScale
       onPress={() => {
         tapLight();
         router.push(`/property/${listing.id}` as Href);
       }}
+      activeScale={0.95}
+      className="rounded-[18px] overflow-hidden"
       style={{ width: "100%" }}
+      accessibilityRole="button"
+      accessibilityLabel={`${listing.title}, ${listing.location}, ${listing.priceLabel}${period}`}
     >
-      <PressableScale
-        activeScale={0.95}
-        className="rounded-[18px] overflow-hidden"
-        style={{ width: "100%" }}
-        accessibilityRole="button"
-        accessibilityLabel={`${listing.title}, ${listing.location}, ${listing.priceLabel}${period}`}
-      >
       <View style={{ height: 168 }} className="relative">
         <Image
           source={listing.coverImage}
@@ -422,7 +404,6 @@ function HomeCard({ listing }: { listing: Listing }) {
         </View>
       </View>
     </PressableScale>
-    </SharedElementSource>
   );
 }
 
