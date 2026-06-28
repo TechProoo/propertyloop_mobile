@@ -21,11 +21,8 @@ import {
   Appear,
   PressableScale,
   SaveHeart,
-  SharedElementDestination,
-  SharedElementProvider,
   stagger,
 } from "@/components/anim";
-import { useStaggeredEntrance } from "@/hooks/useStaggeredEntrance";
 import { PhotoViewer } from "@/components/PhotoViewer";
 import { RichText } from "@/lib/richText";
 import { tapLight, tapMedium } from "@/lib/haptics";
@@ -107,11 +104,7 @@ export default function ListingDetailScreen() {
     );
   }
 
-  return (
-    <SharedElementProvider>
-      <ListingDetail listing={listing} listingId={id!} />
-    </SharedElementProvider>
-  );
+  return <ListingDetail listing={listing} listingId={id!} />;
 }
 
 function ListingDetail({
@@ -232,21 +225,11 @@ function ListingDetail({
                   setViewerOpen(true);
                 }}
               >
-                {index === 0 ? (
-                  <SharedElementDestination id={`property-${listingId}`}>
-                    <Image
-                      source={item}
-                      style={{ width: screenW, height: 360 }}
-                      contentFit="cover"
-                    />
-                  </SharedElementDestination>
-                ) : (
-                  <Image
-                    source={item}
-                    style={{ width: screenW, height: 360 }}
-                    contentFit="cover"
-                  />
-                )}
+                <Image
+                  source={item}
+                  style={{ width: screenW, height: 360 }}
+                  contentFit="cover"
+                />
               </Pressable>
             )}
           />

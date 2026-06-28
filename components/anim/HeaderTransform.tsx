@@ -1,16 +1,16 @@
-import { useCallback, useState, type ReactNode } from "react";
-import { View } from "react-native";
+import { type ReactNode } from "react";
 import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   interpolate,
   Extrapolate,
   useSharedValue,
+  type SharedValue,
 } from "react-native-reanimated";
 
 export interface HeaderTransformProps {
   /** Scroll offset as shared value (connect to your scroll handler) */
-  scrollOffset: Animated.Animated<number>;
+  scrollOffset: SharedValue<number>;
   /** Pixel threshold at which transformation begins (e.g., 60) */
   collapsedAt?: number;
   /** Min height when fully collapsed */
@@ -101,7 +101,7 @@ export function HeaderFadeLayer({
   children,
   layer = 0,
 }: {
-  scrollOffset: Animated.Animated<number>;
+  scrollOffset: SharedValue<number>;
   collapsedAt?: number;
   children: ReactNode;
   /** 0 = fades first, higher numbers fade later */
