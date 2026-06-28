@@ -1,10 +1,17 @@
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { VENDOR_CATEGORIES } from "@/mocks/vendor";
 import vendorsService from "@/api/services/vendors";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
@@ -16,6 +23,7 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
 export default function VendorCategoriesScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ mode?: string }>();
   const isManage = params.mode === "manage";
 
@@ -27,8 +35,49 @@ export default function VendorCategoriesScreen() {
   const [samples, setSamples]       = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const toggle = (id: string) =>
-    setCats((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]));
+  // Once the vendor has picked (or the seed has applied) we stop overwriting,
+  // so a slow profile fetch can't clobber a quick manual selection.
+  const seededRef = useRef(false);
+
+  // Seed the chip + service area from the vendor's saved profile. Without this,
+  // the screen always defaulted to "Cleaning" — so opening it in manage mode and
+  // saving would silently overwrite the vendor's real trade. Their signup also
+  // sets serviceCategory/serviceArea, so onboarding now reflects that too.
+  useEffect(() => {
+    let active = true;
+    vendorsService
+      .getMe()
+      .then((me) => {
+        if (!active || seededRef.current || !me) return;
+        const sc = String(me.serviceCategory ?? "").trim();
+        if (sc) {
+          const match = VENDOR_CATEGORIES.find(
+            (c) => c.label.toLowerCase() === sc.toLowerCase(),
+          );
+          if (match) {
+            setCats([match.id]);
+          } else {
+            setCats(["other"]);
+            setCustomCat(sc);
+          }
+        }
+        const sa = String(me.serviceArea ?? "").trim();
+        if (sa) setArea(sa);
+        seededRef.current = true;
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Single-select: a vendor registers one headline trade, to stay consistent
+  // with their signup category, their edit-profile field, and how the dashboard
+  // and services marketplace filter them. Tapping a chip replaces the choice.
+  const select = (id: string) => {
+    seededRef.current = true;
+    setCats([id]);
+  };
 
   const pickSamples = async () => {
     const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -69,8 +118,8 @@ export default function VendorCategoriesScreen() {
       Alert.alert(
         "Almost there",
         isManage
-          ? "Pick at least one category to save."
-          : "Pick at least one category and finish the verification steps.",
+          ? "Pick your trade to save."
+          : "Pick your trade and finish the verification steps.",
       );
       return;
     }
@@ -104,7 +153,7 @@ export default function VendorCategoriesScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         {/* Top bar */}
         <View className="flex-row items-center justify-between px-5 pt-2">
           <Pressable
@@ -115,7 +164,7 @@ export default function VendorCategoriesScreen() {
             <Text className="text-ink-2 text-xl">‹</Text>
           </Pressable>
           <Text className="text-ink font-sans-bold text-sm">
-            {isManage ? "Service categories" : "Categories & verification"}
+            {isManage ? "Service category" : "Category & verification"}
           </Text>
           <View style={{ width: 36 }} />
         </View>
@@ -134,7 +183,7 @@ export default function VendorCategoriesScreen() {
             What do you <Text className="font-serif-italic">do</Text>?
           </Text>
           <Text className="text-[13px] text-ink-2 mt-1.5 leading-5">
-            Pick all that apply. You can add more later.
+            Pick your main trade. You can change it later.
           </Text>
 
           {/* Categories */}
@@ -144,7 +193,7 @@ export default function VendorCategoriesScreen() {
               return (
                 <Pressable
                   key={c.id}
-                  onPress={() => toggle(c.id)}
+                  onPress={() => select(c.id)}
                   className="flex-row items-center gap-1.5 rounded-full px-3.5 py-2"
                   style={{
                     backgroundColor: on ? INK : "#ffffff",
@@ -166,7 +215,7 @@ export default function VendorCategoriesScreen() {
               return (
                 <Pressable
                   key="other"
-                  onPress={() => toggle("other")}
+                  onPress={() => select("other")}
                   className="flex-row items-center gap-1.5 rounded-full px-3.5 py-2"
                   style={{
                     backgroundColor: on ? INK : "#ffffff",
@@ -256,16 +305,16 @@ export default function VendorCategoriesScreen() {
 
         <View
           className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-          style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+          style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
         >
           <OnboardingCta
-            label={submitting ? "Saving…" : isManage ? "Save categories" : "Continue"}
+            label={submitting ? "Saving…" : isManage ? "Save category" : "Continue"}
             ready={canContinue && !submitting}
             onPress={onContinue}
             getMissing={() => {
               const catMissing = otherNeedsTrade
                 ? "your trade name"
-                : cats.length === 0 && "at least one category";
+                : cats.length === 0 && "your trade";
               return isManage
                 ? ([catMissing].filter(Boolean) as string[])
                 : ([
