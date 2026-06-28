@@ -32,11 +32,14 @@ const paymentsService = {
 
   /**
    * Start a Paystack checkout to fund a service job's escrow. Returns a hosted
-   * `paymentUrl` to open in the browser; the escrow locks once Paystack fires
-   * the `charge.success` webhook (see backend PaymentsService.handleChargeSuccess).
+   * `paymentUrl` to open in an in-app browser. Pass `returnUrl` (a deep link)
+   * so Paystack sends the user back into the app after paying. The app should
+   * then call `verifyJobPayment` to confirm and lock escrow.
    */
-  initJobEscrow(jobId: string): Promise<JobEscrowInit> {
-    return api.post(`/payments/initialize/${jobId}`).then((r) => r.data);
+  initJobEscrow(jobId: string, returnUrl?: string): Promise<JobEscrowInit> {
+    return api
+      .post(`/payments/initialize/${jobId}`, returnUrl ? { returnUrl } : {})
+      .then((r) => r.data);
   },
 
   /** Read the current escrow state for a job by its Paystack reference. */

@@ -1,5 +1,14 @@
-import { useCallback, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useRef, useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -40,18 +49,67 @@ export default function ServiceJobScreen() {
   const [reason, setReason] = useState("");
   const insets = useSafeAreaInsets();
 
+  // Tracks a reference we've already auto-verified, so we don't re-poll a
+  // funded job on every screen focus.
+  const healedRef = useRef<string | null>(null);
+
   const load = useCallback(async () => {
-    if (!id) return;
+    if (!id) return null;
     try {
-      setJob(await vendorJobsService.getOne(id));
+      const j = await vendorJobsService.getOne(id);
+      setJob(j);
+      return j;
     } catch {
       setJob(null);
+      return null;
     } finally {
       setLoading(false);
     }
   }, [id]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  // Ask the backend to verify with Paystack and lock escrow, retrying a few
+  // times while the charge settles. Returns the resulting escrow status.
+  const pollVerify = useCallback(
+    async (reference: string, attempts = 6): Promise<string | null> => {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const res = await paymentsService.verifyJobPayment(reference);
+          if (res.escrowStatus && res.escrowStatus !== "NONE") {
+            return res.escrowStatus;
+          }
+        } catch {
+          /* keep trying */
+        }
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+      return null;
+    },
+    [],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let on = true;
+      (async () => {
+        const j = await load();
+        // Self-heal: payment was started (escrowId set) but never locked —
+        // e.g. the webhook didn't reach us. Quietly verify on return.
+        if (
+          on &&
+          j?.escrowId &&
+          (j.escrowStatus ?? "NONE") === "NONE" &&
+          healedRef.current !== j.escrowId
+        ) {
+          healedRef.current = j.escrowId;
+          const status = await pollVerify(j.escrowId, 2);
+          if (on && status && status !== "NONE") load();
+        }
+      })();
+      return () => {
+        on = false;
+      };
+    }, [load, pollVerify]),
+  );
 
   const confirm = () => {
     if (!id) return;
@@ -77,13 +135,34 @@ export default function ServiceJobScreen() {
     if (!id || busy) return;
     setBusy(true);
     try {
-      const { paymentUrl } = await paymentsService.initJobEscrow(id);
-      await Linking.openURL(paymentUrl);
-      Alert.alert(
-        "Complete payment",
-        "Finish checkout in your browser. Your escrow is secured once payment confirms — reopen this screen to see the update.",
-        [{ text: "Done", onPress: () => load() }],
-      );
+      // Deep link back into the app so Paystack returns here, not the website.
+      const returnUrl = Linking.createURL("payment-callback");
+      const { paymentUrl, reference } = await paymentsService.initJobEscrow(id, returnUrl);
+
+      // In-app browser that auto-closes when checkout redirects to returnUrl.
+      const result = await WebBrowser.openAuthSessionAsync(paymentUrl, returnUrl);
+
+      // Whether it redirected back or the user closed it, confirm with Paystack.
+      healedRef.current = reference; // we're handling verification here
+      const status = await pollVerify(reference);
+      await load();
+
+      if (status === "LOCKED") {
+        Alert.alert(
+          "Payment secured",
+          "Your money is now held safely in escrow until you confirm the job is done.",
+        );
+      } else if (result.type === "cancel" || result.type === "dismiss") {
+        Alert.alert(
+          "Payment not completed",
+          "If you finished paying, it’ll show as secured shortly — pull to refresh.",
+        );
+      } else {
+        Alert.alert(
+          "Confirming payment",
+          "We’re confirming your payment. It’ll show as secured in a moment.",
+        );
+      }
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? "Please try again.";
       Alert.alert("Couldn't start payment", Array.isArray(msg) ? msg.join(", ") : msg);

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -139,7 +139,7 @@ export default function AddCardScreen() {
               label="Cardholder name"
               value={name}
               onChangeText={setName}
-              placeholder="Tunde Adebayo"
+              placeholder="Name on card"
               autoCapitalize="words"
               autoComplete="cc-name"
             />
