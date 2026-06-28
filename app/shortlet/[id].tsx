@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
@@ -105,6 +106,7 @@ export default function ShortletDetailScreen() {
 }
 
 function ShortletDetail({ listing }: { listing: Listing }) {
+  const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
   const [guests, setGuests] = useState(2);
   const [saved, setSaved] = useState(false);
@@ -419,7 +421,7 @@ function ShortletDetail({ listing }: { listing: Listing }) {
           borderTopWidth: 0.5,
           paddingHorizontal: 20,
           paddingTop: 14,
-          paddingBottom: 30,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
         }}
       >
         <View className="flex-row items-center gap-3">

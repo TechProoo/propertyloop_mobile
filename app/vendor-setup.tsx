@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,11 +8,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { LANGUAGES } from "@/mocks/vendor";
 import vendorsService from "@/api/services/vendors";
@@ -26,6 +26,7 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
 export default function VendorSetupScreen() {
+  const insets = useSafeAreaInsets();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [name, setName]         = useState("");
   const [tagline, setTagline]   = useState("");
@@ -105,7 +106,7 @@ export default function VendorSetupScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1"
@@ -242,7 +243,7 @@ export default function VendorSetupScreen() {
 
           <View
             className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-            style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+            style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
           >
             <OnboardingCta
               label={submitting ? "Saving…" : "Continue"}

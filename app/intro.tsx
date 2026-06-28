@@ -84,7 +84,10 @@ export default function IntroScreen() {
     }
   };
 
-  const handleSkip = () => router.push("/(tabs)" as Href);
+  // Skip the intro slides → go straight to role selection (which leads into
+  // sign-up). It must NOT jump into "/(tabs)": that's the authed home and an
+  // unauthenticated user landing there crashes on the first authed API call.
+  const handleSkip = () => router.push("/role-select" as Href);
 
   const onContinue = () => {
     tapMedium();

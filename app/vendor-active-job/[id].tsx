@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  Alert,
   Linking,
   Pressable,
   ScrollView,
@@ -8,6 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import {
@@ -19,7 +19,7 @@ import {
 } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
 import vendorsService from "@/api/services/vendors";
@@ -46,6 +46,7 @@ const TRACK: { key: string; title: string }[] = [
 const ORDER = ["ACCEPTED", "IN_PROGRESS", "COMPLETED", "CONFIRMED"];
 
 export default function VendorActiveJobScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [job, setJob] = useState<VendorJob | null>(null);
   const [loading, setLoading] = useState(true);
@@ -302,7 +303,7 @@ export default function VendorActiveJobScreen() {
       {/* Sticky CTA */}
       <View
         className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-        style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+        style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
       >
         {busy ? (
           <View className="items-center" style={{ paddingVertical: 16 }}>

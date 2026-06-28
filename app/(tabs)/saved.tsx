@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import {
-  Alert,
   Pressable,
   Text,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { router, useFocusEffect, type Href } from "expo-router";

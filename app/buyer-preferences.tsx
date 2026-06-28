@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
@@ -51,6 +51,7 @@ const AREAS = [
 const MAX_AREAS = 4;
 
 export default function BuyerPreferencesScreen() {
+  const insets = useSafeAreaInsets();
   const [intent, setIntent] = useState<Intent>("RENTING");
   const [areas, setAreas] = useState<string[]>([
     "Lekki Phase 1",
@@ -86,7 +87,7 @@ export default function BuyerPreferencesScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         {/* Top bar */}
         <View className="flex-row items-center justify-between px-5 pt-2">
           <Pressable onPress={() => router.back()} hitSlop={12}>
@@ -222,8 +223,12 @@ export default function BuyerPreferencesScreen() {
           </View>
         </ScrollView>
 
-        {/* Sticky bottom CTA */}
-        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
+        {/* Sticky bottom CTA — bottom padding tracks the safe-area inset so the
+            button clears the Android nav bar / gesture area (edge-to-edge). */}
+        <View
+          className="absolute bottom-0 left-0 right-0 px-5 pt-3 bg-cream"
+          style={{ paddingBottom: Math.max(insets.bottom, 20) + 10 }}
+        >
           <OnboardingCta
             label="Show me homes"
             ready={canContinue}

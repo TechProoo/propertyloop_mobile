@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -25,6 +25,7 @@ function fmtNaira(n: number) {
 }
 
 export default function FiltersScreen() {
+  const insets = useSafeAreaInsets();
   const [type, setType] = useState("Any");
   const [beds, setBeds] = useState("3+");
   const [baths, setBaths] = useState("Any");
@@ -64,7 +65,7 @@ export default function FiltersScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Drag handle */}
@@ -157,7 +158,7 @@ export default function FiltersScreen() {
           borderTopWidth: 0.5,
           paddingHorizontal: 16,
           paddingTop: 14,
-          paddingBottom: 28,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
         }}
       >
         <Pressable

@@ -1,15 +1,15 @@
 import { useState } from "react";
 import {
-  Alert,
   Linking,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import agentsService from "@/api/services/agents";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 
@@ -36,6 +36,7 @@ function naira(n: number) {
 }
 
 export default function AgentPayScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tier?: string }>();
   const tier: Tier = ((): Tier => {
     if (params.tier === "STANDARD" || params.tier === "PRO") return params.tier;
@@ -83,7 +84,7 @@ export default function AgentPayScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         {/* Top bar */}
         <View className="flex-row items-center justify-between px-5 pt-2">
           <Pressable
@@ -168,7 +169,10 @@ export default function AgentPayScreen() {
         </ScrollView>
 
         {/* Sticky CTA */}
-        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
+        <View
+          className="absolute bottom-0 left-0 right-0 px-5 pt-3 bg-cream"
+          style={{ paddingBottom: Math.max(insets.bottom, 20) + 10 }}
+        >
           <Pressable
             onPress={handlePay}
             disabled={paying}

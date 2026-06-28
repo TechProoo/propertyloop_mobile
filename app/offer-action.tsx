@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Pressable,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,9 +8,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import vendorsService from "@/api/services/vendors";
 
 const PRIMARY = "#1f6f43";
@@ -46,6 +46,7 @@ function buildDays() {
 }
 
 export default function VendorBlackoutScreen() {
+  const insets = useSafeAreaInsets();
   const days = useMemo(buildDays, []);
   const [selected, setSelected] = useState<string[]>([]);
   const [reason, setReason]     = useState("");
@@ -102,7 +103,7 @@ export default function VendorBlackoutScreen() {
   }, [days]);
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -219,7 +220,7 @@ export default function VendorBlackoutScreen() {
 
         <View
           className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-          style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+          style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
         >
           <Pressable
             onPress={onSave}

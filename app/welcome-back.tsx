@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const PRIMARY_INK = "#134a2d";
 const ACCENT_INK = "#6b4a16";
@@ -90,6 +90,7 @@ function picsum(seed: string) {
 }
 
 export default function WelcomeBackScreen() {
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -207,7 +208,7 @@ export default function WelcomeBackScreen() {
           borderTopWidth: 0.5,
           paddingHorizontal: 16,
           paddingTop: 14,
-          paddingBottom: 30,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
         }}
       >
         <Pressable

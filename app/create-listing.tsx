@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Pressable,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";

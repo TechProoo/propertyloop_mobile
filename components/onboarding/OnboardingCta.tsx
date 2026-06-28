@@ -1,4 +1,8 @@
-import { Alert, Pressable, Text } from "react-native";
+import {
+  Pressable,
+  Text,
+} from "react-native";
+import { Alert } from "@/lib/dialog";
 
 /**
  * Primary onboarding button that is ALWAYS tappable.
