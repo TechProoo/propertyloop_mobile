@@ -205,7 +205,7 @@ export default function SignupScreen() {
 
             {/* Heading */}
             <Text className="text-ink font-serif text-3xl mt-6 leading-[36px]">
-              Let&apos;s get you <Text className="font-serif-italic">home</Text>.
+              Let&apos;s get you <Text className="font-serif-italic">started</Text>.
             </Text>
             <Text className="text-ink-3 text-sm mt-2 leading-5">
               Signing up as <Text className="font-sans-semibold">{ROLE_LABEL[role]}</Text>.{" "}
@@ -225,7 +225,7 @@ export default function SignupScreen() {
                 label="Full name"
                 value={name}
                 onChangeText={setName}
-                placeholder="Tunde Adebayo"
+                placeholder="Your full name"
                 autoCapitalize="words"
                 autoComplete="name"
                 textContentType="name"
@@ -273,17 +273,17 @@ export default function SignupScreen() {
                     autoCapitalize="words"
                   />
                   <Field
-                    label="License number"
+                    label="Reg. number (NIESV or CAC)"
                     value={licenseNumber}
                     onChangeText={setLicenseNumber}
-                    placeholder="Your real estate license #"
+                    placeholder="e.g. F1234 (NIESV) or BN1234567 (CAC)"
                     autoCapitalize="characters"
                   />
                   <Field
                     label="Business address"
                     value={businessAddress}
                     onChangeText={setBusinessAddress}
-                    placeholder="Office or operating address"
+                    placeholder="36 Lekki-Epe Expressway, Wing A, 2nd Floor, Lekki Swiss Mall"
                     autoCapitalize="words"
                   />
                 </View>
@@ -333,7 +333,21 @@ export default function SignupScreen() {
             </Pressable>
 
             <Text className="text-ink-3 text-[11px] text-center mt-6">
-              By continuing, you agree to our Terms &amp; Privacy Policy.
+              By continuing, you agree to our{" "}
+              <Text
+                className="text-primary font-sans-semibold"
+                onPress={() => router.push("/terms" as Href)}
+              >
+                Terms
+              </Text>{" "}
+              &amp;{" "}
+              <Text
+                className="text-primary font-sans-semibold"
+                onPress={() => router.push("/privacy" as Href)}
+              >
+                Privacy Policy
+              </Text>
+              .
             </Text>
 
             <View className="flex-row justify-center mt-5">

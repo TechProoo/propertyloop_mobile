@@ -26,6 +26,7 @@ export interface VendorJob {
   vendorFee: number;
   platformFee: number;
   escrowAmount?: number;
+  escrowId?: string | null;
   escrowStatus?: string;
   paymentMethod?: string;
   completionNotes?: string;

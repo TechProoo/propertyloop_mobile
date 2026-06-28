@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -207,7 +207,7 @@ export default function AgentSetupScreen() {
             <View className="mt-4">
               <View className="flex-row items-center justify-between mb-1.5">
                 <Text className="text-ink-2 text-xs font-sans-semibold">
-                  Licence number · NIESV
+                  Reg. number · NIESV or CAC
                 </Text>
                 <View className="bg-amber-100 px-2 py-0.5 rounded-full">
                   <Text className="text-amber-700 text-[10px] font-sans-bold">
@@ -218,7 +218,7 @@ export default function AgentSetupScreen() {
               <TextInput
                 value={licenseNumber}
                 onChangeText={setLicenseNumber}
-                placeholder="e.g. NIESV/L/3492-A"
+                placeholder="e.g. F1234 (NIESV) or BN1234567 (CAC)"
                 placeholderTextColor="#7f857f"
                 autoCapitalize="characters"
                 className="bg-white border border-line rounded-2xl px-4 py-3.5 text-ink text-base"
@@ -231,7 +231,7 @@ export default function AgentSetupScreen() {
                 label="Business address"
                 value={businessAddress}
                 onChangeText={setBusinessAddress}
-                placeholder="e.g. 14 Adeola Odeku St, V.I., Lagos"
+                placeholder="36 Lekki-Epe Expressway, Wing A, 2nd Floor, Lekki Swiss Mall"
                 autoCapitalize="words"
               />
             </View>
