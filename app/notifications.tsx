@@ -51,8 +51,20 @@ function iconFor(type: string): {
 
 function hrefFor(n: AppNotification, role?: string): Href | null {
   const d = n.data ?? {};
+  const isAgent = role === "AGENT";
   if (d.purchaseId) return "/purchase-progress" as Href;
-  if (d.offerId) return "/offers" as Href;
+  // Offers: agents review and accept/counter/decline on their offers screen;
+  // buyers track the offers they've made on the buyer offers screen. (Routing
+  // an agent to the buyer "/offers" screen showed an empty list.)
+  if (d.offerId) return (isAgent ? "/agent-offers" : "/offers") as Href;
+  // Viewings: agents accept/decline/reschedule from the Leads → Viewings tab;
+  // buyers see their booked viewings on the Account tab. (Previously viewing
+  // notifications had no destination, so they weren't tappable.)
+  if (d.viewingId) {
+    return (
+      isAgent ? "/(agent-tabs)/leads?tab=viewing" : "/(tabs)/account"
+    ) as Href;
+  }
   // Job events route to the recipient's own job screen: the vendor's
   // active-job view (surfaces the dispute banner), or the buyer's service-job
   // view (where they confirm/release escrow).

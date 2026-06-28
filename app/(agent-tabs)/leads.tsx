@@ -1,14 +1,14 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Linking,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
-import { router, useFocusEffect, type Href } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
@@ -70,8 +70,21 @@ function initialsOf(name?: string | null): string {
 }
 
 export default function AgentLeadsScreen() {
-  const [tab, setTab] = useState<TabId>("all");
+  // Deep-link support: a notification (e.g. a new viewing request) can open
+  // this screen on a specific sub-tab via `?tab=viewing`.
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const initialTab: TabId = TABS.some((t) => t.id === params.tab)
+    ? (params.tab as TabId)
+    : "all";
+  const [tab, setTab] = useState<TabId>(initialTab);
   const { user } = useAuth();
+
+  // If the screen is already mounted when the param changes, sync the tab.
+  useEffect(() => {
+    if (params.tab && TABS.some((t) => t.id === params.tab)) {
+      setTab(params.tab as TabId);
+    }
+  }, [params.tab]);
 
   const [viewings, setViewings] = useState<Viewing[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
