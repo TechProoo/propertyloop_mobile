@@ -1,11 +1,11 @@
 import { useState } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";

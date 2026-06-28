@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorJobsService, {
   type JobDispute,
@@ -52,6 +52,7 @@ function initialsOf(name?: string | null) {
 }
 
 export default function VendorDisputeScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [dispute, setDispute] = useState<JobDispute | null>(null);
   const [loading, setLoading] = useState(true);
@@ -308,7 +309,7 @@ export default function VendorDisputeScreen() {
           borderTopWidth: 0.5,
           paddingHorizontal: 16,
           paddingTop: 14,
-          paddingBottom: 28,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
         }}
       >
         <Pressable

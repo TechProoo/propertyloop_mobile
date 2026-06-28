@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,9 +8,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { VENDOR_DURATIONS } from "@/mocks/vendor";
 import vendorServicesService from "@/api/services/vendorServices";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
@@ -26,6 +26,7 @@ const INK_3 = "#7f857f";
 const FEE_RATE = 0.1;
 
 export default function VendorFirstServiceScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ mode?: string; id?: string }>();
   // Modes: onboarding (default first-time, advances to payout) | add | edit
   const mode: "onboarding" | "add" | "edit" =
@@ -109,7 +110,7 @@ export default function VendorFirstServiceScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1"
@@ -261,7 +262,7 @@ export default function VendorFirstServiceScreen() {
 
           <View
             className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-            style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+            style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}
           >
             <OnboardingCta
               label={submitting ? "Saving…" : ctaLabel}

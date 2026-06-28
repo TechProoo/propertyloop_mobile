@@ -1,11 +1,11 @@
 import { useCallback, useState } from "react";
 import {
-  Alert,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import {

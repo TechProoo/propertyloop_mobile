@@ -1,7 +1,14 @@
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import viewingsService from "@/api/services/viewings";
 
 const PRIMARY = "#1f6f43";
@@ -50,6 +57,7 @@ const SLOTS: Slot[] = [
 ];
 
 export default function RescheduleViewingScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     viewingId?: string;
     leadId?: string;
@@ -94,7 +102,7 @@ export default function RescheduleViewingScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Drag handle */}
@@ -233,7 +241,7 @@ export default function RescheduleViewingScreen() {
           borderTopWidth: 0.5,
           paddingHorizontal: 16,
           paddingTop: 14,
-          paddingBottom: 28,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
         }}
       >
         <Pressable

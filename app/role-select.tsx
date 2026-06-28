@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
@@ -80,6 +80,7 @@ const badgeClasses: Record<RoleCard["badgeTone"], string> = {
 export default function RoleSelectScreen() {
   const [selected, setSelected] = useState<Role>("BUYER");
   const current = CARDS.find((c) => c.id === selected)!;
+  const insets = useSafeAreaInsets();
 
   const handleContinue = () => {
     if (selected === "BUYER") {
@@ -94,7 +95,7 @@ export default function RoleSelectScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         {/* Top bar + progress */}
         <View className="flex-row items-center px-5 pt-2">
           <Pressable
@@ -139,8 +140,12 @@ export default function RoleSelectScreen() {
           </View>
         </ScrollView>
 
-        {/* Sticky CTA */}
-        <View className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-cream">
+        {/* Sticky CTA — bottom padding tracks the safe-area inset so the button
+            clears the Android nav bar / gesture area (the app is edge-to-edge). */}
+        <View
+          className="absolute bottom-0 left-0 right-0 px-5 pt-3 bg-cream"
+          style={{ paddingBottom: Math.max(insets.bottom, 20) + 10 }}
+        >
           <PressableScale
             onPress={() => {
               tapMedium();

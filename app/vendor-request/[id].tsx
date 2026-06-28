@@ -1,9 +1,16 @@
 import { useCallback, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
 
@@ -27,6 +34,7 @@ function whenOf(iso?: string) {
 }
 
 export default function VendorRequestScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [job, setJob] = useState<VendorJob | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,7 +159,7 @@ export default function VendorRequestScreen() {
       </ScrollView>
 
       {/* Sticky actions */}
-      <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}>
+      <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
         {busy ? (
           <View className="items-center" style={{ paddingVertical: 16 }}>
             <BouncyLoader color={PRIMARY} />

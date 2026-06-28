@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,11 +8,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
 import listingsService from "@/api/services/listings";
@@ -26,6 +26,7 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
 export default function AgentVerifyScreen() {
+  const insets = useSafeAreaInsets();
   const [nin, setNin]         = useState("");
   const [licenseFile, setLicenseFile] = useState<{ name: string; uri: string; type?: string } | null>(null);
   const [selfieUri, setSelfieUri]     = useState<string | null>(null);
@@ -94,7 +95,7 @@ export default function AgentVerifyScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1"
@@ -235,7 +236,7 @@ export default function AgentVerifyScreen() {
               borderTopWidth: 0.5,
               paddingHorizontal: 16,
               paddingTop: 14,
-              paddingBottom: 28,
+              paddingBottom: Math.max(insets.bottom, 20) + 10,
             }}
           >
             <OnboardingCta

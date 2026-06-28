@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,9 +8,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import paymentsService, { type Bank } from "@/api/services/payments";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
@@ -22,6 +22,7 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
 export default function VendorPayoutSetupScreen() {
+  const insets = useSafeAreaInsets();
   const [banks, setBanks] = useState<Bank[]>([]);
   const [query, setQuery] = useState("");
   const [bankName, setBankName] = useState("");
@@ -63,7 +64,7 @@ export default function VendorPayoutSetupScreen() {
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
           {/* Top bar */}
           <View className="flex-row items-center justify-between px-5 pt-2">
@@ -136,7 +137,7 @@ export default function VendorPayoutSetupScreen() {
             </View>
           </ScrollView>
 
-          <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}>
+          <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
             <OnboardingCta
               label={submitting ? "Submitting…" : "Finish & submit for review"}
               ready={canContinue && !submitting}

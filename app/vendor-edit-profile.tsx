@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,11 +8,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import vendorsService from "@/api/services/vendors";
@@ -28,6 +28,7 @@ function initialsOf(name?: string | null) {
 }
 
 export default function VendorEditProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { user, refreshUser } = useAuth();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -164,7 +165,7 @@ export default function VendorEditProfileScreen() {
           />
         </ScrollView>
 
-        <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}>
+        <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
           <Pressable onPress={onSave} disabled={saving} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16, opacity: saving ? 0.6 : 1 }}>
             <Text className="text-white font-sans-bold text-[15px]">{saving ? "Saving…" : "Save changes"}</Text>
           </Pressable>

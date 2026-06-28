@@ -10,6 +10,7 @@ import { AuthProvider, useAuth, roleHome } from '@/context/auth';
 import vendorsService from '@/api/services/vendors';
 import { BootAnimation } from '@/components/brand/BootAnimation';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
+import { DialogHost } from '@/lib/dialog';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
 // bundle the weights you actually use (instead of all 18 variants).
 import { useFonts } from '@expo-google-fonts/inter/useFonts';
@@ -159,6 +160,7 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
         <UpdatePrompt />
+        <DialogHost />
         <BootGate />
       </ThemeProvider>
       </AuthProvider>

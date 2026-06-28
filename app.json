@@ -24,7 +24,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 2
     },
     "web": {
       "output": "static",
@@ -35,12 +36,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/propertyloop-icon.png",
-          "imageWidth": 140,
+          "image": "./assets/images/logo.png",
+          "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#06160d",
+          "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#06160d"
+            "image": "./assets/images/logo.png",
+            "backgroundColor": "#ffffff"
           }
         }
       ],
