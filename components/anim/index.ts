@@ -17,3 +17,4 @@ export {
   HeaderFadeLayer,
   useHeaderTransform,
 } from "./HeaderTransform";
+export { MorphingTabIndicator } from "./MorphingTabIndicator";

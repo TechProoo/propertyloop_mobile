@@ -13,6 +13,13 @@ import {
 import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
+import Animated, {
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -225,11 +232,15 @@ function ListingDetail({
                   setViewerOpen(true);
                 }}
               >
-                <Image
-                  source={item}
-                  style={{ width: screenW, height: 360 }}
-                  contentFit="cover"
-                />
+                {index === 0 ? (
+                  <HeroImage source={item} width={screenW} />
+                ) : (
+                  <Image
+                    source={item}
+                    style={{ width: screenW, height: 360 }}
+                    contentFit="cover"
+                  />
+                )}
               </Pressable>
             )}
           />
@@ -594,5 +605,42 @@ function ListingDetail({
         onClose={() => setViewerOpen(false)}
       />
     </View>
+  );
+}
+
+/**
+ * Hero entrance for the first gallery image: a gentle fade-in with a subtle
+ * zoom-settle (1.06 → 1) so the detail page "arrives" rather than snapping in.
+ * `FadeIn` guarantees the image ends fully visible even if the scale worklet
+ * never runs, so the hero can never get stuck invisible.
+ */
+function HeroImage({
+  source,
+  width,
+}: {
+  source: string;
+  width: number;
+}) {
+  const scale = useSharedValue(1.06);
+
+  useEffect(() => {
+    scale.value = withTiming(1, {
+      duration: 650,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [scale]);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View entering={FadeIn.duration(360)} style={style}>
+      <Image
+        source={source}
+        style={{ width, height: 360 }}
+        contentFit="cover"
+      />
+    </Animated.View>
   );
 }
