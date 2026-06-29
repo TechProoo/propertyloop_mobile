@@ -63,6 +63,15 @@ export default function PublicVendorProfileScreen() {
   const reviews: any[] = vendor.reviews ?? [];
   const portfolio: string[] = vendor.portfolioImages ?? [];
   const firstReview = reviews[0];
+  // A vendor who finished signup but not the setup wizard has no bio, services,
+  // portfolio or reviews — the directory now hides them, but a stale direct
+  // link can still land here, so show a clear "still setting up" state rather
+  // than a blank page.
+  const profileEmpty =
+    !vendor.bio &&
+    services.length === 0 &&
+    portfolio.length === 0 &&
+    reviews.length === 0;
 
   return (
     <View className="flex-1 bg-cream">
@@ -122,6 +131,19 @@ export default function PublicVendorProfileScreen() {
               </View>
             ))}
           </View>
+
+          {/* Empty profile — vendor hasn't finished setting up */}
+          {profileEmpty && (
+            <View className="bg-white rounded-2xl px-4 py-8 items-center mt-4 border-line" style={{ borderWidth: 0.5 }}>
+              <View className="w-12 h-12 rounded-full items-center justify-center mb-2" style={{ backgroundColor: "#f0f0f0" }}>
+                <Ionicons name="construct-outline" size={22} color={INK_3} />
+              </View>
+              <Text className="text-[13.5px] font-sans-bold text-ink">Still setting up</Text>
+              <Text className="text-[12px] text-ink-3 mt-1 text-center leading-5">
+                {vendor.name?.split(/\s+/)[0] ?? "This vendor"} hasn&apos;t added their services or details yet. Check back soon.
+              </Text>
+            </View>
+          )}
 
           {/* Bio */}
           {!!vendor.bio && (
@@ -186,8 +208,14 @@ export default function PublicVendorProfileScreen() {
         <SafeAreaView edges={["bottom"]} style={{ position: "absolute", left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
           <View className="bg-cream border-line flex-row items-center gap-3 px-4" style={{ borderTopWidth: 0.5, paddingTop: 14, paddingBottom: 14 }}>
             <View className="flex-1">
-              <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">From</Text>
-              <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>{services[0]?.priceLabel ?? "—"}</Text>
+              {services.length > 0 ? (
+                <>
+                  <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">From</Text>
+                  <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>{services[0].priceLabel}</Text>
+                </>
+              ) : (
+                <Text className="text-[13px] font-sans-semibold text-ink-2">Contact for pricing</Text>
+              )}
             </View>
             <Pressable onPress={() => router.push(`/book-service?vendorId=${id}` as Href)} className="bg-primary rounded-full px-6 py-3.5 active:opacity-80">
               <Text className="text-white font-sans-bold text-[14px]">Hire {vendor.name?.split(/\s+/)[0] ?? "vendor"}</Text>
