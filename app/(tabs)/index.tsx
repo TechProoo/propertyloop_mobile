@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { router, type Href } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { NotificationBell } from "@/components/brand/NotificationBell";
+import notificationsService from "@/api/services/notifications";
 import { Skeleton } from "@/components/brand/Skeleton";
 import {
   Appear,
@@ -148,7 +150,22 @@ function Header() {
   const { user } = useAuth();
   const location = useSelectedLocation();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
   const label = labelForLocation(location);
+
+  // Keep the bell's count fresh each time the home tab regains focus.
+  useFocusEffect(
+    useCallback(() => {
+      let on = true;
+      notificationsService
+        .unreadCount()
+        .then((r) => on && setUnread(r.unread))
+        .catch(() => {});
+      return () => {
+        on = false;
+      };
+    }, []),
+  );
   return (
     <View className="px-5 pt-1 flex-row items-center justify-between">
       <Pressable
@@ -177,22 +194,17 @@ function Header() {
       />
 
       <View className="flex-row items-center gap-2.5">
-        <Pressable
+        <NotificationBell
+          count={unread}
           onPress={() => {
             tapLight();
             router.push("/notifications" as Href);
           }}
-          hitSlop={8}
-          className="w-10 h-10 rounded-full bg-cream-2 items-center justify-center active:opacity-80"
-          accessibilityRole="button"
-          accessibilityLabel="Notifications"
-        >
-          <Ionicons name="notifications-outline" size={19} color={INK} />
-          <View
-            className="absolute top-2 right-2.5 w-[7px] h-[7px] rounded-full"
-            style={{ backgroundColor: PRIMARY, borderWidth: 2, borderColor: "#ffffff" }}
-          />
-        </Pressable>
+          size={40}
+          iconColor={INK}
+          bgColor="#f0f0f0"
+          badgeBorderColor="#ffffff"
+        />
         <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
       </View>
     </View>
