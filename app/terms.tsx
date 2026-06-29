@@ -9,8 +9,8 @@ const SECTIONS: { h: string; b: string[] }[] = [
   {
     h: "1. Who we are",
     b: [
-      "PropertyLoop Technologies Ltd (\"PropertyLoop\", \"we\", \"our\") operates the PropertyLoop mobile and web platform connecting buyers, renters, agents and service vendors across Nigeria.",
-      "Registered in Lagos, Nigeria. RC 1842310. Office: 14 Adeola Odeku Street, Victoria Island.",
+      "PropertyLoop (\"we\", \"our\") operates the PropertyLoop mobile and web platform connecting buyers, renters, agents and service vendors across Nigeria.",
+      "Registered in Lagos, Nigeria. RC9151459. Office: 36 Lekki-Epe Expressway, Wing A, 2nd Floor, Lekki Swiss Mall.",
     ],
   },
   {
@@ -129,7 +129,7 @@ export default function TermsScreen() {
         ))}
 
         <Text className="text-[11px] text-ink-3 mt-8 text-center leading-4">
-          © 2026 PropertyLoop Technologies Ltd. All rights reserved.
+          © 2026 PropertyLoop. All rights reserved.
         </Text>
       </ScrollView>
     </SafeAreaView>
