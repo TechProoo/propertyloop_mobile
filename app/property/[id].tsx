@@ -35,6 +35,8 @@ import { RichText } from "@/lib/richText";
 import { tapLight, tapMedium } from "@/lib/haptics";
 import listingsService from "@/api/services/listings";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
+import bookmarksService from "@/api/services/bookmarks";
+import { hydrateOne } from "@/lib/favourites";
 import { useAuth } from "@/context/auth";
 import type { Listing } from "@/api/types";
 
@@ -76,6 +78,12 @@ export default function ListingDetailScreen() {
       .then((l) => active && setListing(l))
       .catch(() => active && setError(true))
       .finally(() => active && setLoading(false));
+    // Sync this listing's saved state with the server so the heart reflects
+    // the truth even if the global launch-sync was skipped or failed.
+    bookmarksService
+      .checkProperty(id)
+      .then((res) => active && hydrateOne(id, !!res?.bookmarked))
+      .catch(() => {});
     return () => {
       active = false;
     };

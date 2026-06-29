@@ -25,6 +25,15 @@ const bookmarksService = {
       .post("/bookmarks/toggle", { entityId: listingId, type: "PROPERTY" })
       .then((r) => r.data);
   },
+
+  /** Authoritative check of whether a single property is bookmarked. */
+  checkProperty(listingId: string): Promise<{ bookmarked: boolean }> {
+    return api
+      .get("/bookmarks/check", {
+        params: { entityId: listingId, type: "PROPERTY" },
+      })
+      .then((r) => r.data);
+  },
 };
 
 export default bookmarksService;

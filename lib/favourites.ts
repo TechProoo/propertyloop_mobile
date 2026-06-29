@@ -39,12 +39,25 @@ export function toggleSaved(id: string): boolean {
   else saved.delete(id);
   tapLight();
   emit();
-  // Persist; revert on failure.
-  bookmarksService.toggleProperty(id).catch(() => {
-    if (willSave) saved.delete(id);
-    else saved.add(id);
-    emit();
-  });
+  // Persist, then reconcile with the server's authoritative state — the local
+  // set can be stale (the launch sync swallows errors, or the listing was saved
+  // on another device), so trust the server's `bookmarked` over our guess.
+  bookmarksService
+    .toggleProperty(id)
+    .then((res) => {
+      const serverSaved = res?.bookmarked;
+      if (typeof serverSaved === "boolean" && serverSaved !== saved.has(id)) {
+        if (serverSaved) saved.add(id);
+        else saved.delete(id);
+        emit();
+      }
+    })
+    .catch(() => {
+      // Network/server failure — revert the optimistic change.
+      if (willSave) saved.delete(id);
+      else saved.add(id);
+      emit();
+    });
   return willSave;
 }
 
@@ -52,6 +65,14 @@ export function toggleSaved(id: string): boolean {
 export function hydrateSaved(ids: string[]) {
   saved.clear();
   ids.forEach((id) => saved.add(id));
+  emit();
+}
+
+/** Hydrate a single listing's saved state from the server (authoritative). */
+export function hydrateOne(id: string, isSaved: boolean) {
+  if (isSaved === saved.has(id)) return; // no change → skip needless emit
+  if (isSaved) saved.add(id);
+  else saved.delete(id);
   emit();
 }
 
