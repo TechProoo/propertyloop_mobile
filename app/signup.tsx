@@ -283,7 +283,7 @@ export default function SignupScreen() {
                     label="Business address"
                     value={businessAddress}
                     onChangeText={setBusinessAddress}
-                    placeholder="36 Lekki-Epe Expressway, Wing A, 2nd Floor, Lekki Swiss Mall"
+                    placeholder="e.g. 36 Lekki-Epe Expressway, Lekki"
                     autoCapitalize="words"
                   />
                 </View>
