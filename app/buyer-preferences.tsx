@@ -148,7 +148,7 @@ export default function BuyerPreferencesScreen() {
                     <Text className="text-ink font-sans-bold text-base">
                       {opt.title}
                     </Text>
-                    <Text className="text-ink-3 text-xs mt-0.5">
+                    <Text className="text-ink-2 text-[13px] mt-0.5">
                       {opt.desc}
                     </Text>
                   </View>
@@ -217,7 +217,7 @@ export default function BuyerPreferencesScreen() {
             <Text className="text-ink font-sans-bold text-base">
               Yearly budget
             </Text>
-            <Text className="text-ink-3 text-xs mt-1">
+            <Text className="text-ink-2 text-[13px] mt-1">
               Coming soon — we'll add budget filtering shortly.
             </Text>
           </View>
