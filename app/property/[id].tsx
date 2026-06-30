@@ -37,6 +37,7 @@ import listingsService from "@/api/services/listings";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
 import bookmarksService from "@/api/services/bookmarks";
 import { hydrateOne } from "@/lib/favourites";
+import { recordListingView } from "@/lib/recentlyViewed";
 import { useAuth } from "@/context/auth";
 import type { Listing } from "@/api/types";
 
@@ -75,7 +76,20 @@ export default function ListingDetailScreen() {
     setError(false);
     listingsService
       .getById(id)
-      .then((l) => active && setListing(l))
+      .then((l) => {
+        if (!active) return;
+        setListing(l);
+        // Remember it for the Home "Jump back in" rail.
+        recordListingView({
+          id: l.id,
+          title: l.title,
+          location: l.location,
+          priceLabel: l.priceLabel,
+          period: l.period,
+          coverImage: l.coverImage,
+          verified: l.verified,
+        });
+      })
       .catch(() => active && setError(true))
       .finally(() => active && setLoading(false));
     // Sync this listing's saved state with the server so the heart reflects

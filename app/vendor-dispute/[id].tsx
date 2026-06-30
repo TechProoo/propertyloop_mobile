@@ -203,9 +203,17 @@ export default function VendorDisputeScreen() {
             className="font-serif mt-2"
             style={{ fontSize: 19, letterSpacing: -0.3, lineHeight: 22, color: DISPUTE_FG }}
           >
-            Customer says the <Text className="font-serif-italic">job&apos;s incomplete</Text>
+            Why the payment&apos;s <Text className="font-serif-italic">on hold</Text>
           </Text>
-          <Text className="text-[12.5px] mt-1 leading-5" style={{ color: DISPUTE_FG }}>
+          {!!dispute.reason && (
+            <Text
+              className="text-[13.5px] mt-1.5 leading-5"
+              style={{ color: DISPUTE_FG, fontFamily: "PlayfairDisplay_400Regular_Italic" }}
+            >
+              “{dispute.reason}”
+            </Text>
+          )}
+          <Text className="text-[12px] mt-2 leading-5" style={{ color: DISPUTE_FG, opacity: 0.85 }}>
             Respond with evidence. Our team reviews both sides and decides the outcome.
           </Text>
           {hrs != null && (

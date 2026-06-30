@@ -34,6 +34,39 @@ const bookmarksService = {
       })
       .then((r) => r.data);
   },
+
+  // ─── Vendors (saved service providers) ──────────────────────────────────
+  // Vendor bookmarks use the backend "SERVICE" type, keyed by the vendor's
+  // userId (see bookmarks.service buildUniqueWhere → vendorUserId).
+
+  /** Toggle a vendor (service provider) bookmark. Returns the new state. */
+  toggleVendor(vendorId: string): Promise<{ bookmarked: boolean; id: string }> {
+    return api
+      .post("/bookmarks/toggle", { entityId: vendorId, type: "SERVICE" })
+      .then((r) => r.data);
+  },
+
+  /** Authoritative check of whether a single vendor is bookmarked. */
+  checkVendor(vendorId: string): Promise<{ bookmarked: boolean }> {
+    return api
+      .get("/bookmarks/check", {
+        params: { entityId: vendorId, type: "SERVICE" },
+      })
+      .then((r) => r.data);
+  },
+
+  /** IDs of all vendors the user has saved — one call to seed the directory. */
+  listVendorIds(): Promise<string[]> {
+    return api
+      .get<{ vendorUserId?: string }[]>("/bookmarks", {
+        params: { type: "SERVICE" },
+      })
+      .then((r) =>
+        (r.data ?? [])
+          .map((b) => b.vendorUserId)
+          .filter((id): id is string => !!id),
+      );
+  },
 };
 
 export default bookmarksService;

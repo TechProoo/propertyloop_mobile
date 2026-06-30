@@ -70,7 +70,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
   {
     h: "10. Contact",
     b: [
-      "Questions about these Terms: support.propertyloop@propertyloop.ng.",
+      "Questions about these Terms: support@propertyloop.ng.",
     ],
   },
 ];

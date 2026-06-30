@@ -19,10 +19,23 @@ import {
 import { tapLight, tapSelection } from "@/lib/haptics";
 import { MODES, type Mode } from "@/mocks/home";
 import listingsService from "@/api/services/listings";
+import agentsService, { type PublicAgent } from "@/api/services/agents";
 import type { Listing, ListingType } from "@/api/types";
 import { useAuth } from "@/context/auth";
 import { useSelectedLocation, labelForLocation } from "@/lib/location";
+import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { LocationSheet } from "@/components/LocationSheet";
+
+// The minimal shape the horizontal rail cards render — satisfied by both a full
+// Listing and a stored RecentListing.
+type RailListing = {
+  id: string;
+  title: string;
+  location: string;
+  priceLabel: string;
+  period?: string | null;
+  coverImage: string;
+};
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
@@ -40,6 +53,11 @@ const ACCENT = "#b9842c"; // gold — rating stars only
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
+
+// Rentals at/under this yearly price power the "Affordable rentals" rail.
+const AFFORDABLE_MAX = 5_000_000;
+// An agent needs at least this many listings to count as a "Top agent".
+const TOP_AGENT_MIN_LISTINGS = 5;
 
 const MODE_TO_TYPE: Record<Mode, ListingType> = {
   Rent: "RENT",
@@ -64,6 +82,13 @@ export default function HomeScreen() {
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const location = useSelectedLocation();
+
+  // Curated rails (independent of the active mode).
+  const [recent, setRecent] = useState<Listing[]>([]);
+  const [affordable, setAffordable] = useState<Listing[]>([]);
+  const [topAgents, setTopAgents] = useState<PublicAgent[]>([]);
+  // Personal "continue where you left off" — updates the instant a listing opens.
+  const recentlyViewed = useRecentlyViewed();
 
   useEffect(() => {
     let active = true;
@@ -90,6 +115,34 @@ export default function HomeScreen() {
     };
   }, [mode, reloadKey, location]);
 
+  // Rails load once per location change — not on every mode tap.
+  useEffect(() => {
+    let on = true;
+    const loc = location ? { location } : {};
+    const empty = { items: [] as Listing[] };
+    Promise.all([
+      listingsService.list({ sort: "newest", limit: 10, ...loc }).catch(() => empty),
+      listingsService
+        .list({ type: "RENT", maxPrice: AFFORDABLE_MAX, sort: "price_asc", limit: 10, ...loc })
+        .catch(() => empty),
+      agentsService
+        .list({ sort: "most_listings", limit: 12 })
+        .catch(() => ({ items: [] as PublicAgent[] })),
+    ]).then(([r, a, ag]) => {
+      if (!on) return;
+      setRecent(r.items ?? []);
+      setAffordable(a.items ?? []);
+      setTopAgents(
+        (ag.items ?? [])
+          .filter((x) => (x.listingsCount ?? 0) >= TOP_AGENT_MIN_LISTINGS)
+          .slice(0, 10),
+      );
+    });
+    return () => {
+      on = false;
+    };
+  }, [location, reloadKey]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
@@ -109,10 +162,18 @@ export default function HomeScreen() {
         keyboardDismissMode="on-drag"
       >
         <Header />
-        <Heading />
+        <Greeting />
         <ServiceLoopEntry />
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
+
+        {/* Jump back in — recently viewed (returning users only) */}
+        {recentlyViewed.length > 0 && (
+          <>
+            <SectionHeader title="Jump back in" />
+            <ListingRail items={recentlyViewed} />
+          </>
+        )}
 
         <Text className="px-5 pt-5 text-[16px] font-sans-bold text-ink tracking-tight">
           {MODE_HEADING[mode]}
@@ -137,6 +198,26 @@ export default function HomeScreen() {
               </Reveal>
             ))}
           </View>
+        )}
+
+        {/* Curated rails — only render when there's something to show. */}
+        {recent.length > 0 && (
+          <>
+            <SectionHeader title="Recently added" />
+            <ListingRail items={recent} />
+          </>
+        )}
+        {affordable.length > 0 && (
+          <>
+            <SectionHeader title="Affordable rentals" />
+            <ListingRail items={affordable} />
+          </>
+        )}
+        {topAgents.length > 0 && (
+          <>
+            <SectionHeader title="Top agents" />
+            <AgentRail items={topAgents} />
+          </>
         )}
       </RevealScrollView>
     </SafeAreaView>
@@ -212,16 +293,29 @@ function Header() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Heading
+// Greeting — personal, time-aware. Replaces the generic "Discover" head.
 // ─────────────────────────────────────────────────────────────────
-function Heading() {
+function Greeting() {
+  const { user } = useAuth();
+  const first = (user?.name ?? "").trim().split(/\s+/)[0];
+  const h = new Date().getHours();
+  const tod = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   return (
     <View className="px-5 pt-4">
       <Text
-        className="font-sans-bold text-ink"
-        style={{ fontSize: 28, lineHeight: 32, letterSpacing: -0.6 }}
+        className="font-serif text-ink"
+        style={{ fontSize: 26, lineHeight: 30, letterSpacing: -0.5 }}
       >
-        Discover{"\n"}your new home
+        {tod}
+        {first ? (
+          <>
+            , <Text className="font-serif-italic">{first}</Text>
+          </>
+        ) : null}
+        .
+      </Text>
+      <Text className="text-[13px] text-ink-2 mt-1 font-sans-medium">
+        Buy, Rent &amp; Hire Trusted Professionals.
       </Text>
     </View>
   );
@@ -247,12 +341,12 @@ function SearchRow({
         <TextInput
           value={query}
           onChangeText={onChange}
-          placeholder="Search place…"
+          placeholder="Search Lagos, Abuja, Lekki…"
           placeholderTextColor={INK_3}
           className="flex-1 text-[14.5px] text-ink font-sans-medium"
           style={{ paddingVertical: 0 }}
           returnKeyType="search"
-          accessibilityLabel="Search place"
+          accessibilityLabel="Search by city or area"
         />
         {query.length > 0 ? (
           <Pressable
@@ -282,7 +376,7 @@ function SearchRow({
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Category chips — Rental House / Apartment / Houses / Rooms
+// Mode chips — Rent / Buy / Shortlet
 // ─────────────────────────────────────────────────────────────────
 function ModeChips({
   active,
@@ -329,10 +423,11 @@ function ModeChips({
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Home card — photo with verified badge, price pill, rating overlay
+// Home card — photo with verified badge, price + save in one row.
 // ─────────────────────────────────────────────────────────────────
 function HomeCard({ listing }: { listing: Listing }) {
   const period = listing.period ?? "";
+  const hasRating = (listing.rating ?? 0) > 0;
   return (
     <PressableScale
       onPress={() => {
@@ -353,34 +448,36 @@ function HomeCard({ listing }: { listing: Listing }) {
           transition={200}
         />
 
-        {/* Verified badge (brand green, like the reference's blue) */}
-        {listing.verified && (
-          <View
-            className="absolute top-2.5 left-2.5 w-[26px] h-[26px] rounded-lg items-center justify-center"
-            style={{ backgroundColor: PRIMARY }}
-            accessibilityLabel="Verified listing"
-          >
-            <Ionicons name="checkmark-sharp" size={16} color="#ffffff" />
+        {/* Top row — verified (left) · price + save together (right) */}
+        <View className="absolute top-2.5 left-2.5 right-2.5 flex-row items-center justify-between">
+          <View>
+            {listing.verified && (
+              <View
+                className="w-[26px] h-[26px] rounded-lg items-center justify-center"
+                style={{ backgroundColor: PRIMARY }}
+                accessibilityLabel="Verified listing"
+              >
+                <Ionicons name="checkmark-sharp" size={16} color="#ffffff" />
+              </View>
+            )}
           </View>
-        )}
-
-        {/* Price pill */}
-        <View
-          className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full"
-          style={{ backgroundColor: "rgba(26,33,32,0.62)" }}
-        >
-          <Text className="text-[11px] font-sans-bold text-white">
-            {listing.priceLabel}
-            {period}
-          </Text>
-        </View>
-
-        {/* Save heart (bottom-right) — pops + ring-bursts on save */}
-        <View
-          className="absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full items-center justify-center"
-          style={{ backgroundColor: "rgba(26,33,32,0.45)" }}
-        >
-          <SaveHeart id={listing.id} size={16} />
+          <View className="flex-row items-center gap-1.5">
+            <View
+              className="px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: "rgba(26,33,32,0.8)" }}
+            >
+              <Text className="text-[12.5px] font-sans-bold text-white">
+                {listing.priceLabel}
+                {period}
+              </Text>
+            </View>
+            <View
+              className="w-8 h-8 rounded-full items-center justify-center"
+              style={{ backgroundColor: "rgba(26,33,32,0.5)" }}
+            >
+              <SaveHeart id={listing.id} size={16} />
+            </View>
+          </View>
         </View>
 
         <LinearGradient
@@ -390,14 +487,16 @@ function HomeCard({ listing }: { listing: Listing }) {
           style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
         />
 
-        {/* Rating + title + location */}
+        {/* Rating (only when there is one) + title + location */}
         <View className="absolute left-2.5 right-2.5 bottom-2.5">
-          <View className="flex-row items-center gap-1 mb-1">
-            <Ionicons name="star" size={11} color={ACCENT} />
-            <Text className="text-[11px] font-sans-bold text-white">
-              {listing.rating}
-            </Text>
-          </View>
+          {hasRating && (
+            <View className="flex-row items-center gap-1 mb-1">
+              <Ionicons name="star" size={11} color={ACCENT} />
+              <Text className="text-[11px] font-sans-bold text-white">
+                {listing.rating}
+              </Text>
+            </View>
+          )}
           <Text
             className="text-[14px] font-sans-bold text-white tracking-tight"
             numberOfLines={1}
@@ -420,9 +519,7 @@ function HomeCard({ listing }: { listing: Listing }) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Service Loop — compact, premium entry placed near the top of the feed
-// (not a full-width banner, so a long listing feed never buries it).
-// Soft brand-tinted card with a green icon tile + circular arrow.
+// Service Loop — descriptive copy + an explicit "Explore Service" CTA.
 // ─────────────────────────────────────────────────────────────────
 function ServiceLoopEntry() {
   return (
@@ -432,41 +529,159 @@ function ServiceLoopEntry() {
           tapLight();
           router.push("/services" as Href);
         }}
-        activeScale={0.97}
-        className="flex-row items-center gap-3 rounded-2xl pl-3 pr-2.5 py-2.5"
+        activeScale={0.98}
+        className="rounded-2xl px-4 py-3.5"
         style={{
           backgroundColor: "#e3efe7", // primary.soft
           borderWidth: 1,
           borderColor: "rgba(31,111,67,0.16)",
         }}
         accessibilityRole="button"
-        accessibilityLabel="Service Loop — hire verified pros, paid safely via escrow"
+        accessibilityLabel="Service Loop — hire verified artisans, paid safely via escrow"
       >
-        <View
-          className="w-10 h-10 rounded-xl items-center justify-center"
-          style={{ backgroundColor: PRIMARY }}
-        >
-          <Ionicons name="construct" size={19} color="#ffffff" />
-        </View>
-        <View className="flex-1">
-          <Text
-            className="text-[10px] font-sans-bold text-primary uppercase"
-            style={{ letterSpacing: 1.3 }}
+        <View className="flex-row items-center gap-3">
+          <View
+            className="w-10 h-10 rounded-xl items-center justify-center"
+            style={{ backgroundColor: PRIMARY }}
           >
-            Service Loop
-          </Text>
-          <Text className="text-[13.5px] font-sans-bold text-ink tracking-tight mt-0.5">
-            Hire verified pros, paid via escrow
-          </Text>
+            <Ionicons name="construct" size={19} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[14px] font-sans-bold text-ink tracking-tight">
+              Need an artisan or service provider?
+            </Text>
+            <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">
+              Hire verified electricians, plumbers &amp; more — payment via escrow.
+            </Text>
+          </View>
         </View>
         <View
-          className="w-8 h-8 rounded-full items-center justify-center"
+          className="flex-row items-center justify-center gap-1.5 mt-3 rounded-full py-2.5"
           style={{ backgroundColor: PRIMARY }}
         >
-          <Ionicons name="arrow-forward" size={16} color="#ffffff" />
+          <Text className="text-white font-sans-bold text-[13px]">Explore Service</Text>
+          <Ionicons name="arrow-forward" size={15} color="#ffffff" />
         </View>
       </PressableScale>
     </Appear>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Curated rails — section header + horizontal scrollers
+// ─────────────────────────────────────────────────────────────────
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <View className="px-5 pt-6">
+      <Text className="text-[16px] font-sans-bold text-ink tracking-tight">{title}</Text>
+    </View>
+  );
+}
+
+function ListingRail({ items }: { items: RailListing[] }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}
+    >
+      {items.map((l) => (
+        <ListingRailCard key={l.id} listing={l} />
+      ))}
+    </ScrollView>
+  );
+}
+
+function ListingRailCard({ listing }: { listing: RailListing }) {
+  const period = listing.period ?? "";
+  return (
+    <PressableScale
+      onPress={() => {
+        tapLight();
+        router.push(`/property/${listing.id}` as Href);
+      }}
+      activeScale={0.96}
+      style={{ width: 178 }}
+    >
+      <View style={{ height: 120 }} className="relative rounded-2xl overflow-hidden">
+        <Image
+          source={listing.coverImage}
+          style={{ width: "100%", height: "100%" }}
+          contentFit="cover"
+          transition={200}
+        />
+        <View
+          className="absolute top-2 right-2 px-2 py-0.5 rounded-full"
+          style={{ backgroundColor: "rgba(26,33,32,0.8)" }}
+        >
+          <Text className="text-[11.5px] font-sans-bold text-white">
+            {listing.priceLabel}
+            {period}
+          </Text>
+        </View>
+        <View
+          className="absolute bottom-2 left-2 w-7 h-7 rounded-full items-center justify-center"
+          style={{ backgroundColor: "rgba(26,33,32,0.5)" }}
+        >
+          <SaveHeart id={listing.id} size={14} />
+        </View>
+      </View>
+      <Text className="text-[13px] font-sans-bold text-ink mt-1.5" numberOfLines={1}>
+        {listing.title}
+      </Text>
+      <View className="flex-row items-center gap-1 mt-0.5">
+        <Ionicons name="location" size={10} color={INK_3} />
+        <Text className="text-[11px] text-ink-3 flex-1" numberOfLines={1}>
+          {listing.location}
+        </Text>
+      </View>
+    </PressableScale>
+  );
+}
+
+function AgentRail({ items }: { items: PublicAgent[] }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}
+    >
+      {items.map((a) => (
+        <AgentRailCard key={a.id} agent={a} />
+      ))}
+    </ScrollView>
+  );
+}
+
+function AgentRailCard({ agent }: { agent: PublicAgent }) {
+  const hasRating = (agent.rating ?? 0) > 0;
+  return (
+    <PressableScale
+      onPress={() => {
+        tapLight();
+        router.push(`/agent-profile/${agent.id}` as Href);
+      }}
+      activeScale={0.96}
+      className="rounded-2xl bg-cream-2 items-center px-3 py-4"
+      style={{ width: 150 }}
+    >
+      <PLAvatar initials={initialsOf(agent.name)} uri={agent.avatarUrl ?? undefined} size={56} tone="primary" />
+      <Text className="text-[13px] font-sans-bold text-ink mt-2 text-center" numberOfLines={1}>
+        {agent.name}
+      </Text>
+      <View className="flex-row items-center gap-1 mt-1">
+        {hasRating && (
+          <>
+            <Ionicons name="star" size={11} color={ACCENT} />
+            <Text className="text-[11px] font-sans-bold text-ink">{agent.rating}</Text>
+            <Text className="text-[11px] text-ink-3">·</Text>
+          </>
+        )}
+        <Text className="text-[11px] font-sans-semibold text-ink-3">
+          {agent.listingsCount} listings
+        </Text>
+      </View>
+    </PressableScale>
   );
 }
 

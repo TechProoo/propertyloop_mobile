@@ -121,7 +121,11 @@ export default function PublicVendorProfileScreen() {
           {/* Stat strip */}
           <View className="mt-4 rounded-2xl overflow-hidden border-line flex-row" style={{ borderWidth: 0.5, backgroundColor: "#ffffff" }}>
             {[
-              { n: `${vendor.rating ?? 0}`, l: "Rating", star: true },
+              // Only show a star + score once the vendor actually has a rating;
+              // a bare "★ 0" reads as a bad score rather than "not yet rated".
+              (vendor.rating ?? 0) > 0
+                ? { n: `${vendor.rating}`, l: "Rating", star: true }
+                : { n: "New", l: "Rating", star: false },
               { n: (vendor.jobsCount ?? 0) > 0 ? `${vendor.jobsCount}` : "—", l: "Jobs" },
               { n: `${vendor.yearsExperience ?? 0} yr`, l: "Exp." },
             ].map((s, i) => (

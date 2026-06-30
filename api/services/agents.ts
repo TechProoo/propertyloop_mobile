@@ -26,7 +26,28 @@ export interface AgentStats {
   };
 }
 
+export interface PublicAgent {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  rating?: number;
+  listingsCount?: number;
+  location?: string | null;
+  specialties?: string[];
+  verified?: boolean;
+}
+
 const agentsService = {
+  /** Public agents marketplace list. */
+  list(params?: {
+    sort?: "top_rated" | "most_listings" | "most_deals" | "top_performers" | "newest";
+    search?: string;
+    location?: string;
+    limit?: number;
+    page?: number;
+  }): Promise<{ items: PublicAgent[]; total: number; pages: number }> {
+    return api.get("/agents", { params: params ?? {} }).then((r) => r.data);
+  },
   getMe(): Promise<any> {
     return api.get("/agents/me").then((r) => r.data);
   },

@@ -94,11 +94,38 @@ export interface CreateBookingPayload {
   clientName: string;
   clientPhone: string;
   clientEmail?: string;
+  /** Image/video URLs of what needs fixing (uploaded via uploadAttachment). */
+  attachments?: string[];
 }
 
 const vendorJobsService = {
   createBooking(payload: CreateBookingPayload): Promise<VendorJob> {
     return api.post<VendorJob>("/vendor-jobs", payload).then((r) => r.data);
+  },
+  /** Upload one image/video (multipart) for a booking. Returns the hosted URL. */
+  async uploadAttachment(
+    uri: string,
+    opts?: { name?: string; type?: string },
+  ): Promise<{ url: string; mimeType: string }> {
+    const form = new FormData();
+    form.append("file", {
+      uri,
+      name: opts?.name ?? `attachment-${Date.now()}.jpg`,
+      type: opts?.type ?? "image/jpeg",
+    } as any);
+    const { data } = await api.post<{ url: string; mimeType: string }>(
+      "/upload/job-attachment",
+      form,
+      {
+        // Let React Native set the multipart boundary by dropping the JSON
+        // default Content-Type header (same as messages.uploadAttachment).
+        transformRequest: (d, headers) => {
+          headers.delete("Content-Type");
+          return d;
+        },
+      },
+    );
+    return { url: data.url, mimeType: data.mimeType };
   },
   list(params?: ListJobsParams): Promise<Paginated<VendorJob>> {
     return api

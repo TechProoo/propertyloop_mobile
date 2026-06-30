@@ -210,26 +210,61 @@ export default function VendorEarningsScreen() {
               <Text className="px-5 pt-2 text-[12.5px] text-ink-3">Nothing in escrow right now.</Text>
             ) : (
               <View className="px-4 pt-2 gap-2">
-                {clearing.map((e) => (
-                  <View
-                    key={e.id}
-                    className="bg-white rounded-2xl px-3 py-3 flex-row items-center gap-3 border-line"
-                    style={{ borderWidth: 0.5 }}
-                  >
-                    <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: "#e3efe7" }}>
-                      <Ionicons name="shield-checkmark" size={16} color={PRIMARY} />
+                {clearing.map((e) => {
+                  const disputed = e.job?.escrowStatus === "DISPUTED";
+                  const row = (
+                    <View
+                      className="bg-white rounded-2xl px-3 py-3 flex-row items-center gap-3"
+                      style={{
+                        borderWidth: disputed ? 1 : 0.5,
+                        borderColor: disputed ? "#e4a87e" : "#e1dcd3",
+                        backgroundColor: disputed ? "#fdf3eb" : "#ffffff",
+                      }}
+                    >
+                      <View
+                        className="w-9 h-9 rounded-xl items-center justify-center"
+                        style={{ backgroundColor: disputed ? "#f6dcc6" : "#e3efe7" }}
+                      >
+                        <Ionicons
+                          name={disputed ? "alert-circle" : "shield-checkmark"}
+                          size={16}
+                          color={disputed ? "#c05a1f" : PRIMARY}
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-[13px] font-sans-bold text-ink" numberOfLines={1}>
+                          {e.job?.clientName ? `${e.job.clientName} · ` : ""}{e.job?.title ?? "Job"}
+                        </Text>
+                        <Text
+                          className="text-[11px] font-sans-semibold mt-0.5"
+                          style={{ color: disputed ? "#7a3a13" : INK_3 }}
+                          numberOfLines={1}
+                        >
+                          {disputed
+                            ? "On hold · customer raised a dispute"
+                            : e.status === "PROCESSING"
+                              ? "Sending to your bank"
+                              : "Held until client confirms"}
+                        </Text>
+                      </View>
+                      <Text className="font-serif text-ink" style={{ fontSize: 15 }}>{naira(e.amount)}</Text>
+                      {disputed && (
+                        <Ionicons name="chevron-forward" size={15} color="#7a3a13" />
+                      )}
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-[13px] font-sans-bold text-ink" numberOfLines={1}>
-                        {e.job?.clientName ? `${e.job.clientName} · ` : ""}{e.job?.title ?? "Job"}
-                      </Text>
-                      <Text className="text-[11px] font-sans-semibold mt-0.5" style={{ color: INK_3 }}>
-                        {e.status === "PROCESSING" ? "Sending to your bank" : "Held until client confirms"}
-                      </Text>
-                    </View>
-                    <Text className="font-serif text-ink" style={{ fontSize: 15 }}>{naira(e.amount)}</Text>
-                  </View>
-                ))}
+                  );
+                  return disputed && e.job?.id ? (
+                    <Pressable
+                      key={e.id}
+                      onPress={() => router.push(`/vendor-dispute/${e.job!.id}` as Href)}
+                      className="active:opacity-90"
+                    >
+                      {row}
+                    </Pressable>
+                  ) : (
+                    <View key={e.id}>{row}</View>
+                  );
+                })}
               </View>
             )}
 

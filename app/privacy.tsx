@@ -64,7 +64,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "5. Your rights",
     b: [
       "Under the NDPR you may request access to, correction of, or deletion of your personal data.",
-      "Email support.propertyloop@propertyloop.ng with the request. We respond within 30 days.",
+      "Email support@propertyloop.ng with the request. We respond within 30 days.",
       "You can also withdraw consent for non-essential processing (e.g. marketing) from Settings → Notifications.",
     ],
   },
@@ -167,7 +167,7 @@ export default function PrivacyScreen() {
         ))}
 
         <Text className="text-[11px] text-ink-3 mt-8 text-center leading-4">
-          Questions? support.propertyloop@propertyloop.ng — we reply within 30 days.
+          Questions? support@propertyloop.ng — we reply within 30 days.
         </Text>
       </ScrollView>
     </SafeAreaView>

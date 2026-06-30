@@ -15,6 +15,20 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
 
+// Per-row icon tints — colour breaks up the monochrome list and gives each
+// destination its own identity. Kept on-brand (greens/amber) with a few calm
+// accent hues for variety.
+const TINTS: Record<string, { bg: string; fg: string }> = {
+  edit:    { bg: "#e3efe7", fg: "#1f6f43" }, // green
+  notif:   { bg: "#fbeacd", fg: "#b9842c" }, // amber
+  help:    { bg: "#e4ecfb", fg: "#3b5bdb" }, // blue
+  logbook: { bg: "#dcf0ef", fg: "#0e7c7b" }, // teal
+  escrow:  { bg: "#e3efe7", fg: "#1f6f43" }, // green
+  terms:   { bg: "#ebe6fb", fg: "#6741d9" }, // violet
+  privacy: { bg: "#e4ecfb", fg: "#3b5bdb" }, // blue
+  out:     { bg: "#fde6e4", fg: DESTRUCTIVE }, // red (destructive)
+};
+
 type SettingsLink = {
   id: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -105,26 +119,27 @@ export default function SettingsScreen() {
       >
         {/* Profile card */}
         <View
-          className="bg-white rounded-2xl px-4 py-4 flex-row items-center gap-3 border-line mt-1"
-          style={{ borderWidth: 0.5 }}
+          className="bg-primary-soft rounded-2xl px-4 py-4 flex-row items-center gap-3 mt-1"
+          style={{ borderWidth: 1, borderColor: "#cfe5d8" }}
         >
           <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={56} tone="primary" />
           <View className="flex-1">
             <Text className="text-[15px] font-sans-bold text-ink">
               {user?.name ?? "Your account"}
             </Text>
-            <Text className="text-[12px] text-ink-3 mt-0.5">
+            <Text className="text-[12px] text-ink-2 mt-0.5">
               {user?.email ?? ""}
             </Text>
             {!!user?.phone && (
-              <Text className="text-[12px] text-ink-3">{user.phone}</Text>
+              <Text className="text-[12px] text-ink-2">{user.phone}</Text>
             )}
           </View>
           <Pressable
             onPress={() => router.push("/edit-profile" as Href)}
             hitSlop={8}
+            className="bg-primary rounded-full px-3.5 py-1.5 active:opacity-80"
           >
-            <Text className="text-[12px] font-sans-bold text-primary">Edit</Text>
+            <Text className="text-[12px] font-sans-bold text-white">Edit</Text>
           </Pressable>
         </View>
 
@@ -138,7 +153,9 @@ export default function SettingsScreen() {
               className="bg-white rounded-2xl overflow-hidden border-line"
               style={{ borderWidth: 0.5 }}
             >
-              {g.links.map((l, i) => (
+              {g.links.map((l, i) => {
+                const tint = TINTS[l.id] ?? { bg: "#f0f0f0", fg: INK_2 };
+                return (
                 <Pressable
                   key={l.id}
                   onPress={() => onLink(l)}
@@ -150,15 +167,9 @@ export default function SettingsScreen() {
                 >
                   <View
                     className="w-9 h-9 rounded-xl items-center justify-center"
-                    style={{
-                      backgroundColor: l.destructive ? "#fde6e4" : "#f0f0f0",
-                    }}
+                    style={{ backgroundColor: tint.bg }}
                   >
-                    <Ionicons
-                      name={l.icon}
-                      size={17}
-                      color={l.destructive ? DESTRUCTIVE : INK_2}
-                    />
+                    <Ionicons name={l.icon} size={17} color={tint.fg} />
                   </View>
                   <View className="flex-1">
                     <Text
@@ -177,7 +188,8 @@ export default function SettingsScreen() {
                     <Ionicons name="chevron-forward" size={14} color={INK_3} />
                   )}
                 </Pressable>
-              ))}
+                );
+              })}
             </View>
           </View>
         ))}

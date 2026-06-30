@@ -122,11 +122,19 @@ export default function AccountScreen() {
     [purchases],
   );
 
-  const stats = [
-    { n: String(bookmarksCount), l: "Saved" },
-    { n: String(upcomingViewings.length), l: "Viewings" },
-    { n: String(activeOffers.length), l: "Offers" },
-    { n: String(activePurchases.length), l: "Closing" },
+  const stats: { n: string; l: string; href: string | null }[] = [
+    { n: String(bookmarksCount), l: "Saved", href: "/(tabs)/saved" },
+    {
+      n: String(upcomingViewings.length),
+      l: "Viewings",
+      // No dedicated buyer viewings list — open the nearest viewing's property,
+      // where it can be seen/managed. Dead (dimmed) when there are none.
+      href: upcomingViewings[0]
+        ? `/property/${upcomingViewings[0].listingId}`
+        : null,
+    },
+    { n: String(activeOffers.length), l: "Offers", href: "/offers" },
+    { n: String(activePurchases.length), l: "Closing", href: "/purchase-progress" },
   ];
 
   const upNext = useMemo<UpNextItem[]>(() => {
@@ -144,7 +152,7 @@ export default function AccountScreen() {
             : "Awaiting the agent's confirmation",
         cta: "Open",
         icon: "calendar-outline",
-        href: nextV.listing ? `/property/${nextV.listingId}` : "/(tabs)/account",
+        href: `/property/${nextV.listingId}`,
       });
     }
     offers
@@ -240,21 +248,7 @@ export default function AccountScreen() {
             {/* Stat strip */}
             <View className="mt-3.5 flex-row gap-2">
               {stats.map((s) => (
-                <View
-                  key={s.l}
-                  className="flex-1 bg-white rounded-xl border-line"
-                  style={{ borderWidth: 0.5, paddingHorizontal: 8, paddingVertical: 10 }}
-                >
-                  <Text
-                    className="font-serif text-ink"
-                    style={{ fontSize: 20, letterSpacing: -0.4 }}
-                  >
-                    {s.n}
-                  </Text>
-                  <Text className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5">
-                    {s.l}
-                  </Text>
-                </View>
+                <StatBox key={s.l} n={s.n} l={s.l} href={s.href} />
               ))}
             </View>
           </View>
@@ -301,6 +295,39 @@ export default function AccountScreen() {
 }
 
 // ─── Subcomponents ───────────────────────────────────────────
+
+function StatBox({ n, l, href }: { n: string; l: string; href: string | null }) {
+  const body = (
+    <>
+      <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>
+        {n}
+      </Text>
+      <Text className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5">
+        {l}
+      </Text>
+    </>
+  );
+  const boxClass = "flex-1 bg-white rounded-xl border-line";
+  const boxStyle = { borderWidth: 0.5, paddingHorizontal: 8, paddingVertical: 10 } as const;
+
+  // No destination (e.g. no upcoming viewings) → dimmed, non-interactive.
+  if (!href) {
+    return (
+      <View className={boxClass} style={{ ...boxStyle, opacity: 0.55 }}>
+        {body}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      onPress={() => router.push(href as Href)}
+      className={`${boxClass} active:opacity-80`}
+      style={boxStyle}
+    >
+      {body}
+    </Pressable>
+  );
+}
 
 function SectionLabel({
   children,

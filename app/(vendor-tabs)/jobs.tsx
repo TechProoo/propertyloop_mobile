@@ -33,8 +33,10 @@ type TabId = (typeof TABS)[number]["id"];
 const GROUPS: Record<TabId, JobStatus[]> = {
   upcoming: ["PENDING", "ACCEPTED"],
   active: ["IN_PROGRESS"],
-  completed: ["COMPLETED", "CONFIRMED"],
-  cancelled: ["DECLINED", "CANCELLED", "DISPUTED"],
+  // A disputed job was completed and is contested — not cancelled. Keep it here
+  // (with a clear badge) so the vendor can find it and respond.
+  completed: ["COMPLETED", "CONFIRMED", "DISPUTED"],
+  cancelled: ["DECLINED", "CANCELLED"],
 };
 
 function initialsOf(name?: string | null) {
@@ -139,7 +141,11 @@ export default function VendorJobsScreen() {
 
 function JobCard({ job, onChanged }: { job: VendorJob; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
-  const open = () => router.push(`/vendor-active-job/${job.id}` as Href);
+  const disputed = job.status === "DISPUTED";
+  const open = () =>
+    router.push(
+      (disputed ? `/vendor-dispute/${job.id}` : `/vendor-active-job/${job.id}`) as Href,
+    );
   const highlight = job.status === "IN_PROGRESS";
 
   const act = (fn: () => Promise<unknown>, label: string) => {
@@ -153,7 +159,13 @@ function JobCard({ job, onChanged }: { job: VendorJob; onChanged: () => void }) 
   };
 
   return (
-    <View className="bg-white rounded-2xl overflow-hidden" style={{ borderWidth: highlight ? 1.5 : 0.5, borderColor: highlight ? PRIMARY : "#e1dcd3" }}>
+    <View
+      className="bg-white rounded-2xl overflow-hidden"
+      style={{
+        borderWidth: disputed || highlight ? 1.5 : 0.5,
+        borderColor: disputed ? "#e4a87e" : highlight ? PRIMARY : "#e1dcd3",
+      }}
+    >
       <Pressable onPress={open} className="flex-row gap-3 p-3 active:opacity-90">
         <View className="flex-1">
           <View className="flex-row items-center gap-2">
@@ -163,6 +175,14 @@ function JobCard({ job, onChanged }: { job: VendorJob; onChanged: () => void }) 
             </Text>
             <Text className="font-serif text-ink" style={{ fontSize: 15 }}>{naira(job.vendorFee)}</Text>
           </View>
+          {disputed && (
+            <View className="flex-row items-center gap-1 mt-1.5 self-start px-2 py-0.5 rounded-full" style={{ backgroundColor: "#f6dcc6" }}>
+              <Ionicons name="alert-circle" size={11} color="#c05a1f" />
+              <Text className="text-[10px] font-sans-bold tracking-wide uppercase" style={{ color: "#7a3a13" }}>
+                Under dispute · payment held
+              </Text>
+            </View>
+          )}
           <Text className="text-[12px] font-sans-semibold text-ink-2 mt-1.5" numberOfLines={1}>{job.title}</Text>
           <View className="flex-row items-center gap-1 mt-0.5">
             <Ionicons name="time-outline" size={11} color={INK_3} />
@@ -195,6 +215,14 @@ function JobCard({ job, onChanged }: { job: VendorJob; onChanged: () => void }) 
         <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
           <ActionBtn label="Mark complete" tone="primary" onPress={open} />
         </View>
+      ) : disputed ? (
+        <Pressable
+          onPress={open}
+          className="items-center justify-center active:opacity-80"
+          style={{ backgroundColor: "#c05a1f", paddingVertical: 11, borderTopWidth: 0.5, borderTopColor: "#ece6df" }}
+        >
+          <Text className="text-[12.5px] font-sans-bold text-white">Respond to dispute</Text>
+        </Pressable>
       ) : null}
     </View>
   );

@@ -143,7 +143,7 @@ export default function HelpScreen() {
             icon="mail-outline"
             title="Email"
             detail={HELP_CONTACT.email}
-            onPress={() => Linking.openURL(`mailto:${HELP_CONTACT.email}`)}
+            onPress={() => Linking.openURL(`mailto:${HELP_CONTACT.emailTarget}`)}
           />
           <ContactRow
             icon="chatbubble-ellipses-outline"

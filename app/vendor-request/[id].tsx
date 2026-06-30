@@ -7,11 +7,13 @@ import {
   View,
 } from "react-native";
 import { Alert } from "@/lib/dialog";
+import { Image } from "expo-image";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
 
 const PRIMARY = "#1f6f43";
@@ -39,6 +41,7 @@ export default function VendorRequestScreen() {
   const [job, setJob] = useState<VendorJob | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -156,7 +159,39 @@ export default function VendorRequestScreen() {
             </View>
           </>
         )}
+
+        {/* Photos the customer attached — what needs fixing */}
+        {!!job.attachments?.length && (
+          <>
+            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">
+              Photos · {job.attachments.length}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {job.attachments.map((url, i) => (
+                <Pressable
+                  key={url}
+                  onPress={() => setViewerIndex(i)}
+                  className="rounded-xl overflow-hidden"
+                  style={{ width: 96, height: 96 }}
+                >
+                  <Image
+                    source={url}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                  />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </>
+        )}
       </ScrollView>
+
+      <PhotoViewer
+        visible={viewerIndex !== null}
+        images={job.attachments ?? []}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
+      />
 
       {/* Sticky actions */}
       <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
