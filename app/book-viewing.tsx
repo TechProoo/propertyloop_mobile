@@ -92,6 +92,10 @@ export default function BookViewingScreen() {
       await viewingsService.create({
         listingId,
         scheduledFor: when.toISOString(),
+        // Send the buyer's profile name/phone explicitly — the booking is keyed
+        // to the signed-in user, but the create endpoint is optional-auth, so we
+        // can't rely on it resolving the session to fill these server-side.
+        clientName: (user?.name ?? "").trim() || undefined,
         clientPhone: phoneToUse,
         notes:
           (mode === "video" ? "Video tour requested. " : "") + note.trim(),

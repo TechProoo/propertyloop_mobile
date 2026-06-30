@@ -33,6 +33,8 @@ export interface VendorEarning {
     clientName?: string | null;
     category?: string | null;
     scheduledFor?: string | null;
+    /** NONE | LOCKED | RELEASED | DISPUTED | REFUNDED — drives the "under dispute" flag. */
+    escrowStatus?: string | null;
   } | null;
 }
 

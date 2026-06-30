@@ -45,16 +45,16 @@ const CARDS: RoleCard[] = [
   },
   {
     id: "AGENT",
-    badge: "AGENT",
+    badge: "REAL ESTATE",
     badgeTone: "slate",
     iconBg: "bg-cream-2",
     iconName: "business-outline",
     iconColor: "#334155", // slate-700
-    title: "I'm an estate agent",
+    title: "I'm a real estate professional",
     desc: "List properties, manage viewings, handle offers, and earn commissions.",
     chips: ["Listings dashboard", "Lead inbox", "Earnings"],
     footnote: "Verified KYC required",
-    ctaLabel: "Continue as agent",
+    ctaLabel: "Continue as a professional",
   },
   {
     id: "VENDOR",
@@ -63,7 +63,7 @@ const CARDS: RoleCard[] = [
     iconBg: "bg-amber-100",
     iconName: "construct-outline",
     iconColor: "#b45309", // amber-700
-    title: "I provide property services",
+    title: "I provide building services",
     desc: "Plumbers, cleaners, inspectors, movers — find verified work near you.",
     chips: ["Job board", "Quotes", "Reviews"],
     footnote: "Trade verification required",

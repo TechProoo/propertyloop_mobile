@@ -25,8 +25,8 @@ type Role = "BUYER" | "AGENT" | "VENDOR";
 
 const ROLE_LABEL: Record<Role, string> = {
   BUYER: "Buyer / Renter",
-  AGENT: "Real estate agent",
-  VENDOR: "Property service vendor",
+  AGENT: "Real estate professional",
+  VENDOR: "Building services vendor",
 };
 
 // Mirrors backend: 8+ chars, at least 1 lowercase, 1 uppercase, 1 digit.

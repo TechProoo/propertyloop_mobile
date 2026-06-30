@@ -9,6 +9,8 @@ import {
   View,
 } from "react-native";
 import { Alert } from "@/lib/dialog";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -57,10 +59,36 @@ export default function BookServiceScreen() {
   const [dateIdx, setDateIdx] = useState(0);
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
+  const [photos, setPhotos] = useState<{ uri: string; mimeType?: string }[]>([]);
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [submitting, setSubmitting] = useState(false);
   const insets = useSafeAreaInsets();
+
+  const MAX_PHOTOS = 8;
+  const pickPhotos = async () => {
+    const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!lib.granted) {
+      Alert.alert("Photo library", "Allow library access in Settings to add photos.");
+      return;
+    }
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - photos.length,
+      quality: 0.7,
+    });
+    if (!r.canceled) {
+      setPhotos((p) =>
+        [...p, ...r.assets.map((a) => ({ uri: a.uri, mimeType: a.mimeType }))].slice(
+          0,
+          MAX_PHOTOS,
+        ),
+      );
+    }
+  };
+  const removePhoto = (i: number) =>
+    setPhotos((p) => p.filter((_, idx) => idx !== i));
 
   useEffect(() => {
     if (!vendorId) { setLoading(false); return; }
@@ -104,6 +132,19 @@ export default function BookServiceScreen() {
 
     setSubmitting(true);
     try {
+      // Upload any "what needs fixing" photos first, one at a time — mobile
+      // radios drop concurrent upload streams, so sequential is more reliable.
+      let attachments: string[] | undefined;
+      if (photos.length) {
+        const urls: string[] = [];
+        for (const p of photos) {
+          const { url } = await vendorJobsService.uploadAttachment(p.uri, {
+            type: p.mimeType ?? "image/jpeg",
+          });
+          urls.push(url);
+        }
+        attachments = urls;
+      }
       await vendorJobsService.createBooking({
         vendorId,
         title: service.name,
@@ -114,6 +155,7 @@ export default function BookServiceScreen() {
         scheduledFor: scheduledFor.toISOString(),
         clientName: nameToUse,
         clientPhone: phoneToUse,
+        ...(attachments?.length ? { attachments } : {}),
       });
       Alert.alert(
         "Request sent",
@@ -240,6 +282,51 @@ export default function BookServiceScreen() {
             style={{ minHeight: 70 }}
             textAlignVertical="top"
           />
+
+          {/* Photos of what needs fixing */}
+          <SectionLabel className="mt-5">Photos · optional</SectionLabel>
+          <Text className="text-[11.5px] text-ink-3 mt-1">
+            Show the vendor what needs fixing — up to {MAX_PHOTOS}.
+          </Text>
+          <View className="flex-row flex-wrap gap-2 mt-2">
+            {photos.map((p, i) => (
+              <View
+                key={p.uri}
+                className="rounded-xl overflow-hidden"
+                style={{ width: 72, height: 72 }}
+              >
+                <Image
+                  source={p.uri}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="cover"
+                />
+                <Pressable
+                  onPress={() => removePhoto(i)}
+                  hitSlop={6}
+                  className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full items-center justify-center"
+                  style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                >
+                  <Ionicons name="close" size={12} color="#ffffff" />
+                </Pressable>
+              </View>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <Pressable
+                onPress={pickPhotos}
+                className="rounded-xl items-center justify-center bg-white"
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderWidth: 1.5,
+                  borderStyle: "dashed",
+                  borderColor: "#d3cdc1",
+                }}
+              >
+                <Ionicons name="camera-outline" size={20} color={INK_2} />
+                <Text className="text-[10px] font-sans-bold text-ink-3 mt-0.5">Add</Text>
+              </Pressable>
+            )}
+          </View>
 
           {/* Name (if missing) */}
           {!(user?.name ?? "").trim() && (

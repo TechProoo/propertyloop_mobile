@@ -183,5 +183,7 @@ export const HELP_CONTACT = {
   phoneLabel: "+234 705 305 3040",
   phoneTel:   "+2347053053040",
   hours:      "Mon–Sat · 9am–6pm WAT",
-  email:      "support.propertyloop@propertyloop.ng",
+  // Brand address shown to users; mail is routed to emailTarget below.
+  email:       "support@propertyloop.ng",
+  emailTarget: "support.propertyloop@propertyloop.ng",
 };

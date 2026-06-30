@@ -15,6 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { SERVICE_CATEGORIES_GRID } from "@/mocks/services";
 import vendorsService from "@/api/services/vendors";
+import bookmarksService from "@/api/services/bookmarks";
+import { tapLight } from "@/lib/haptics";
 
 const PRIMARY = "#1f6f43";
 const ACCENT = "#b9842c";
@@ -61,6 +63,8 @@ export default function ServicesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
+  // Vendor userIds the signed-in user has saved to favourites.
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     try {
@@ -79,10 +83,38 @@ export default function ServicesScreen() {
     load()
       .then((items) => on && setVendors(items))
       .finally(() => on && setLoading(false));
+    // Seed saved favourites in one call (no-op for guests / on error).
+    bookmarksService
+      .listVendorIds()
+      .then((ids) => on && setSavedIds(new Set(ids)))
+      .catch(() => {});
     return () => {
       on = false;
     };
   }, [load]);
+
+  // Optimistic favourite toggle, reconciled by reverting if the request fails.
+  const toggleSave = useCallback(
+    (id: string) => {
+      tapLight();
+      const willSave = !savedIds.has(id);
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (willSave) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+      bookmarksService.toggleVendor(id).catch(() => {
+        setSavedIds((prev) => {
+          const next = new Set(prev);
+          if (willSave) next.delete(id);
+          else next.add(id);
+          return next;
+        });
+      });
+    },
+    [savedIds],
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -137,13 +169,12 @@ export default function ServicesScreen() {
           </Text>
           <Text
             className="font-serif text-ink mt-1"
-            style={{ fontSize: 28, letterSpacing: -0.6, lineHeight: 30 }}
+            style={{ fontSize: 28, letterSpacing: -0.6, lineHeight: 32 }}
           >
-            Service <Text className="font-serif-italic">providers</Text>.
+            Hire <Text className="font-serif-italic">trusted</Text> professionals.
           </Text>
           <Text className="text-[12.5px] text-ink-2 mt-1.5 leading-5">
-            Verified vendors. Pay through escrow — released only when the job
-            is done.
+            Hire verified artisans and professionals with secure escrow payment.
           </Text>
         </View>
 
@@ -157,7 +188,7 @@ export default function ServicesScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search vendors by name, trade or area…"
+              placeholder="Search plumbers, electricians, painters"
               placeholderTextColor={INK_3}
               className="flex-1 text-[14px] text-ink font-sans-medium"
               style={{ paddingVertical: 0 }}
@@ -276,7 +307,12 @@ export default function ServicesScreen() {
         ) : (
           <View className="px-4 pt-2.5 gap-2.5">
             {filtered.map((v) => (
-              <VendorRow key={v.id} vendor={v} />
+              <VendorCard
+                key={v.id}
+                vendor={v}
+                saved={savedIds.has(v.id)}
+                onToggleSave={() => toggleSave(v.id)}
+              />
             ))}
           </View>
         )}
@@ -310,53 +346,139 @@ export default function ServicesScreen() {
   );
 }
 
-function VendorRow({ vendor }: { vendor: any }) {
+function VendorCard({
+  vendor,
+  saved,
+  onToggleSave,
+}: {
+  vendor: any;
+  saved: boolean;
+  onToggleSave: () => void;
+}) {
   const priceLabel = vendor.priceLabel ?? vendor.price;
+  const rating = Number(vendor.rating ?? 0);
+  const jobs = Number(vendor.jobsCount ?? 0);
+  // The public directory only lists vendors who are open for hire, so this is
+  // effectively always true here — shown as a reassurance badge, not a filter.
+  const available = vendor.availableForHire !== false;
+  const goToProfile = () => router.push(`/vendor/${vendor.id}` as Href);
+
   return (
     <Pressable
-      onPress={() => router.push(`/vendor/${vendor.id}` as Href)}
-      className="flex-row gap-3 p-3 bg-white rounded-2xl border-line active:opacity-90"
-      style={{ borderWidth: 0.5 }}
+      onPress={goToProfile}
+      className="bg-white rounded-2xl border-line active:opacity-95"
+      style={{ borderWidth: 0.5, padding: 12 }}
     >
-      {vendor.avatarUrl ? (
-        <Image source={vendor.avatarUrl} style={{ width: 52, height: 52, borderRadius: 26 }} contentFit="cover" />
-      ) : (
-        <PLAvatar initials={initialsOf(vendor.name)} size={52} tone="primary" />
-      )}
-      <View className="flex-1">
-        <View className="flex-row items-center gap-1.5">
-          <Text className="text-[14px] font-sans-bold text-ink flex-shrink" numberOfLines={1}>
-            {vendor.name}
-          </Text>
-          {vendor.verified && <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />}
-          {!!priceLabel && (
-            <Text className="ml-auto text-[12px] font-sans-bold text-primary" numberOfLines={1}>
-              {priceLabel}
-            </Text>
-          )}
-        </View>
-        <Text className="text-xs text-ink-3 mt-0.5" numberOfLines={1}>
-          {vendor.category ?? "Service"}
-        </Text>
-        <View className="flex-row items-center gap-3 mt-1.5">
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="star" size={11} color={ACCENT} />
-            <Text className="text-[11.5px] font-sans-semibold text-ink">{vendor.rating ?? 0}</Text>
-          </View>
-          {(vendor.jobsCount ?? 0) > 0 && (
-            <Text className="text-[11.5px] font-sans-semibold text-ink-3">
-              {vendor.jobsCount} {vendor.jobsCount === 1 ? "job" : "jobs"}
-            </Text>
-          )}
-          {!!vendor.serviceArea && (
-            <View className="ml-auto flex-row items-center gap-1 flex-shrink">
-              <Ionicons name="location-outline" size={11} color={INK_3} />
-              <Text className="text-[11.5px] font-sans-semibold text-ink-3" numberOfLines={1}>
-                {vendor.serviceArea}
+      {/* Top row — avatar, name/category, favourite heart */}
+      <View className="flex-row gap-3">
+        {vendor.avatarUrl ? (
+          <Image source={vendor.avatarUrl} style={{ width: 54, height: 54, borderRadius: 27 }} contentFit="cover" />
+        ) : (
+          <PLAvatar initials={initialsOf(vendor.name)} size={54} tone="primary" />
+        )}
+
+        <View className="flex-1">
+          <View className="flex-row items-start gap-2">
+            <View className="flex-1">
+              <Text className="text-[14.5px] font-sans-bold text-ink" numberOfLines={1}>
+                {vendor.name}
+              </Text>
+              <Text className="text-[12px] text-ink-3 mt-0.5" numberOfLines={1}>
+                {vendor.category ?? "Service provider"}
               </Text>
             </View>
-          )}
+
+            {/* Save to favourites */}
+            <Pressable
+              onPress={onToggleSave}
+              hitSlop={10}
+              className="w-9 h-9 rounded-full items-center justify-center"
+              style={{ backgroundColor: saved ? "#fdecec" : "#f3f1ec" }}
+            >
+              <Ionicons
+                name={saved ? "heart" : "heart-outline"}
+                size={18}
+                color={saved ? "#e1483b" : INK_3}
+              />
+            </Pressable>
+          </View>
+
+          {/* Badges — verified + availability */}
+          <View className="flex-row flex-wrap items-center gap-1.5 mt-2">
+            {vendor.verified && (
+              <View
+                className="flex-row items-center gap-1 rounded-full px-2 py-1"
+                style={{ backgroundColor: "#e7f3ec" }}
+              >
+                <Ionicons name="shield-checkmark" size={11} color={PRIMARY} />
+                <Text className="text-[10.5px] font-sans-bold" style={{ color: PRIMARY }}>
+                  Verified
+                </Text>
+              </View>
+            )}
+            <View
+              className="flex-row items-center gap-1 rounded-full px-2 py-1"
+              style={{ backgroundColor: available ? "#e7f3ec" : "#f0eee9" }}
+            >
+              <View
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 6,
+                  backgroundColor: available ? "#2f9e61" : "#9a948b",
+                }}
+              />
+              <Text
+                className="text-[10.5px] font-sans-bold"
+                style={{ color: available ? "#1f6f43" : INK_3 }}
+              >
+                {available ? "Available for work" : "Unavailable"}
+              </Text>
+            </View>
+          </View>
         </View>
+      </View>
+
+      {/* Meta row — rating (hidden when none), jobs, service area */}
+      <View className="flex-row items-center gap-3 mt-2.5">
+        {rating > 0 && (
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="star" size={12} color={ACCENT} />
+            <Text className="text-[12px] font-sans-bold text-ink">{rating.toFixed(1)}</Text>
+          </View>
+        )}
+        {jobs > 0 && (
+          <Text className="text-[12px] font-sans-semibold text-ink-3">
+            {jobs} {jobs === 1 ? "job" : "jobs"} done
+          </Text>
+        )}
+        {!!vendor.serviceArea && (
+          <View className="flex-row items-center gap-1 flex-shrink">
+            <Ionicons name="location-outline" size={12} color={INK_3} />
+            <Text className="text-[12px] font-sans-semibold text-ink-3 flex-shrink" numberOfLines={1}>
+              {vendor.serviceArea}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Footer — price + View profile CTA */}
+      <View className="flex-row items-center justify-between mt-3 pt-3 border-line" style={{ borderTopWidth: 0.5 }}>
+        {priceLabel ? (
+          <View>
+            <Text className="text-[10px] font-sans-bold text-ink-3 tracking-wider uppercase">From</Text>
+            <Text className="text-[14px] font-sans-bold text-primary" numberOfLines={1}>{priceLabel}</Text>
+          </View>
+        ) : (
+          <View />
+        )}
+        <Pressable
+          onPress={goToProfile}
+          className="flex-row items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 active:opacity-85"
+        >
+          <Text className="text-white text-[12.5px] font-sans-bold">View profile</Text>
+          <Ionicons name="arrow-forward" size={13} color="#ffffff" />
+        </Pressable>
       </View>
     </Pressable>
   );
