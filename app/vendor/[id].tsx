@@ -6,6 +6,7 @@ import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import vendorsService from "@/api/services/vendors";
 import { useAuth } from "@/context/auth";
 
@@ -25,6 +26,8 @@ export default function PublicVendorProfileScreen() {
   const [vendor, setVendor] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // Full-screen portfolio viewer: -1 = closed, otherwise the tapped index.
+  const [viewerIndex, setViewerIndex] = useState(-1);
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
@@ -174,7 +177,9 @@ export default function PublicVendorProfileScreen() {
         {portfolio.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
             {portfolio.map((url, i) => (
-              <Image key={i} source={url} style={{ width: 130, height: 130, borderRadius: 14 }} contentFit="cover" />
+              <Pressable key={i} onPress={() => setViewerIndex(i)} accessibilityRole="imagebutton">
+                <Image source={url} style={{ width: 130, height: 130, borderRadius: 14 }} contentFit="cover" />
+              </Pressable>
             ))}
           </ScrollView>
         )}
@@ -211,7 +216,11 @@ export default function PublicVendorProfileScreen() {
               {services.length > 0 ? (
                 <>
                   <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">From</Text>
-                  <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>{services[0].priceLabel}</Text>
+                  {/* priceLabel may already start with "from " (FROM price mode);
+                      strip it so the eyebrow doesn't read "From from ₦20,000". */}
+                  <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>
+                    {services[0].priceLabel?.replace(/^from\s+/i, "")}
+                  </Text>
                 </>
               ) : (
                 <Text className="text-[13px] font-sans-semibold text-ink-2">Contact for pricing</Text>
@@ -223,6 +232,13 @@ export default function PublicVendorProfileScreen() {
           </View>
         </SafeAreaView>
       )}
+
+      <PhotoViewer
+        visible={viewerIndex >= 0}
+        images={portfolio}
+        initialIndex={Math.max(0, viewerIndex)}
+        onClose={() => setViewerIndex(-1)}
+      />
     </View>
   );
 }
