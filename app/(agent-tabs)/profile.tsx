@@ -10,6 +10,8 @@ import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
+import AgentDashboard from "@/components/agent/AgentDashboard";
 import { useAuth } from "@/context/auth";
 import agentsService, { type AgentSubscription } from "@/api/services/agents";
 
@@ -30,6 +32,12 @@ const TIER_PRICE: Record<string, string> = {
   STANDARD: "₦5,000 / month",
   PRO: "₦12,000 / month",
 };
+
+type ToggleTab = "profile" | "settings";
+const TOGGLE_OPTIONS = [
+  { id: "profile" as const, label: "Profile" },
+  { id: "settings" as const, label: "Settings" },
+];
 
 function formatDate(iso?: string | null) {
   if (!iso) return null;
@@ -103,6 +111,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
 
 export default function AgentProfileTab() {
   const { user, signOut } = useAuth();
+  const [tab, setTab] = useState<ToggleTab>("profile");
   const [me, setMe] = useState<any>(null);
   const [sub, setSub] = useState<AgentSubscription | null>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -175,113 +184,119 @@ export default function AgentProfileTab() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View className="px-1 pt-1 mb-3">
-          <Text className="text-[15px] font-sans-bold text-ink">Profile</Text>
+    <View className="flex-1 bg-cream">
+      {/* Toggle header — flips between the dashboard ("Profile") and Settings */}
+      <SafeAreaView edges={["top"]} className="bg-cream">
+        <View className="px-4 pt-1 pb-2">
+          <SegmentedToggle options={TOGGLE_OPTIONS} value={tab} onChange={setTab} />
         </View>
+      </SafeAreaView>
 
-        {/* Profile card */}
-        <View
-          className="bg-white rounded-2xl px-4 py-4 border-line"
-          style={{ borderWidth: 0.5 }}
+      {tab === "profile" ? (
+        <AgentDashboard embedded />
+      ) : (
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
         >
-          <View className="flex-row items-center gap-3">
-            <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={60} tone="primary" />
-            <View className="flex-1">
-              <View className="flex-row items-center gap-1.5">
-                <Text className="text-[16px] font-sans-bold text-ink">
-                  {user?.name ?? "Agent"}
+          {/* Profile card */}
+          <View
+            className="bg-white rounded-2xl px-4 py-4 border-line mt-1"
+            style={{ borderWidth: 0.5 }}
+          >
+            <View className="flex-row items-center gap-3">
+              <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={60} tone="primary" />
+              <View className="flex-1">
+                <View className="flex-row items-center gap-1.5">
+                  <Text className="text-[16px] font-sans-bold text-ink">
+                    {user?.name ?? "Agent"}
+                  </Text>
+                  {me?.verified && (
+                    <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
+                  )}
+                </View>
+                <Text className="text-[12px] text-ink-3 mt-0.5">
+                  {[me?.agency, me?.location].filter(Boolean).join(" · ") || "Estate agent"}
                 </Text>
-                {me?.verified && (
-                  <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
-                )}
-              </View>
-              <Text className="text-[12px] text-ink-3 mt-0.5">
-                {[me?.agency, me?.location].filter(Boolean).join(" · ") || "Estate agent"}
-              </Text>
-              <View className="flex-row items-center gap-3 mt-1">
-                <View className="flex-row items-center gap-1">
-                  <Ionicons name="star" size={11} color="#b9842c" />
-                  <Text className="text-[11.5px] font-sans-bold text-ink">
-                    {me?.rating ?? 0}
-                  </Text>
-                  <Text className="text-[11.5px] text-ink-3">
-                    · {me?.listingsCount ?? 0} listings
-                  </Text>
+                <View className="flex-row items-center gap-3 mt-1">
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons name="star" size={11} color="#b9842c" />
+                    <Text className="text-[11.5px] font-sans-bold text-ink">
+                      {me?.rating ?? 0}
+                    </Text>
+                    <Text className="text-[11.5px] text-ink-3">
+                      · {me?.listingsCount ?? 0} listings
+                    </Text>
+                  </View>
                 </View>
               </View>
             </View>
           </View>
-        </View>
 
-        {/* Subscription / billing */}
-        <SubscriptionCard
-          sub={sub}
-          cancelling={cancelling}
-          onChangePlan={() => router.push("/agent-plan" as Href)}
-          onCancel={cancelSub}
-        />
+          {/* Subscription / billing */}
+          <SubscriptionCard
+            sub={sub}
+            cancelling={cancelling}
+            onChangePlan={() => router.push("/agent-plan" as Href)}
+            onCancel={cancelSub}
+          />
 
-        {/* Groups */}
-        {GROUPS.map((g) => (
-          <View key={g.label} className="mt-5">
-            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-2 px-1">
-              {g.label}
-            </Text>
-            <View
-              className="bg-white rounded-2xl overflow-hidden border-line"
-              style={{ borderWidth: 0.5 }}
-            >
-              {g.rows.map((r, i) => (
-                <Pressable
-                  key={r.id}
-                  onPress={() => onLink(r)}
-                  className="flex-row items-center gap-3 px-3.5 py-3.5 active:opacity-90"
-                  style={{
-                    borderBottomWidth: i === g.rows.length - 1 ? 0 : 0.5,
-                    borderBottomColor: "#ece6df",
-                  }}
-                >
-                  <View
-                    className="w-9 h-9 rounded-xl items-center justify-center"
-                    style={{ backgroundColor: r.destructive ? "#fde6e4" : "#f0f0f0" }}
+          {/* Groups */}
+          {GROUPS.map((g) => (
+            <View key={g.label} className="mt-5">
+              <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-2 px-1">
+                {g.label}
+              </Text>
+              <View
+                className="bg-white rounded-2xl overflow-hidden border-line"
+                style={{ borderWidth: 0.5 }}
+              >
+                {g.rows.map((r, i) => (
+                  <Pressable
+                    key={r.id}
+                    onPress={() => onLink(r)}
+                    className="flex-row items-center gap-3 px-3.5 py-3.5 active:opacity-90"
+                    style={{
+                      borderBottomWidth: i === g.rows.length - 1 ? 0 : 0.5,
+                      borderBottomColor: "#ece6df",
+                    }}
                   >
-                    <Ionicons
-                      name={r.icon}
-                      size={17}
-                      color={r.destructive ? DESTRUCTIVE : INK_2}
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text
-                      className="text-[13.5px] font-sans-bold"
-                      style={{ color: r.destructive ? DESTRUCTIVE : "#1a2120" }}
+                    <View
+                      className="w-9 h-9 rounded-xl items-center justify-center"
+                      style={{ backgroundColor: r.destructive ? "#fde6e4" : "#f0f0f0" }}
                     >
-                      {r.title}
-                    </Text>
-                    {r.detail && (
-                      <Text className="text-[11.5px] text-ink-3 mt-0.5">{r.detail}</Text>
+                      <Ionicons
+                        name={r.icon}
+                        size={17}
+                        color={r.destructive ? DESTRUCTIVE : INK_2}
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text
+                        className="text-[13.5px] font-sans-bold"
+                        style={{ color: r.destructive ? DESTRUCTIVE : "#1a2120" }}
+                      >
+                        {r.title}
+                      </Text>
+                      {r.detail && (
+                        <Text className="text-[11.5px] text-ink-3 mt-0.5">{r.detail}</Text>
+                      )}
+                    </View>
+                    {!r.destructive && (
+                      <Ionicons name="chevron-forward" size={14} color={INK_3} />
                     )}
-                  </View>
-                  {!r.destructive && (
-                    <Ionicons name="chevron-forward" size={14} color={INK_3} />
-                  )}
-                </Pressable>
-              ))}
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </View>
-        ))}
+          ))}
 
-        <Text className="text-center text-[11px] text-ink-3 mt-6">
-          PropertyLoop · v0.1.0
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+          <Text className="text-center text-[11px] text-ink-3 mt-6">
+            PropertyLoop · v0.1.0
+          </Text>
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
