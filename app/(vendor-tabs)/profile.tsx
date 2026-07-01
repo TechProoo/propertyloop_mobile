@@ -168,9 +168,13 @@ export default function VendorProfileScreen() {
               style={{ borderWidth: 0.5 }}
             >
               {[
-                { n: `${stats?.profile.rating ?? 0}`, l: "Rating", star: true },
-                { n: `${stats?.profile.jobsCount ?? 0}`, l: "Jobs" },
-                { n: completeRate, l: "Complete" },
+                // Show "New" / "—" instead of a bare 0 until the vendor has
+                // earned a rating or completed jobs.
+                (stats?.profile.rating ?? 0) > 0
+                  ? { n: `${stats?.profile.rating}`, l: "Rating", star: true }
+                  : { n: "New", l: "Rating", star: false },
+                { n: (stats?.profile.jobsCount ?? 0) > 0 ? `${stats?.profile.jobsCount}` : "—", l: "Jobs", star: false },
+                { n: completeRate, l: "Complete", star: false },
               ].map((s, i) => (
                 <View
                   key={s.l}

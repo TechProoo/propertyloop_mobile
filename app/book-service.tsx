@@ -212,7 +212,7 @@ export default function BookServiceScreen() {
                 {vendor?.verified && <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />}
               </View>
               <Text className="text-xs text-ink-3">
-                {[vendor?.category, vendor?.rating ? `⭐ ${vendor.rating}` : null, `${vendor?.jobsCount ?? 0} jobs`].filter(Boolean).join(" · ")}
+                {[vendor?.category, vendor?.rating ? `⭐ ${vendor.rating}` : null, (vendor?.jobsCount ?? 0) > 0 ? `${vendor.jobsCount} jobs` : null].filter(Boolean).join(" · ")}
               </Text>
             </View>
           </View>

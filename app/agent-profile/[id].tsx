@@ -115,20 +115,34 @@ export default function PublicAgentProfileScreen() {
                 {agent.verified && <Ionicons name="shield-checkmark" size={15} color={PRIMARY} />}
               </View>
               {!!agent.agency && <Text className="text-[12.5px] mt-0.5" style={{ color: PRIMARY_INK }}>{agent.agency}</Text>}
-              <View className="flex-row items-center gap-2 mt-1">
-                <Ionicons name="star" size={12} color={ACCENT} />
-                <Text className="text-[12px] font-sans-bold text-ink">{agent.rating ?? 0}</Text>
-                <Text className="text-[12px] text-ink-3">· {reviews.length} reviews</Text>
-              </View>
+              {/* Rating line hidden until the agent has reviews — no "★ 0 · 0 reviews". */}
+              {reviews.length > 0 && (
+                <View className="flex-row items-center gap-2 mt-1">
+                  <Ionicons name="star" size={12} color={ACCENT} />
+                  <Text className="text-[12px] font-sans-bold text-ink">{agent.rating}</Text>
+                  <Text className="text-[12px] text-ink-3">· {reviews.length} reviews</Text>
+                </View>
+              )}
             </View>
           </View>
 
-          {/* Stat strip */}
-          <View className="flex-row gap-2 mt-4">
-            <Stat n={`${agent.yearsExperience ?? 0}y`} l="Experience" />
-            <Stat n={`${agent.soldRentedCount ?? 0}`} l="Closed" tone="primary" />
-            <Stat n={`${agent.listingsCount ?? 0}`} l="Listings" />
-          </View>
+          {/* Stat strip — only surface metrics the agent has actually earned;
+              a "0" stat reads as a negative rather than "just getting started". */}
+          {((agent.yearsExperience ?? 0) > 0 ||
+            (agent.soldRentedCount ?? 0) > 0 ||
+            (agent.listingsCount ?? 0) > 0) && (
+            <View className="flex-row gap-2 mt-4">
+              {(agent.yearsExperience ?? 0) > 0 && (
+                <Stat n={`${agent.yearsExperience}y`} l="Experience" />
+              )}
+              {(agent.soldRentedCount ?? 0) > 0 && (
+                <Stat n={`${agent.soldRentedCount}`} l="Closed" tone="primary" />
+              )}
+              {(agent.listingsCount ?? 0) > 0 && (
+                <Stat n={`${agent.listingsCount}`} l="Listings" />
+              )}
+            </View>
+          )}
         </View>
 
         {/* Bio */}
