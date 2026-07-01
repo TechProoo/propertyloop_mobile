@@ -36,7 +36,10 @@ export const tokenStore = {
   },
 
   /** Set both tokens at once (after login/signup/refresh). */
-  async setSession(access: string | null, refresh: string | null): Promise<void> {
+  async setSession(
+    access: string | null,
+    refresh: string | null,
+  ): Promise<void> {
     accessToken = access;
     await this.setRefresh(refresh);
   },
