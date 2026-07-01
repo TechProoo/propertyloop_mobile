@@ -125,9 +125,8 @@ export default function LogbookInfoScreen() {
           <Text className="font-serif-italic">an honest record</Text>
         </Text>
         <Text className="text-[13.5px] text-ink-2 mt-2 leading-5">
-          A permanent digital service history that travels with the property —
-          not the owner. Repairs, inspections, who did the work, and what it
-          cost.
+          A permanent digital service history that travels with the property,
+          tracking repairs, inspections, service providers, and costs.
         </Text>
 
         {/* Steps */}
