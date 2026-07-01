@@ -73,8 +73,19 @@ export default function BookViewingScreen() {
 
   const selectedDate = dates[dateIdx];
 
+  // An agent can't book a viewing on their own listing. The detail screen hides
+  // the entry point, but guard here too in case the screen is reached directly.
+  const isOwnListing = !!user && !!listing?.agent && user.id === listing.agent.id;
+
   const submit = async () => {
     if (!listingId) return;
+    if (isOwnListing) {
+      Alert.alert(
+        "That's your listing",
+        "You can't book a viewing on a property you listed.",
+      );
+      return;
+    }
     const phoneToUse = (user?.phone ?? "").trim() || phone.trim();
     if (!phoneToUse) {
       Alert.alert(
@@ -318,19 +329,23 @@ export default function BookViewingScreen() {
           }}
         >
           <Pressable
-            disabled={submitting}
+            disabled={submitting || isOwnListing}
             className="bg-primary rounded-full items-center active:opacity-80"
-            style={{ paddingVertical: 17, opacity: submitting ? 0.6 : 1 }}
+            style={{ paddingVertical: 17, opacity: submitting || isOwnListing ? 0.6 : 1 }}
             onPress={submit}
           >
             <Text className="text-white font-sans-bold text-[15px]">
-              {submitting
-                ? "Requesting…"
-                : `Request viewing · ${WEEKDAYS[selectedDate.getDay()]} ${selectedDate.getDate()}, ${slot}`}
+              {isOwnListing
+                ? "This is your listing"
+                : submitting
+                  ? "Requesting…"
+                  : `Request viewing · ${WEEKDAYS[selectedDate.getDay()]} ${selectedDate.getDate()}, ${slot}`}
             </Text>
           </Pressable>
           <Text className="text-center text-[11px] text-ink-3 mt-1.5">
-            You&apos;ll get a confirmation from the agent
+            {isOwnListing
+              ? "You can't book a viewing on your own listing"
+              : "You'll get a confirmation from the agent"}
           </Text>
         </View>
       </KeyboardAvoidingView>

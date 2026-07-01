@@ -229,6 +229,12 @@ function ListingDetail({
         ? { label: "Book stay", pathname: "/shortlet-request" }
         : { label: "Apply to rent", pathname: "/rental-application" };
 
+  // An agent viewing their own listing can't book a viewing or make an
+  // offer/apply on it — those are buyer actions. Public profile ids equal the
+  // owner's user id (same convention as the vendor profile screen), so a direct
+  // id match identifies the owner. Show a manage shortcut instead of the CTAs.
+  const isOwnListing = !!user && !!listing.agent && user.id === listing.agent.id;
+
   return (
     <View className="flex-1 bg-cream">
       <Stack.Screen options={{ headerShown: false }} />
@@ -580,43 +586,61 @@ function ListingDetail({
           paddingHorizontal: 16,
         }}
       >
-        <View className="flex-row gap-2">
+        {isOwnListing ? (
           <PressableScale
             onPress={() => {
               tapLight();
-              router.push({
-                pathname: "/book-viewing",
-                params: { listingId: listing.id },
-              } as Href);
+              router.push(`/agent-listing/${listing.id}` as Href);
             }}
-            style={{ flex: 1, paddingVertical: 15 }}
-            className="bg-cream-2 rounded-full items-center"
+            style={{ paddingVertical: 15 }}
+            className="bg-ink rounded-full flex-row items-center justify-center gap-1.5"
             accessibilityRole="button"
-            accessibilityLabel="Book a viewing"
+            accessibilityLabel="Manage your listing"
           >
-            <Text className="text-[14px] font-sans-bold text-ink">
-              Book a viewing
-            </Text>
-          </PressableScale>
-          <PressableScale
-            onPress={() => {
-              tapMedium();
-              router.push({
-                pathname: primaryCta.pathname,
-                params: { listingId: listing.id },
-              } as Href);
-            }}
-            style={{ flex: 1, paddingVertical: 15 }}
-            className="bg-primary rounded-full flex-row items-center justify-center gap-1.5"
-            accessibilityRole="button"
-            accessibilityLabel={primaryCta.label}
-          >
+            <Ionicons name="create-outline" size={16} color="#ffffff" />
             <Text className="text-[14px] font-sans-bold text-white">
-              {primaryCta.label}
+              Manage your listing
             </Text>
-            <Ionicons name="arrow-forward" size={15} color="#ffffff" />
           </PressableScale>
-        </View>
+        ) : (
+          <View className="flex-row gap-2">
+            <PressableScale
+              onPress={() => {
+                tapLight();
+                router.push({
+                  pathname: "/book-viewing",
+                  params: { listingId: listing.id },
+                } as Href);
+              }}
+              style={{ flex: 1, paddingVertical: 15 }}
+              className="bg-cream-2 rounded-full items-center"
+              accessibilityRole="button"
+              accessibilityLabel="Book a viewing"
+            >
+              <Text className="text-[14px] font-sans-bold text-ink">
+                Book a viewing
+              </Text>
+            </PressableScale>
+            <PressableScale
+              onPress={() => {
+                tapMedium();
+                router.push({
+                  pathname: primaryCta.pathname,
+                  params: { listingId: listing.id },
+                } as Href);
+              }}
+              style={{ flex: 1, paddingVertical: 15 }}
+              className="bg-primary rounded-full flex-row items-center justify-center gap-1.5"
+              accessibilityRole="button"
+              accessibilityLabel={primaryCta.label}
+            >
+              <Text className="text-[14px] font-sans-bold text-white">
+                {primaryCta.label}
+              </Text>
+              <Ionicons name="arrow-forward" size={15} color="#ffffff" />
+            </PressableScale>
+          </View>
+        )}
       </View>
 
       {/* Full-screen photo viewer */}
