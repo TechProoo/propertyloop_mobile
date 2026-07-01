@@ -250,7 +250,11 @@ export default function AgentDashboard({ embedded = false }: { embedded?: boolea
           }}
         >
           <View className="flex-row items-center gap-3.5">
-            <View
+            <Pressable
+              onPress={() => router.push("/(agent-tabs)/profile" as Href)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Open your profile"
               style={{
                 borderRadius: 999,
                 borderWidth: 2,
@@ -264,7 +268,7 @@ export default function AgentDashboard({ embedded = false }: { embedded?: boolea
                 size={52}
                 tone="primary"
               />
-            </View>
+            </Pressable>
             <View className="flex-1">
               <Text
                 className="text-[11px] font-sans-bold uppercase"

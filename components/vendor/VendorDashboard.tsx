@@ -121,7 +121,14 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
         <Appear from="fade" delay={0}>
           <View className="flex-row items-center justify-between px-5 pt-1">
           <View className="flex-row items-center gap-2.5">
-            <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
+            <Pressable
+              onPress={() => router.push("/(vendor-tabs)/profile" as Href)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Open your profile"
+            >
+              <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
+            </Pressable>
             <View>
               <Text className="text-[11px] font-sans-bold text-ink-3">{greeting}</Text>
               <Text className="text-[16px] font-sans-bold text-ink">{user?.name ?? "Vendor"}</Text>
