@@ -435,6 +435,17 @@ function ModeChips({
 // ─────────────────────────────────────────────────────────────────
 // Home card — photo with verified badge, price + save in one row.
 // ─────────────────────────────────────────────────────────────────
+// Compact the rent/shortlet period so the price pill stays short enough to sit
+// beside the save button without crowding or clipping it ("/year" → "/yr").
+function shortPeriod(period?: string | null) {
+  if (!period) return "";
+  return period
+    .replace(/years?/i, "yr")
+    .replace(/months?/i, "mo")
+    .replace(/weeks?/i, "wk")
+    .replace(/nights?/i, "nt");
+}
+
 function HomeCard({ listing }: { listing: Listing }) {
   const period = listing.period ?? "";
   const hasRating = (listing.rating ?? 0) > 0;
@@ -459,7 +470,7 @@ function HomeCard({ listing }: { listing: Listing }) {
         />
 
         {/* Top row — verified (left) · price + save together (right) */}
-        <View className="absolute top-2.5 left-2.5 right-2.5 flex-row items-center justify-between">
+        <View className="absolute top-2.5 left-2.5 right-2.5 flex-row items-center gap-2">
           <View>
             {listing.verified && (
               <View
@@ -471,14 +482,16 @@ function HomeCard({ listing }: { listing: Listing }) {
               </View>
             )}
           </View>
-          <View className="flex-row items-center gap-1.5">
+          {/* Right group shrinks so a long price can't push the save button off
+              the card edge (which clips it under overflow-hidden). */}
+          <View className="flex-1 flex-row items-center justify-end gap-1.5">
             <View
               className="px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: "rgba(26,33,32,0.8)" }}
+              style={{ backgroundColor: "rgba(26,33,32,0.8)", flexShrink: 1 }}
             >
-              <Text className="text-[12.5px] font-sans-bold text-white">
+              <Text numberOfLines={1} className="text-[12.5px] font-sans-bold text-white">
                 {listing.priceLabel}
-                {period}
+                {shortPeriod(listing.period)}
               </Text>
             </View>
             <View
@@ -610,7 +623,6 @@ function ListingRail({ items }: { items: RailListing[] }) {
 }
 
 function ListingRailCard({ listing }: { listing: RailListing }) {
-  const period = listing.period ?? "";
   return (
     <PressableScale
       onPress={() => {
@@ -629,11 +641,11 @@ function ListingRailCard({ listing }: { listing: RailListing }) {
         />
         <View
           className="absolute top-2 right-2 px-2 py-0.5 rounded-full"
-          style={{ backgroundColor: "rgba(26,33,32,0.8)" }}
+          style={{ backgroundColor: "rgba(26,33,32,0.8)", maxWidth: 122 }}
         >
-          <Text className="text-[11.5px] font-sans-bold text-white">
+          <Text numberOfLines={1} className="text-[11.5px] font-sans-bold text-white">
             {listing.priceLabel}
-            {period}
+            {shortPeriod(listing.period)}
           </Text>
         </View>
         <View
