@@ -483,7 +483,14 @@ function HomeCard({ listing }: { listing: Listing }) {
             </View>
             <View
               className="w-8 h-8 rounded-full items-center justify-center"
-              style={{ backgroundColor: "rgba(26,33,32,0.5)" }}
+              style={{
+                backgroundColor: "rgba(26,33,32,0.72)",
+                shadowColor: "#000",
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 1 },
+                elevation: 3,
+              }}
             >
               <SaveHeart id={listing.id} size={16} />
             </View>
@@ -630,10 +637,17 @@ function ListingRailCard({ listing }: { listing: RailListing }) {
           </Text>
         </View>
         <View
-          className="absolute bottom-2 left-2 w-7 h-7 rounded-full items-center justify-center"
-          style={{ backgroundColor: "rgba(26,33,32,0.5)" }}
+          className="absolute top-2 left-2 w-7 h-7 rounded-full items-center justify-center"
+          style={{
+            backgroundColor: "rgba(26,33,32,0.72)",
+            shadowColor: "#000",
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            shadowOffset: { width: 0, height: 1 },
+            elevation: 3,
+          }}
         >
-          <SaveHeart id={listing.id} size={14} />
+          <SaveHeart id={listing.id} size={15} />
         </View>
       </View>
       <Text className="text-[13px] font-sans-bold text-ink mt-1.5" numberOfLines={1}>
