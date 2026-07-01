@@ -131,20 +131,27 @@ export default function BookServiceScreen() {
     if (!phoneToUse) { Alert.alert("Add a phone number", "The vendor needs a number to reach you."); return; }
 
     setSubmitting(true);
-    try {
-      // Upload any "what needs fixing" photos first, one at a time — mobile
-      // radios drop concurrent upload streams, so sequential is more reliable.
-      let attachments: string[] | undefined;
-      if (photos.length) {
-        const urls: string[] = [];
-        for (const p of photos) {
-          const { url } = await vendorJobsService.uploadAttachment(p.uri, {
-            type: p.mimeType ?? "image/jpeg",
-          });
-          urls.push(url);
-        }
-        attachments = urls;
+
+    // Upload the "what needs fixing" photos best-effort, one at a time. A failed
+    // photo upload must NOT sink the whole booking — we book with whatever
+    // attached and tell the buyer if any couldn't. Capture the real reason so a
+    // failure surfaces instead of hiding behind a generic message.
+    const attachments: string[] = [];
+    let photoError: string | null = null;
+    for (const p of photos) {
+      try {
+        const { url } = await vendorJobsService.uploadAttachment(p.uri, {
+          type: p.mimeType ?? "image/jpeg",
+        });
+        attachments.push(url);
+      } catch (err: any) {
+        photoError =
+          err?.response?.data?.message ?? err?.message ?? "upload failed";
+        console.warn("Job attachment upload failed:", photoError, err);
       }
+    }
+
+    try {
       await vendorJobsService.createBooking({
         vendorId,
         title: service.name,
@@ -155,16 +162,19 @@ export default function BookServiceScreen() {
         scheduledFor: scheduledFor.toISOString(),
         clientName: nameToUse,
         clientPhone: phoneToUse,
-        ...(attachments?.length ? { attachments } : {}),
+        ...(attachments.length ? { attachments } : {}),
       });
+      const someFailed = photos.length > 0 && attachments.length < photos.length;
       Alert.alert(
         "Request sent",
-        `${vendor?.name ?? "The vendor"} will confirm your booking shortly.`,
+        someFailed
+          ? `${vendor?.name ?? "The vendor"} will confirm your booking shortly.\n\nSome photos couldn't be attached (${photoError ?? "upload failed"}) — you can share them in chat.`
+          : `${vendor?.name ?? "The vendor"} will confirm your booking shortly.`,
         [{ text: "Done", onPress: () => router.back() }],
       );
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? "Couldn't book. Please try again.";
-      Alert.alert("Booking failed", Array.isArray(msg) ? msg.join(", ") : msg);
+      const raw = e?.response?.data?.message ?? e?.message ?? "Couldn't book. Please try again.";
+      Alert.alert("Booking failed", Array.isArray(raw) ? raw.join(", ") : String(raw));
     } finally {
       setSubmitting(false);
     }
