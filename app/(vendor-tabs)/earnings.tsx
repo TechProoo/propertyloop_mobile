@@ -145,7 +145,7 @@ export default function VendorEarningsScreen() {
           <View className="flex-row gap-2.5 mt-3">
             <DarkStat label="In escrow" value={naira(inEscrow)} />
             <DarkStat label="This month" value={naira(summary?.thisMonth ?? 0)} />
-            <DarkStat label="Lifetime" value={naira(summary?.total ?? 0)} />
+            <DarkStat label="Total" value={naira(summary?.total ?? 0)} />
           </View>
         </View>
 
