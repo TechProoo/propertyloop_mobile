@@ -19,7 +19,9 @@ export default function ExploreMapScreen() {
   const [selectedPin, setSelectedPin] = useState<string | null>(null);
   const [mapType, setMapType] = useState<MapLayer>("standard");
   const mapRef = useRef<PropertyMapHandle | null>(null);
-  const { items, total } = useListings({ sort: "newest", limit: 12 });
+  // Fetch the full active set so the map plots every home and the header count
+  // reflects what's actually pinned — not a 12-item slice claiming the total.
+  const { items, loading } = useListings({ sort: "newest", limit: 100 });
 
   const recenter = () => {
     mapRef.current?.recenter();
@@ -62,7 +64,9 @@ export default function ExploreMapScreen() {
               Search homes
             </Text>
             <Text className="ml-auto text-[11px] text-ink-3 font-sans-semibold">
-              {total} home{total === 1 ? "" : "s"}
+              {loading
+                ? "…"
+                : `${items.length} home${items.length === 1 ? "" : "s"}`}
             </Text>
           </Pressable>
           <Pressable
@@ -139,7 +143,7 @@ export default function ExploreMapScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: 12, paddingHorizontal: 18, paddingTop: 12 }}
         >
-          {items.map((c) => (
+          {items.slice(0, 20).map((c) => (
             <Pressable
               key={c.id}
               onPress={() => router.push(`/property/${c.id}` as Href)}
