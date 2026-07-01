@@ -28,6 +28,8 @@ const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
+const DISPUTE = "#c05a1f";
+const DISPUTE_INK = "#7a3a13";
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
@@ -42,6 +44,14 @@ const TRACK: { key: string; title: string }[] = [
   { key: "IN_PROGRESS", title: "In progress" },
   { key: "COMPLETED", title: "Completed · awaiting confirmation" },
   { key: "CONFIRMED", title: "Confirmed · paid out" },
+];
+// A disputed job was necessarily completed first, so it reaches the Completed
+// stage; its final node is the dispute (not "confirmed · paid out").
+const DISPUTE_TRACK: { key: string; title: string }[] = [
+  { key: "ACCEPTED", title: "Accepted" },
+  { key: "IN_PROGRESS", title: "In progress" },
+  { key: "COMPLETED", title: "Completed" },
+  { key: "DISPUTED", title: "Disputed · under review" },
 ];
 const ORDER = ["ACCEPTED", "IN_PROGRESS", "COMPLETED", "CONFIRMED"];
 
@@ -147,7 +157,11 @@ export default function VendorActiveJobScreen() {
     );
   }
 
-  const stageIdx = Math.max(0, ORDER.indexOf(job.status));
+  const disputed = job.status === "DISPUTED";
+  const track = disputed ? DISPUTE_TRACK : TRACK;
+  // Disputes only happen after completion, so land the tracker on the final
+  // (dispute) node with everything before it done — not clamped back to 0.
+  const stageIdx = disputed ? 3 : Math.max(0, ORDER.indexOf(job.status));
   const canComplete = job.status === "IN_PROGRESS";
 
   return (
@@ -190,7 +204,8 @@ export default function VendorActiveJobScreen() {
 
         {/* Tracker */}
         <View className="mt-5">
-          {TRACK.map((s, i, arr) => {
+          {track.map((s, i, arr) => {
+            const isDisputeNode = disputed && s.key === "DISPUTED";
             const done = i < stageIdx;
             const active = i === stageIdx;
             const todo = i > stageIdx;
@@ -200,11 +215,13 @@ export default function VendorActiveJobScreen() {
                   <View
                     style={{
                       width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center",
-                      backgroundColor: done ? PRIMARY : active ? "#ffffff" : "#f0f0f0",
-                      borderWidth: active ? 2 : 0, borderColor: PRIMARY,
+                      backgroundColor: isDisputeNode ? DISPUTE : done ? PRIMARY : active ? "#ffffff" : "#f0f0f0",
+                      borderWidth: active && !isDisputeNode ? 2 : 0, borderColor: PRIMARY,
                     }}
                   >
-                    {done ? (
+                    {isDisputeNode ? (
+                      <Ionicons name="alert" size={16} color="#ffffff" />
+                    ) : done ? (
                       <Ionicons name="checkmark" size={14} color="#ffffff" />
                     ) : (
                       <View style={{ width: 8, height: 8, borderRadius: 8, backgroundColor: active ? PRIMARY : INK_3 }} />
@@ -215,7 +232,12 @@ export default function VendorActiveJobScreen() {
                   )}
                 </View>
                 <View className="flex-1 pb-4">
-                  <Text className="text-[14px] font-sans-bold" style={{ color: todo ? INK_3 : INK }}>{s.title}</Text>
+                  <Text
+                    className="text-[14px] font-sans-bold"
+                    style={{ color: isDisputeNode ? DISPUTE_INK : todo ? INK_3 : INK }}
+                  >
+                    {s.title}
+                  </Text>
                 </View>
               </View>
             );
