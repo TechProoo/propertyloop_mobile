@@ -286,7 +286,17 @@ function Header() {
           bgColor="#f0f0f0"
           badgeBorderColor="#ffffff"
         />
-        <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
+        <Pressable
+          onPress={() => {
+            tapLight();
+            router.push("/(tabs)/account" as Href);
+          }}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel="Open your profile"
+        >
+          <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
+        </Pressable>
       </View>
     </View>
   );
