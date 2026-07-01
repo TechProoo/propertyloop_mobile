@@ -218,17 +218,26 @@ export default function AgentProfileTab() {
                 <Text className="text-[12px] text-ink-3 mt-0.5">
                   {[me?.agency, me?.location].filter(Boolean).join(" · ") || "Estate agent"}
                 </Text>
-                <View className="flex-row items-center gap-3 mt-1">
-                  <View className="flex-row items-center gap-1">
-                    <Ionicons name="star" size={11} color="#b9842c" />
-                    <Text className="text-[11.5px] font-sans-bold text-ink">
-                      {me?.rating ?? 0}
-                    </Text>
-                    <Text className="text-[11.5px] text-ink-3">
-                      · {me?.listingsCount ?? 0} listings
-                    </Text>
+                {((me?.rating ?? 0) > 0 || (me?.listingsCount ?? 0) > 0) && (
+                  <View className="flex-row items-center gap-3 mt-1">
+                    <View className="flex-row items-center gap-1">
+                      {(me?.rating ?? 0) > 0 && (
+                        <>
+                          <Ionicons name="star" size={11} color="#b9842c" />
+                          <Text className="text-[11.5px] font-sans-bold text-ink">
+                            {me.rating}
+                          </Text>
+                        </>
+                      )}
+                      {(me?.listingsCount ?? 0) > 0 && (
+                        <Text className="text-[11.5px] text-ink-3">
+                          {(me?.rating ?? 0) > 0 ? "· " : ""}
+                          {me.listingsCount} listings
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                </View>
+                )}
               </View>
             </View>
           </View>

@@ -195,12 +195,14 @@ function SavedCard({
                 {l.period}
               </Text>
             )}
-            <View className="ml-auto flex-row items-center gap-1">
-              <Ionicons name="star" size={12} color={ACCENT} />
-              <Text className="text-[11px] font-sans-bold text-ink-2">
-                {l.rating}
-              </Text>
-            </View>
+            {(l.rating ?? 0) > 0 && (
+              <View className="ml-auto flex-row items-center gap-1">
+                <Ionicons name="star" size={12} color={ACCENT} />
+                <Text className="text-[11px] font-sans-bold text-ink-2">
+                  {l.rating}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View className="flex-row gap-3 mt-2">

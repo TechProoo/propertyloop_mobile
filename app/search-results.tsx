@@ -215,12 +215,14 @@ function ResultCard({ listing }: { listing: Listing }) {
             {listing.priceLabel}
             <Text style={{ fontSize: 12 }}>{listing.period ?? ""}</Text>
           </Text>
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="star" size={12} color="#b9842c" />
-            <Text className="text-[11px] font-sans-bold text-ink-2">
-              {listing.rating}
-            </Text>
-          </View>
+          {(listing.rating ?? 0) > 0 && (
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="star" size={12} color="#b9842c" />
+              <Text className="text-[11px] font-sans-bold text-ink-2">
+                {listing.rating}
+              </Text>
+            </View>
+          )}
         </View>
         <Text className="text-[14px] font-sans-bold text-ink mt-0.5">
           {listing.title}

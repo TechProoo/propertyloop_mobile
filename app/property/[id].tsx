@@ -360,15 +360,19 @@ function ListingDetail({
         >
           {/* Tag row */}
           <View className="flex-row items-center gap-2 mb-3">
-            <View className="bg-accent-soft px-2.5 py-1.5 rounded-full flex-row items-center gap-1">
-              <Ionicons name="star" size={12} color={ACCENT} />
-              <Text
-                className="text-[12.5px] font-sans-bold"
-                style={{ color: "#6b4a16" }}
-              >
-                {listing.rating}
-              </Text>
-            </View>
+            {/* Rating badge hidden until the listing actually has a rating —
+                a bare "★ 0" reads as a bad score, not "not yet rated". */}
+            {(listing.rating ?? 0) > 0 && (
+              <View className="bg-accent-soft px-2.5 py-1.5 rounded-full flex-row items-center gap-1">
+                <Ionicons name="star" size={12} color={ACCENT} />
+                <Text
+                  className="text-[12.5px] font-sans-bold"
+                  style={{ color: "#6b4a16" }}
+                >
+                  {listing.rating}
+                </Text>
+              </View>
+            )}
             <View className="bg-cream-2 px-3 py-1.5 rounded-full">
               <Text className="text-[12px] font-sans-bold text-ink-2">
                 {listing.propertyType}
@@ -545,8 +549,12 @@ function ListingDetail({
                     <Text className="text-xs font-sans-semibold text-ink-3 mt-0.5">
                       {[
                         listing.agent.agency,
-                        `${listing.agent.soldRentedCount} deals`,
-                        `⭐ ${listing.agent.rating}`,
+                        listing.agent.soldRentedCount > 0
+                          ? `${listing.agent.soldRentedCount} deals`
+                          : null,
+                        listing.agent.rating > 0
+                          ? `⭐ ${listing.agent.rating}`
+                          : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
