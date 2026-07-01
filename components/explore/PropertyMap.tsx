@@ -59,7 +59,9 @@ const HTML = `<!DOCTYPE html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
   html, body, #map { height: 100%; margin: 0; padding: 0; background: #e8e4dc; }
   .leaflet-control-attribution { font-size: 9px; opacity: 0.7; }
@@ -79,6 +81,27 @@ const HTML = `<!DOCTYPE html>
     border: 1px solid rgba(0,0,0,0.04);
   }
   .pl-pin.on { background: #1a2120; color: #ffffff; font-size: 13px; padding: 8px 12px; }
+  /* Clustered pins: a branded circle showing how many listings are stacked. */
+  .pl-cluster { width: 0; height: 0; }
+  .pl-cluster-badge {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    min-width: 36px;
+    height: 36px;
+    padding: 0 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    background: #1f6f43;
+    color: #ffffff;
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 100px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+  }
 </style>
 </head>
 <body>
@@ -94,25 +117,43 @@ const HTML = `<!DOCTYPE html>
   var markers = {};
   var selected = null;
 
+  // Group nearby pins into a single count badge; they split apart as you zoom
+  // in, and fan out (spiderfy) when fully zoomed and still overlapping.
+  var clusters = L.markerClusterGroup({
+    maxClusterRadius: 55,
+    showCoverageOnHover: false,
+    spiderfyOnMaxZoom: true,
+    zoomToBoundsOnClick: true,
+    iconCreateFunction: function (cluster) {
+      return L.divIcon({
+        className: 'pl-cluster',
+        iconSize: [0, 0],
+        html: '<div class="pl-cluster-badge">' + cluster.getChildCount() + '</div>'
+      });
+    }
+  }).addTo(map);
+
   function post(o) { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(o)); }
   function pin(label, on) {
     return L.divIcon({ className: 'pl-marker', iconSize: [0, 0], html: '<div class="pl-pin' + (on ? ' on' : '') + '">' + label + '</div>' });
   }
   function renderMarkers(items, sel) {
     selected = sel;
-    Object.keys(markers).forEach(function (id) { map.removeLayer(markers[id]); });
+    clusters.clearLayers();
     markers = {};
     items.forEach(function (it) {
       var m = L.marker([it.latitude, it.longitude], { icon: pin(it.label, it.id === selected) });
       m._label = it.label;
       m.on('click', function () { post({ type: 'select', id: it.id }); });
-      m.addTo(map);
       markers[it.id] = m;
     });
+    clusters.addLayers(Object.keys(markers).map(function (id) { return markers[id]; }));
   }
   function setSelected(sel) {
     selected = sel;
     Object.keys(markers).forEach(function (id) { markers[id].setIcon(pin(markers[id]._label, id === sel)); });
+    // Reveal the chosen pin if it's hidden inside a cluster.
+    if (sel && markers[sel]) clusters.zoomToShowLayer(markers[sel], function () {});
   }
   function setTile(type) { map.removeLayer(current); current = (tiles[type] || tiles.standard).addTo(map); }
   function recenter() { map.setView([D.lat, D.lng], D.zoom, { animate: true }); }
