@@ -1,4 +1,5 @@
 import api from "../client";
+import { tokenStore } from "../tokenStore";
 import type { Paginated } from "../types";
 
 export type JobStatus =
@@ -102,7 +103,16 @@ const vendorJobsService = {
   createBooking(payload: CreateBookingPayload): Promise<VendorJob> {
     return api.post<VendorJob>("/vendor-jobs", payload).then((r) => r.data);
   },
-  /** Upload one image/video (multipart) for a booking. Returns the hosted URL. */
+  /**
+   * Upload one image/video (multipart) for a booking. Returns the hosted URL.
+   *
+   * Uses native `fetch` rather than axios: on React Native, axios FormData
+   * uploads intermittently fail at the transport layer with a bare
+   * "Network Error" (the boundary/stream handling in the XHR adapter is
+   * unreliable). `fetch` hands the FormData straight to the platform networking
+   * stack and sets the `multipart/form-data; boundary=…` header itself. The
+   * endpoint is unauthenticated, so the Bearer token is attached only if present.
+   */
   async uploadAttachment(
     uri: string,
     opts?: { name?: string; type?: string },
@@ -113,18 +123,32 @@ const vendorJobsService = {
       name: opts?.name ?? `attachment-${Date.now()}.jpg`,
       type: opts?.type ?? "image/jpeg",
     } as any);
-    const { data } = await api.post<{ url: string; mimeType: string }>(
-      "/upload/job-attachment",
-      form,
-      {
-        // Let React Native set the multipart boundary by dropping the JSON
-        // default Content-Type header (same as messages.uploadAttachment).
-        transformRequest: (d, headers) => {
-          headers.delete("Content-Type");
-          return d;
-        },
-      },
-    );
+
+    const base = api.defaults.baseURL ?? "";
+    const token = tokenStore.getAccess();
+    // Do NOT set Content-Type — the RN runtime adds it with the correct boundary.
+    const res = await fetch(`${base}/upload/job-attachment`, {
+      method: "POST",
+      body: form,
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+
+    if (!res.ok) {
+      let message = `Upload failed (${res.status})`;
+      try {
+        const body = await res.json();
+        if (body?.message) {
+          message = Array.isArray(body.message)
+            ? body.message.join(", ")
+            : String(body.message);
+        }
+      } catch {
+        /* non-JSON error body — keep the status-based message */
+      }
+      throw new Error(message);
+    }
+
+    const data = (await res.json()) as { url: string; mimeType: string };
     return { url: data.url, mimeType: data.mimeType };
   },
   list(params?: ListJobsParams): Promise<Paginated<VendorJob>> {
