@@ -52,6 +52,9 @@ const MAX_AREAS = 4;
 
 export default function BuyerPreferencesScreen() {
   const insets = useSafeAreaInsets();
+  // Measure the sticky CTA so the scroll content can pad past it — a fixed
+  // padding leaves the last section hidden behind a taller CTA on some devices.
+  const [footerH, setFooterH] = useState(0);
   const [intent, setIntent] = useState<Intent>("RENTING");
   const [areas, setAreas] = useState<string[]>([
     "Lekki Phase 1",
@@ -108,7 +111,7 @@ export default function BuyerPreferencesScreen() {
         <OnboardingProgress step={2} total={3} className="px-5 mt-3" />
 
         <ScrollView
-          contentContainerClassName="px-5 pb-32"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: footerH + 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Heading */}
@@ -228,6 +231,7 @@ export default function BuyerPreferencesScreen() {
         <View
           className="absolute bottom-0 left-0 right-0 px-5 pt-3 bg-cream"
           style={{ paddingBottom: Math.max(insets.bottom, 20) + 10 }}
+          onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
         >
           <OnboardingCta
             label="Show me homes"
