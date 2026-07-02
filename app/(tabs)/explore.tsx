@@ -38,7 +38,10 @@ export default function ExploreMapScreen() {
         items={items}
         mapType={mapType}
         selectedPin={selectedPin}
-        onSelectPin={setSelectedPin}
+        onSelectPin={(id) => {
+          setSelectedPin(id);
+          router.push(`/property/${id}` as Href);
+        }}
       />
 
       {/* Top floating search */}
