@@ -47,7 +47,9 @@ export default function VendorEditProfileScreen() {
         if (!on) return;
         if (me?.name) setName(me.name);
         setCategory(me?.category ?? me?.serviceCategory ?? "");
-        setLocation(me?.location ?? "");
+        // The public profile shows serviceArea (set at signup); prefer it so the
+        // field reflects what buyers actually see, falling back to location.
+        setLocation(me?.serviceArea ?? me?.location ?? "");
         setAbout(me?.bio ?? "");
         setYears(me?.yearsExperience ? String(me.yearsExperience) : "");
         setAvatarUrl(me?.avatarUrl ?? null);
@@ -92,6 +94,9 @@ export default function VendorEditProfileScreen() {
         name: name.trim(),
         bio: about.trim() || undefined,
         yearsExperience: years.trim() || undefined,
+        // Write both so the public profile (serviceArea) and any location-based
+        // display stay in sync.
+        serviceArea: location.trim() || undefined,
         location: location.trim() || undefined,
         serviceCategory: category.trim() || undefined,
         ...(avatar ? { avatarUrl: avatar } : {}),

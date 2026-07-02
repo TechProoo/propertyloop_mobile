@@ -279,6 +279,23 @@ export default function PublicVendorProfileScreen() {
         </SafeAreaView>
       )}
 
+      {/* Own profile — the hire bar is hidden, so offer a quick edit action */}
+      {user?.id === id && (
+        <SafeAreaView edges={["bottom"]} style={{ position: "absolute", left: 0, right: 0, bottom: 0 }} pointerEvents="box-none">
+          <View className="bg-cream border-line px-4" style={{ borderTopWidth: 0.5, paddingTop: 14, paddingBottom: 14 }}>
+            <Pressable
+              onPress={() => router.push("/vendor-edit-profile" as Href)}
+              className="bg-primary rounded-full py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel="Edit your profile"
+            >
+              <Ionicons name="create-outline" size={16} color="#ffffff" />
+              <Text className="text-white font-sans-bold text-[14px]">Edit profile</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      )}
+
       <PhotoViewer
         visible={viewerIndex >= 0}
         images={portfolio}
