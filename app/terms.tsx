@@ -9,7 +9,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
   {
     h: "1. Who we are",
     b: [
-      "PropertyLoop (\"we\", \"our\") operates the PropertyLoop mobile and web platform connecting buyers, renters, agents and service vendors across Nigeria.",
+      'PropertyLoop ("we", "our") operates the PropertyLoop mobile and web platform connecting buyers, renters, agents and service vendors across Nigeria.',
       "Registered in Lagos, Nigeria. RC9151459. Office: 36 Lekki-Epe Expressway, Wing A, 2nd Floor, Lekki Swiss Mall.",
     ],
   },
@@ -69,9 +69,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
   },
   {
     h: "10. Contact",
-    b: [
-      "Questions about these Terms: support@propertyloop.ng.",
-    ],
+    b: ["Questions about these Terms: support.propertyloop@propertyloop.ng."],
   },
 ];
 
@@ -110,18 +108,15 @@ export default function TermsScreen() {
 
         <Text className="text-[13px] text-ink-2 mt-3 leading-5">
           Please read these Terms carefully — they govern your use of the
-          PropertyLoop platform. By signing up or continuing to use the app,
-          you agree to be bound by them.
+          PropertyLoop platform. By signing up or continuing to use the app, you
+          agree to be bound by them.
         </Text>
 
         {SECTIONS.map((s) => (
           <View key={s.h} className="mt-6">
             <Text className="text-[14px] font-sans-bold text-ink">{s.h}</Text>
             {s.b.map((p, i) => (
-              <Text
-                key={i}
-                className="text-[12.5px] text-ink-2 mt-2 leading-5"
-              >
+              <Text key={i} className="text-[12.5px] text-ink-2 mt-2 leading-5">
                 {p}
               </Text>
             ))}
