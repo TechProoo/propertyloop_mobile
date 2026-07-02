@@ -7,7 +7,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { PhotoViewer } from "@/components/PhotoViewer";
+import { Alert } from "@/lib/dialog";
 import vendorsService from "@/api/services/vendors";
+import messagesService, { type ConversationRole } from "@/api/services/messages";
 import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
@@ -26,8 +28,36 @@ export default function PublicVendorProfileScreen() {
   const [vendor, setVendor] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
   // Full-screen portfolio viewer: -1 = closed, otherwise the tapped index.
   const [viewerIndex, setViewerIndex] = useState(-1);
+
+  // Vendors without a bookable service menu can't be scheduled, so let the
+  // client open a chat to ask about the work instead. Reuses the same
+  // conversation store as agent messaging, so it lands in the Inbox.
+  const enquire = async () => {
+    if (!id || starting) return;
+    if (!user) {
+      Alert.alert("Sign in required", "Please sign in to message this vendor.");
+      return;
+    }
+    setStarting(true);
+    try {
+      const conv = await messagesService.createOrFind({
+        recipientId: id,
+        recipientRole: "VENDOR",
+        senderRole: user.role as ConversationRole,
+      });
+      router.push(`/conversation/${conv.conversationId}` as Href);
+    } catch (e: any) {
+      Alert.alert(
+        "Couldn't start chat",
+        e?.response?.data?.message ?? "Please try again.",
+      );
+    } finally {
+      setStarting(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
@@ -230,9 +260,21 @@ export default function PublicVendorProfileScreen() {
                 <Text className="text-[13px] font-sans-semibold text-ink-2">Contact for pricing</Text>
               )}
             </View>
-            <Pressable onPress={() => router.push(`/book-service?vendorId=${id}` as Href)} className="bg-primary rounded-full px-6 py-3.5 active:opacity-80">
-              <Text className="text-white font-sans-bold text-[14px]">Hire {vendor.name?.split(/\s+/)[0] ?? "vendor"}</Text>
-            </Pressable>
+            {services.length > 0 ? (
+              <Pressable onPress={() => router.push(`/book-service?vendorId=${id}` as Href)} className="bg-primary rounded-full px-6 py-3.5 active:opacity-80">
+                <Text className="text-white font-sans-bold text-[14px]">Hire {vendor.name?.split(/\s+/)[0] ?? "vendor"}</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={enquire}
+                disabled={starting}
+                className="bg-primary rounded-full px-5 py-3.5 flex-row items-center gap-2 active:opacity-80"
+                style={{ opacity: starting ? 0.6 : 1 }}
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={15} color="#ffffff" />
+                <Text className="text-white font-sans-bold text-[14px]">Enquire about service</Text>
+              </Pressable>
+            )}
           </View>
         </SafeAreaView>
       )}
