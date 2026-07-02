@@ -55,6 +55,10 @@ const messagesService = {
       .post("/messages/conversations", payload)
       .then((r) => r.data);
   },
+  /** Find-or-create this user's PropertyLoop support chat; returns its id. */
+  startSupport(): Promise<{ conversationId: string; created: boolean }> {
+    return api.post("/messages/support", {}).then((r) => r.data);
+  },
   listConversations(): Promise<ConversationsPage> {
     return api
       .get<ConversationsPage>("/messages/conversations")
