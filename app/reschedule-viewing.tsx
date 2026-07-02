@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -16,45 +16,26 @@ const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-type Day = { d: string; n: number; m: string; off?: boolean; tag?: string };
-type Slot = { t: string; off?: boolean };
+// The bookable times we offer. A day is "Busy" once all of these are taken
+// (or in the past). That's the real answer to "how many slots before busy?".
+const SLOT_TIMES = ["09:00", "10:00", "11:30", "13:00", "14:30", "16:00", "17:30"];
+const DAYS_AHEAD = 14;
 
-/** Build an ISO datetime from the picked day + slot, rolling to next year
- *  if the resulting date would otherwise be in the past. */
-function toISO(day: Day, slot: string): string {
-  const monthIdx = Math.max(0, MONTHS.indexOf(day.m));
-  const [hh, mm] = slot.split(":").map(Number);
-  const now = new Date();
-  let year = now.getFullYear();
-  let d = new Date(year, monthIdx, day.n, hh, mm, 0, 0);
-  if (d.getTime() < now.getTime() - 60_000) {
-    year += 1;
-    d = new Date(year, monthIdx, day.n, hh, mm, 0, 0);
-  }
-  return d.toISOString();
+function dayKey(d: Date) {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
-
-const DAYS: Day[] = [
-  { d: "Sun", n: 1,  m: "Jun" },
-  { d: "Mon", n: 2,  m: "Jun", tag: "4 slots" },
-  { d: "Tue", n: 3,  m: "Jun" },
-  { d: "Wed", n: 4,  m: "Jun", off: true },
-  { d: "Thu", n: 5,  m: "Jun" },
-  { d: "Fri", n: 6,  m: "Jun", tag: "Busy" },
-  { d: "Sat", n: 7,  m: "Jun" },
-];
-
-const SLOTS: Slot[] = [
-  { t: "09:00" },
-  { t: "10:00" },
-  { t: "11:30" },
-  { t: "13:00" },
-  { t: "14:30", off: true },
-  { t: "16:00" },
-  { t: "17:30" },
-];
+function slotDate(day: Date, hhmm: string) {
+  const [hh, mm] = hhmm.split(":").map(Number);
+  const x = new Date(day);
+  x.setHours(hh, mm, 0, 0);
+  return x;
+}
+function hhmmOf(d: Date) {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
 
 export default function RescheduleViewingScreen() {
   const insets = useSafeAreaInsets();
@@ -68,19 +49,96 @@ export default function RescheduleViewingScreen() {
   const listing = params.listing ?? "this listing";
   const viewingId = params.viewingId;
 
-  const [dayIdx, setDayIdx] = useState(1);
-  const [slot, setSlot]     = useState("10:00");
-  const [note, setNote]     = useState("");
+  // Real calendar: the next N days starting today (no more frozen "June").
+  const days = useMemo(() => {
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    return Array.from({ length: DAYS_AHEAD }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      return d;
+    });
+  }, []);
+  // Snapshot "now" once so the past-slot check is stable across renders.
+  const now = useMemo(() => Date.now(), []);
+
+  const [booked, setBooked] = useState<Map<string, Set<string>>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [dayIdx, setDayIdx] = useState(0);
+  const [slot, setSlot] = useState<string | null>(null);
+  const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const selected = DAYS[dayIdx];
+  // Pull the agent's own upcoming viewings and index the taken times by day —
+  // an agent can't be at two viewings at once, so those slots are unavailable.
+  useEffect(() => {
+    let on = true;
+    viewingsService
+      .listForAgent({ upcoming: true, limit: 200 })
+      .then((res) => {
+        if (!on) return;
+        const map = new Map<string, Set<string>>();
+        for (const v of res.items) {
+          if (v.id === viewingId) continue; // the booking we're moving
+          if (v.status !== "PENDING" && v.status !== "CONFIRMED") continue;
+          const d = new Date(v.scheduledFor);
+          if (Number.isNaN(d.getTime())) continue;
+          const k = dayKey(d);
+          if (!map.has(k)) map.set(k, new Set());
+          map.get(k)!.add(hhmmOf(d));
+        }
+        setBooked(map);
+      })
+      .catch(() => {
+        /* couldn't load — treat everything as open rather than block the agent */
+      })
+      .finally(() => on && setLoading(false));
+    return () => {
+      on = false;
+    };
+  }, [viewingId]);
+
+  const slotStateFor = useCallback(
+    (day: Date) => {
+      const taken = booked.get(dayKey(day));
+      return SLOT_TIMES.map((t) => ({
+        t,
+        off: slotDate(day, t).getTime() < now || (taken?.has(t) ?? false),
+      }));
+    },
+    [booked, now],
+  );
+
+  const availableCountFor = useCallback(
+    (day: Date) => slotStateFor(day).filter((s) => !s.off).length,
+    [slotStateFor],
+  );
+
+  // Once availability resolves, land on the first day + time that's actually open.
+  useEffect(() => {
+    if (loading) return;
+    const first = days.findIndex((d) => availableCountFor(d) > 0);
+    const idx = first === -1 ? 0 : first;
+    setDayIdx(idx);
+    setSlot(slotStateFor(days[idx]).find((s) => !s.off)?.t ?? null);
+  }, [loading, days, availableCountFor, slotStateFor]);
+
+  const selectedDay = days[dayIdx];
+  const slots = slotStateFor(selectedDay);
+
+  const pickDay = (i: number) => {
+    setDayIdx(i);
+    setSlot(slotStateFor(days[i]).find((s) => !s.off)?.t ?? null);
+  };
+
+  const selectedLabel = `${WEEKDAYS[selectedDay.getDay()]} ${selectedDay.getDate()} ${MONTHS[selectedDay.getMonth()]}`;
 
   const onConfirm = async () => {
-    if (saving) return;
+    if (saving || !slot) return;
     const successAlert = () =>
       Alert.alert(
         "Reschedule sent",
-        `${buyer} will be notified of the new slot: ${selected.d} ${selected.n} ${selected.m} at ${slot}.`,
+        `${buyer} will be notified of the new slot: ${selectedLabel} at ${slot}.`,
         [{ text: "OK", onPress: () => router.back() }],
       );
 
@@ -92,7 +150,10 @@ export default function RescheduleViewingScreen() {
 
     setSaving(true);
     try {
-      await viewingsService.update(viewingId, { scheduledFor: toISO(selected, slot) });
+      await viewingsService.update(viewingId, {
+        scheduledFor: slotDate(selectedDay, slot).toISOString(),
+        ...(note.trim() ? { notes: note.trim() } : {}),
+      });
       successAlert();
     } catch {
       Alert.alert("Couldn’t reschedule", "Please check your connection and try again.");
@@ -137,46 +198,63 @@ export default function RescheduleViewingScreen() {
         </Text>
 
         {/* Day strip */}
-        <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">
-          Day
-        </Text>
+        <View className="flex-row items-center justify-between mt-6 mb-2">
+          <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
+            Day
+          </Text>
+          {loading && (
+            <Text className="text-[10.5px] font-sans-semibold text-ink-3">
+              Checking your calendar…
+            </Text>
+          )}
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: 8 }}
         >
-          {DAYS.map((d, i) => {
+          {days.map((d, i) => {
             const on = dayIdx === i;
+            const avail = availableCountFor(d);
+            const full = avail === 0;
+            const tag = full
+              ? "Busy"
+              : avail < SLOT_TIMES.length
+                ? `${avail} left`
+                : undefined;
             return (
               <Pressable
-                key={`${d.m}-${d.n}`}
-                onPress={() => !d.off && setDayIdx(i)}
-                disabled={d.off}
+                key={dayKey(d)}
+                onPress={() => !full && pickDay(i)}
+                disabled={full}
                 className="rounded-2xl items-center justify-center"
                 style={{
                   width: 64,
                   paddingVertical: 12,
-                  backgroundColor: on ? INK : d.off ? "#f0f0f0" : "#ffffff",
+                  backgroundColor: on ? INK : full ? "#f0f0f0" : "#ffffff",
                   borderWidth: on ? 0 : 1,
                   borderColor: "#e1dcd3",
-                  opacity: d.off ? 0.5 : 1,
+                  opacity: full ? 0.5 : 1,
                 }}
               >
                 <Text
                   className="text-[10.5px] font-sans-bold tracking-wider uppercase"
                   style={{ color: on ? "rgba(255,255,255,0.7)" : INK_3 }}
                 >
-                  {d.d}
+                  {WEEKDAYS[d.getDay()]}
                 </Text>
                 <Text
                   className="font-serif mt-0.5"
                   style={{ fontSize: 20, color: on ? "#ffffff" : INK, letterSpacing: -0.3 }}
                 >
-                  {d.n}
+                  {d.getDate()}
                 </Text>
-                {d.tag && !on && (
-                  <Text className="text-[9px] font-sans-bold text-primary mt-0.5">
-                    {d.tag}
+                {tag && !on && (
+                  <Text
+                    className="text-[9px] font-sans-bold mt-0.5"
+                    style={{ color: full ? INK_3 : PRIMARY }}
+                  >
+                    {tag}
                   </Text>
                 )}
               </Pressable>
@@ -188,35 +266,40 @@ export default function RescheduleViewingScreen() {
         <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">
           Time
         </Text>
-        <View className="flex-row flex-wrap gap-2">
-          {SLOTS.map((s) => {
-            const on = slot === s.t;
-            const disabled = !!s.off;
-            return (
-              <Pressable
-                key={s.t}
-                onPress={() => !disabled && setSlot(s.t)}
-                disabled={disabled}
-                className="rounded-full"
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 10,
-                  backgroundColor: on ? PRIMARY : disabled ? "#f0f0f0" : "#ffffff",
-                  borderWidth: on ? 0 : 1,
-                  borderColor: "#e1dcd3",
-                  opacity: disabled ? 0.5 : 1,
-                }}
-              >
-                <Text
-                  className="text-[13px] font-sans-bold"
-                  style={{ color: on ? "#ffffff" : disabled ? INK_3 : INK_2 }}
+        {availableCountFor(selectedDay) === 0 ? (
+          <Text className="text-[13px] text-ink-3">
+            No open times on {selectedLabel}. Try another day.
+          </Text>
+        ) : (
+          <View className="flex-row flex-wrap gap-2">
+            {slots.map((s) => {
+              const on = slot === s.t;
+              return (
+                <Pressable
+                  key={s.t}
+                  onPress={() => !s.off && setSlot(s.t)}
+                  disabled={s.off}
+                  className="rounded-full"
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    backgroundColor: on ? PRIMARY : s.off ? "#f0f0f0" : "#ffffff",
+                    borderWidth: on ? 0 : 1,
+                    borderColor: "#e1dcd3",
+                    opacity: s.off ? 0.5 : 1,
+                  }}
                 >
-                  {s.t}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                  <Text
+                    className="text-[13px] font-sans-bold"
+                    style={{ color: on ? "#ffffff" : s.off ? INK_3 : INK_2 }}
+                  >
+                    {s.t}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
 
         {/* Note */}
         <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">
@@ -246,14 +329,16 @@ export default function RescheduleViewingScreen() {
       >
         <Pressable
           onPress={onConfirm}
-          disabled={saving}
+          disabled={saving || !slot}
           className="bg-primary rounded-full items-center active:opacity-80"
-          style={{ paddingVertical: 16, opacity: saving ? 0.6 : 1 }}
+          style={{ paddingVertical: 16, opacity: saving || !slot ? 0.6 : 1 }}
         >
           <Text className="text-white font-sans-bold text-[15px]">
             {saving
               ? "Sending…"
-              : `Send new slot · ${selected.d} ${selected.n} ${selected.m} · ${slot}`}
+              : slot
+                ? `Send new slot · ${selectedLabel} · ${slot}`
+                : "No open slots — pick another day"}
           </Text>
         </Pressable>
       </View>
