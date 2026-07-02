@@ -78,11 +78,14 @@ const vendorsService = {
   },
 
   /** Presign + PUT one image to storage; returns the public URL. */
-  async uploadImage(uri: string): Promise<string> {
+  async uploadImage(
+    uri: string,
+    kind: "portfolio" | "banner" = "portfolio",
+  ): Promise<string> {
     const contentType = "image/jpeg";
     const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
       "/vendors/me/portfolio/presign",
-      { filename: `upload-${Date.now()}.jpg`, contentType, kind: "portfolio" },
+      { filename: `upload-${Date.now()}.jpg`, contentType, kind },
     );
     const fileRes = await fetch(uri);
     const blob = await fileRes.blob();
