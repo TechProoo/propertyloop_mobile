@@ -67,11 +67,11 @@ export const NOTIFICATIONS: Notif[] = [
 ];
 
 export const NOTIF_ICON: Record<NotifKind, { icon: IonName; tone: string }> = {
-  offer:   { icon: "swap-horizontal-outline",  tone: "primary" },
-  viewing: { icon: "calendar-outline",         tone: "primary" },
-  vendor:  { icon: "construct-outline",        tone: "accent"  },
-  doc:     { icon: "document-text-outline",    tone: "accent"  },
-  system:  { icon: "sparkles-outline",         tone: "neutral" },
+  offer: { icon: "swap-horizontal-outline", tone: "primary" },
+  viewing: { icon: "calendar-outline", tone: "primary" },
+  vendor: { icon: "construct-outline", tone: "accent" },
+  doc: { icon: "document-text-outline", tone: "accent" },
+  system: { icon: "sparkles-outline", tone: "neutral" },
 };
 
 // ─── Settings ────────────────────────────────────────────────────
@@ -101,33 +101,96 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Account",
     links: [
-      { id: "edit",  icon: "person-outline",       title: "Edit profile",            href: "/edit-profile" },
-      { id: "kyc",   icon: "shield-checkmark-outline", title: "Identity verification", detail: "Verified · NIN on file", href: "/verify-identity" },
-      { id: "pay",   icon: "card-outline",         title: "Payment methods",         detail: "GTBank •• 4421",       href: "/payment" },
+      {
+        id: "edit",
+        icon: "person-outline",
+        title: "Edit profile",
+        href: "/edit-profile",
+      },
+      {
+        id: "kyc",
+        icon: "shield-checkmark-outline",
+        title: "Identity verification",
+        detail: "Verified · NIN on file",
+        href: "/verify-identity",
+      },
+      {
+        id: "pay",
+        icon: "card-outline",
+        title: "Payment methods",
+        detail: "GTBank •• 4421",
+        href: "/payment",
+      },
     ],
   },
   {
     label: "Preferences",
     links: [
-      { id: "notif",  icon: "notifications-outline", title: "Notifications",  detail: "Push + email" },
-      { id: "search", icon: "search-outline",        title: "Saved searches", detail: "3 active",     href: "/search-results" },
-      { id: "lang",   icon: "globe-outline",         title: "Language",       detail: "English (NG)" },
+      {
+        id: "notif",
+        icon: "notifications-outline",
+        title: "Notifications",
+        detail: "Push + email",
+      },
+      {
+        id: "search",
+        icon: "search-outline",
+        title: "Saved searches",
+        detail: "3 active",
+        href: "/search-results",
+      },
+      {
+        id: "lang",
+        icon: "globe-outline",
+        title: "Language",
+        detail: "English (NG)",
+      },
     ],
   },
   {
     label: "Support",
     links: [
-      { id: "help",   icon: "help-circle-outline",   title: "Help centre",     href: "/help" },
-      { id: "logbook",icon: "document-text-outline", title: "About the logbook", href: "/logbook-info" },
-      { id: "escrow", icon: "lock-closed-outline",   title: "How escrow works",  href: "/escrow-info" },
+      {
+        id: "help",
+        icon: "help-circle-outline",
+        title: "Help centre",
+        href: "/help",
+      },
+      {
+        id: "logbook",
+        icon: "document-text-outline",
+        title: "About the logbook",
+        href: "/logbook-info",
+      },
+      {
+        id: "escrow",
+        icon: "lock-closed-outline",
+        title: "How escrow works",
+        href: "/escrow-info",
+      },
     ],
   },
   {
     label: "Legal",
     links: [
-      { id: "terms",   icon: "reader-outline",  title: "Terms of service", href: "/terms"   },
-      { id: "privacy", icon: "eye-outline",     title: "Privacy policy",   href: "/privacy" },
-      { id: "out",     icon: "log-out-outline", title: "Sign out", destructive: true },
+      {
+        id: "terms",
+        icon: "reader-outline",
+        title: "Terms of service",
+        href: "/terms",
+      },
+      {
+        id: "privacy",
+        icon: "eye-outline",
+        title: "Privacy policy",
+        href: "/privacy",
+      },
+      {
+        id: "out",
+        icon: "log-out-outline",
+        title: "Sign out",
+        destructive: true,
+      },
     ],
   },
 ];
@@ -159,12 +222,69 @@ export const LOGBOOK = {
     spend: "₦1.84M",
   },
   events: [
-    { id: "l-1", date: "Mar 2026", category: "Plumbing",   title: "Master bath leak fixed",       detail: "Replaced cartridge + reseated trap", cost: "₦18,000",  vendor: "Tope Plumbing Co.",     verified: true,  receipt: true },
-    { id: "l-2", date: "Feb 2026", category: "Cleaning",   title: "Deep clean · pre-shoot",       detail: "Full unit · 4 hrs",                  cost: "₦35,000",  vendor: "Sparkle & Co.",         verified: true,  receipt: true },
-    { id: "l-3", date: "Dec 2025", category: "Electrical", title: "Generator service",            detail: "Oil + filter change · load test",    cost: "₦42,000",  vendor: "Bright Sparks Ltd",     verified: true,  receipt: true },
-    { id: "l-4", date: "Nov 2025", category: "Owner log",  title: "Repainted living room",       detail: "Own painter · ivory matte",          cost: "₦55,000",                                  verified: false },
-    { id: "l-5", date: "Sep 2025", category: "Inspection", title: "Annual structural inspection", detail: "No defects · report on file",                            vendor: "Hauz Surveyors",        verified: true,  receipt: true },
-    { id: "l-6", date: "Jul 2025", category: "Pest",       title: "Termite treatment",            detail: "Perimeter spray · 6-mo warranty",    cost: "₦28,000",  vendor: "PestAway NG",           verified: true,  receipt: true },
+    {
+      id: "l-1",
+      date: "Mar 2026",
+      category: "Plumbing",
+      title: "Master bath leak fixed",
+      detail: "Replaced cartridge + reseated trap",
+      cost: "₦18,000",
+      vendor: "Tope Plumbing Co.",
+      verified: true,
+      receipt: true,
+    },
+    {
+      id: "l-2",
+      date: "Feb 2026",
+      category: "Cleaning",
+      title: "Deep clean · pre-shoot",
+      detail: "Full unit · 4 hrs",
+      cost: "₦35,000",
+      vendor: "Sparkle & Co.",
+      verified: true,
+      receipt: true,
+    },
+    {
+      id: "l-3",
+      date: "Dec 2025",
+      category: "Electrical",
+      title: "Generator service",
+      detail: "Oil + filter change · load test",
+      cost: "₦42,000",
+      vendor: "Bright Sparks Ltd",
+      verified: true,
+      receipt: true,
+    },
+    {
+      id: "l-4",
+      date: "Nov 2025",
+      category: "Owner log",
+      title: "Repainted living room",
+      detail: "Own painter · ivory matte",
+      cost: "₦55,000",
+      verified: false,
+    },
+    {
+      id: "l-5",
+      date: "Sep 2025",
+      category: "Inspection",
+      title: "Annual structural inspection",
+      detail: "No defects · report on file",
+      vendor: "Hauz Surveyors",
+      verified: true,
+      receipt: true,
+    },
+    {
+      id: "l-6",
+      date: "Jul 2025",
+      category: "Pest",
+      title: "Termite treatment",
+      detail: "Perimeter spray · 6-mo warranty",
+      cost: "₦28,000",
+      vendor: "PestAway NG",
+      verified: true,
+      receipt: true,
+    },
   ] as LogbookEvent[],
 };
 
@@ -172,18 +292,33 @@ export const LOGBOOK = {
 export type FaqItem = { q: string; a: string };
 
 export const HELP_FAQ: FaqItem[] = [
-  { q: "How does escrow work?",            a: "Your payment is held by PropertyLoop until you confirm the vendor's job is done. If anything goes wrong, raise a dispute before releasing." },
-  { q: "Are agents verified?",             a: "Every agent submits NIESV licence + ID. We verify before they can list, and re-verify annually." },
-  { q: "What happens after an offer is accepted?", a: "Both sides instruct solicitors. PropertyLoop coordinates title search, inspection, and document signing — see Purchase progress for the live status." },
-  { q: "Can I cancel a viewing?",          a: "Yes — cancel from the viewing card up to 4 hours before. Late cancellations may incur a fee." },
-  { q: "Is my data shared with agents?",   a: "Only what's needed to action the listing — your name, contact and offer. Bank details and KYC docs stay with us." },
+  {
+    q: "How does escrow work?",
+    a: "Your payment is held by PropertyLoop until you confirm the vendor's job is done. If anything goes wrong, raise a dispute before releasing.",
+  },
+  {
+    q: "Are agents verified?",
+    a: "Every agent submits NIESV licence + ID. We verify before they can list, and re-verify annually.",
+  },
+  {
+    q: "What happens after an offer is accepted?",
+    a: "Both sides instruct solicitors. PropertyLoop coordinates title search, inspection, and document signing — see Purchase progress for the live status.",
+  },
+  {
+    q: "Can I cancel a viewing?",
+    a: "Yes — cancel from the viewing card up to 4 hours before. Late cancellations may incur a fee.",
+  },
+  {
+    q: "Is my data shared with agents?",
+    a: "Only what's needed to action the listing — your name, contact and offer. Bank details and KYC docs stay with us.",
+  },
 ];
 
 export const HELP_CONTACT = {
   phoneLabel: "+234 705 305 3040",
-  phoneTel:   "+2347053053040",
-  hours:      "Mon–Sat · 9am–6pm WAT",
+  phoneTel: "+2347053053040",
+  hours: "Mon–Sat · 9am–6pm WAT",
   // Brand address shown to users; mail is routed to emailTarget below.
-  email:       "support@propertyloop.ng",
+  email: "support.propertyloop@propertyloop.ng",
   emailTarget: "support.propertyloop@propertyloop.ng",
 };

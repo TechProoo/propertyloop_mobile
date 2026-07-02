@@ -10,17 +10,20 @@ const PRINCIPLES = [
   {
     icon: "shield-checkmark-outline" as const,
     title: "Encrypted at rest",
-    detail: "ID documents and bank details are encrypted; only verification staff can decrypt them.",
+    detail:
+      "ID documents and bank details are encrypted; only verification staff can decrypt them.",
   },
   {
     icon: "eye-off-outline" as const,
     title: "Never sold",
-    detail: "We don't sell your data to advertisers, brokers or data aggregators. Ever.",
+    detail:
+      "We don't sell your data to advertisers, brokers or data aggregators. Ever.",
   },
   {
     icon: "people-outline" as const,
     title: "Minimum sharing",
-    detail: "Agents and vendors only see what they need — name, contact, the listing you're enquiring about.",
+    detail:
+      "Agents and vendors only see what they need — name, contact, the listing you're enquiring about.",
   },
 ];
 
@@ -64,7 +67,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "5. Your rights",
     b: [
       "Under the NDPR you may request access to, correction of, or deletion of your personal data.",
-      "Email support@propertyloop.ng with the request. We respond within 30 days.",
+      "Email support.propertyloop@propertyloop.ng with the request. We respond within 30 days.",
       "You can also withdraw consent for non-essential processing (e.g. marketing) from Settings → Notifications.",
     ],
   },
@@ -156,10 +159,7 @@ export default function PrivacyScreen() {
           <View key={s.h} className="mt-6">
             <Text className="text-[14px] font-sans-bold text-ink">{s.h}</Text>
             {s.b.map((p, i) => (
-              <Text
-                key={i}
-                className="text-[12.5px] text-ink-2 mt-2 leading-5"
-              >
+              <Text key={i} className="text-[12.5px] text-ink-2 mt-2 leading-5">
                 {p}
               </Text>
             ))}
@@ -167,7 +167,8 @@ export default function PrivacyScreen() {
         ))}
 
         <Text className="text-[11px] text-ink-3 mt-8 text-center leading-4">
-          Questions? support@propertyloop.ng — we reply within 30 days.
+          Questions? support.propertyloop@propertyloop.ng — we reply within 30
+          days.
         </Text>
       </ScrollView>
     </SafeAreaView>
