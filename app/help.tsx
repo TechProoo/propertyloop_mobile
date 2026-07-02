@@ -12,10 +12,30 @@ const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-const TOPICS: { id: string; icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap; label: string; href: string }[] = [
-  { id: "escrow",  icon: "lock-closed-outline",   label: "Escrow",   href: "/escrow-info"   },
-  { id: "logbook", icon: "document-text-outline", label: "Logbook",  href: "/logbook-info"  },
-  { id: "offers",  icon: "swap-horizontal-outline", label: "Offers",  href: "/offers"        },
+const TOPICS: {
+  id: string;
+  icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
+  label: string;
+  href: string;
+}[] = [
+  {
+    id: "escrow",
+    icon: "lock-closed-outline",
+    label: "Escrow",
+    href: "/escrow-info",
+  },
+  {
+    id: "logbook",
+    icon: "document-text-outline",
+    label: "Logbook",
+    href: "/logbook-info",
+  },
+  {
+    id: "offers",
+    icon: "swap-horizontal-outline",
+    label: "Offers",
+    href: "/offers",
+  },
 ];
 
 export default function HelpScreen() {
@@ -28,7 +48,10 @@ export default function HelpScreen() {
     setOpeningSupport(true);
     try {
       const { conversationId } = await messagesService.startSupport();
-      router.push(`/conversation/${conversationId}` as Href);
+      router.push({
+        pathname: "/conversation/[id]",
+        params: { id: conversationId },
+      } as Href);
     } catch (e: any) {
       Alert.alert(
         "Couldn't start chat",
@@ -51,9 +74,7 @@ export default function HelpScreen() {
         >
           <Ionicons name="chevron-back" size={18} color={INK_2} />
         </Pressable>
-        <Text className="text-[15px] font-sans-bold text-ink">
-          Help centre
-        </Text>
+        <Text className="text-[15px] font-sans-bold text-ink">Help centre</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -163,12 +184,18 @@ export default function HelpScreen() {
             icon="mail-outline"
             title="Email"
             detail={HELP_CONTACT.email}
-            onPress={() => Linking.openURL(`mailto:${HELP_CONTACT.emailTarget}`)}
+            onPress={() =>
+              Linking.openURL(`mailto:${HELP_CONTACT.emailTarget}`)
+            }
           />
           <ContactRow
             icon="chatbubble-ellipses-outline"
             title="Message us in-app"
-            detail={openingSupport ? "Opening chat…" : "Chat with PropertyLoop · avg. reply in 12 min"}
+            detail={
+              openingSupport
+                ? "Opening chat…"
+                : "Chat with PropertyLoop · avg. reply in 12 min"
+            }
             onPress={openSupport}
           />
         </View>
