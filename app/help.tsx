@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HELP_CONTACT, HELP_FAQ } from "@/mocks/buyer-extra";
+import messagesService from "@/api/services/messages";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -18,6 +20,24 @@ const TOPICS: { id: string; icon: keyof typeof import("@expo/vector-icons").Ioni
 
 export default function HelpScreen() {
   const [openId, setOpenId] = useState<string | null>(HELP_FAQ[0].q);
+  const [openingSupport, setOpeningSupport] = useState(false);
+
+  // Open (or resume) the user's PropertyLoop support chat, then jump into it.
+  const openSupport = async () => {
+    if (openingSupport) return;
+    setOpeningSupport(true);
+    try {
+      const { conversationId } = await messagesService.startSupport();
+      router.push(`/conversation/${conversationId}` as Href);
+    } catch (e: any) {
+      Alert.alert(
+        "Couldn't start chat",
+        e?.response?.data?.message ?? "Please try again in a moment.",
+      );
+    } finally {
+      setOpeningSupport(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -148,8 +168,8 @@ export default function HelpScreen() {
           <ContactRow
             icon="chatbubble-ellipses-outline"
             title="Message us in-app"
-            detail="Avg. reply in 12 min"
-            onPress={() => router.push("/(tabs)/inbox" as Href)}
+            detail={openingSupport ? "Opening chat…" : "Chat with PropertyLoop · avg. reply in 12 min"}
+            onPress={openSupport}
           />
         </View>
       </ScrollView>
