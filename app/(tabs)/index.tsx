@@ -289,7 +289,15 @@ function Header() {
         <Pressable
           onPress={() => {
             tapLight();
-            router.push("/(tabs)/account" as Href);
+            // The home feed is shared across roles, so send each role to its
+            // own profile tab, not always the buyer account screen.
+            const profileHref =
+              user?.role === "AGENT"
+                ? "/(agent-tabs)/profile"
+                : user?.role === "VENDOR"
+                  ? "/(vendor-tabs)/profile"
+                  : "/(tabs)/account";
+            router.push(profileHref as Href);
           }}
           hitSlop={6}
           accessibilityRole="button"
