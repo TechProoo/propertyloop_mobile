@@ -14,7 +14,7 @@ import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { PLAvatar } from "@/components/brand/PLAvatar";
@@ -294,6 +294,19 @@ export default function ConversationScreen() {
   const title = conv?.name ?? "Conversation";
   const canSend = draft.trim().length > 0 || attachments.length > 0;
 
+  // Reserve room below the composer for the system nav bar. The app runs
+  // edge-to-edge on Android, so without this the 3-button nav (≈48dp) sits on
+  // top of the input and send button. `insets.bottom` carries the real height
+  // once measured; on Android it can read 0 before that resolves, so fall back
+  // to the tallest common nav bar rather than let the buttons tuck under.
+  const insets = useSafeAreaInsets();
+  const composerBottomPad =
+    (insets.bottom > 0
+      ? insets.bottom
+      : Platform.OS === "android"
+        ? 48
+        : 0) + 10;
+
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -489,8 +502,12 @@ export default function ConversationScreen() {
 
         {/* Composer */}
         <View
-          className="px-3 pt-2.5 pb-6 flex-row items-end gap-2 bg-cream"
-          style={{ borderTopWidth: 0.5, borderTopColor: LINE }}
+          className="px-3 pt-2.5 flex-row items-end gap-2 bg-cream"
+          style={{
+            borderTopWidth: 0.5,
+            borderTopColor: LINE,
+            paddingBottom: composerBottomPad,
+          }}
         >
           <PressableScale
             onPress={onAttach}
