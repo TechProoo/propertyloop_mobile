@@ -59,6 +59,27 @@ const authService = {
     await api.post("/auth/resend-verification-public", { email });
   },
 
+  // Email a 6-digit password-reset code. Always resolves (even for unknown
+  // emails) so we never leak which addresses are registered.
+  async forgotPassword(email: string): Promise<void> {
+    await api.post("/auth/forgot-password", {
+      email: email.trim().toLowerCase(),
+    });
+  },
+
+  // Complete the reset with the emailed code + a new password.
+  async resetPassword(payload: {
+    email: string;
+    code: string;
+    password: string;
+  }): Promise<void> {
+    await api.post("/auth/reset-password", {
+      email: payload.email.trim().toLowerCase(),
+      code: payload.code.trim(),
+      password: payload.password,
+    });
+  },
+
   async logout(): Promise<void> {
     try {
       await api.post("/auth/logout", {});

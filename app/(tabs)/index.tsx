@@ -215,7 +215,14 @@ export default function HomeScreen() {
         )}
         {topAgents.length > 0 && (
           <>
-            <SectionHeader title="Top agents" />
+            <SectionHeader
+              title="Top agents"
+              actionLabel="View more"
+              onAction={() => {
+                tapLight();
+                router.push("/top-agents" as Href);
+              }}
+            />
             <AgentRail items={topAgents} />
           </>
         )}
@@ -608,10 +615,23 @@ function ServiceLoopEntry() {
 // ─────────────────────────────────────────────────────────────────
 // Curated rails — section header + horizontal scrollers
 // ─────────────────────────────────────────────────────────────────
-function SectionHeader({ title }: { title: string }) {
+function SectionHeader({
+  title,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
   return (
-    <View className="px-5 pt-6">
+    <View className="px-5 pt-6 flex-row items-baseline justify-between">
       <Text className="text-[16px] font-sans-bold text-ink tracking-tight">{title}</Text>
+      {actionLabel && onAction ? (
+        <Pressable onPress={onAction} hitSlop={8}>
+          <Text className="text-xs font-sans-bold text-primary">{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
