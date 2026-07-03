@@ -135,6 +135,7 @@ export default function RootLayout() {
         <Stack.Screen name="create-listing" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="agent-listing/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="agent-profile/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="top-agents" options={{ headerShown: false }} />
         <Stack.Screen name="reschedule-viewing" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="payout-bank" options={{ headerShown: false }} />
         <Stack.Screen name="listing-defaults" options={{ headerShown: false }} />
