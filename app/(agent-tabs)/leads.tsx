@@ -115,14 +115,22 @@ export default function AgentLeadsScreen() {
     }, [load]),
   );
 
+  // Declined (CANCELLED) viewings drop off the active leads list — they no
+  // longer need the agent's attention, so both the count and the cards exclude
+  // them (this is also why a just-declined card disappears immediately).
+  const activeViewings = useMemo(
+    () => viewings.filter((v) => v.status !== "CANCELLED"),
+    [viewings],
+  );
+
   const counts = useMemo(
     () => ({
-      all: leads.length + viewings.length + offers.length,
+      all: leads.length + activeViewings.length + offers.length,
       inquiry: leads.length,
-      viewing: viewings.length,
+      viewing: activeViewings.length,
       offer: offers.length,
     }),
-    [leads, viewings, offers],
+    [leads, activeViewings, offers],
   );
 
   // ─── Viewing actions ────────────────────────────────────────────────────
@@ -155,7 +163,7 @@ export default function AgentLeadsScreen() {
   const empty =
     !loading &&
     ((tab === "inquiry" && leads.length === 0) ||
-      (tab === "viewing" && viewings.length === 0) ||
+      (tab === "viewing" && activeViewings.length === 0) ||
       (tab === "offer" && offers.length === 0) ||
       (tab === "all" && counts.all === 0));
 
@@ -192,7 +200,7 @@ export default function AgentLeadsScreen() {
           </View>
         ) : (
           <View className="px-4 pt-3 gap-3">
-            {showViewings && viewings.map((v) => (
+            {showViewings && activeViewings.map((v) => (
               <ViewingCard key={v.id} viewing={v} busy={busyViewingId === v.id} onConfirm={() => confirmViewing(v)} onDecline={() => cancelViewing(v)} onReschedule={() => rescheduleViewing(v)} />
             ))}
             {showInquiries && leads.map((l) => (
