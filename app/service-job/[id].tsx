@@ -15,7 +15,11 @@ import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
-import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
+import vendorJobsService, {
+  type VendorJob,
+  type JobDispute,
+  type DisputeMessage,
+} from "@/api/services/vendorJobs";
 import paymentsService from "@/api/services/payments";
 
 const PRIMARY = "#1f6f43";
@@ -43,6 +47,9 @@ function dateOf(iso?: string | null) {
 export default function ServiceJobScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [job, setJob] = useState<VendorJob | null>(null);
+  const [dispute, setDispute] = useState<JobDispute | null>(null);
+  const [reply, setReply] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [disputing, setDisputing] = useState(false);
@@ -58,6 +65,11 @@ export default function ServiceJobScreen() {
     try {
       const j = await vendorJobsService.getOne(id);
       setJob(j);
+      // Once a job has been disputed, load the thread so the customer can read
+      // our team's messages — including the resolution — even after it closes.
+      if (j.disputeReason || j.escrowStatus === "DISPUTED") {
+        vendorJobsService.getDispute(id).then(setDispute).catch(() => {});
+      }
       return j;
     } catch {
       setJob(null);
@@ -66,6 +78,20 @@ export default function ServiceJobScreen() {
       setLoading(false);
     }
   }, [id]);
+
+  const sendReply = async () => {
+    if (!id || !reply.trim() || sendingReply) return;
+    setSendingReply(true);
+    try {
+      const updated = await vendorJobsService.addDisputeMessage(id, reply.trim());
+      setDispute(updated);
+      setReply("");
+    } catch (e: any) {
+      Alert.alert("Couldn't send", e?.response?.data?.message ?? "Please try again.");
+    } finally {
+      setSendingReply(false);
+    }
+  };
 
   // Ask the backend to verify with Paystack and lock escrow, retrying a few
   // times while the charge settles. Returns the resulting escrow status.
@@ -310,6 +336,42 @@ export default function ServiceJobScreen() {
           </View>
         )}
 
+        {/* Dispute conversation — the customer can read our team's replies and
+            the resolution here, both during and after the dispute. */}
+        {dispute && dispute.thread.length > 0 && (
+          <View className="mt-5">
+            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-2">
+              Dispute conversation
+            </Text>
+            <View className="bg-white rounded-2xl border-line" style={{ borderWidth: 0.5, paddingHorizontal: 12, paddingVertical: 14, gap: 12 }}>
+              {dispute.thread.map((m) => (
+                <DisputeBubble key={m.id} msg={m} vendorName={job.vendor?.name} />
+              ))}
+            </View>
+            {isDisputed && (
+              <View className="flex-row items-center gap-2 mt-2.5">
+                <TextInput
+                  value={reply}
+                  onChangeText={setReply}
+                  placeholder="Reply to our team…"
+                  placeholderTextColor={INK_3}
+                  multiline
+                  className="flex-1 bg-white border border-line rounded-2xl px-4 py-2.5 text-ink text-[14px]"
+                  style={{ maxHeight: 100 }}
+                />
+                <Pressable
+                  onPress={sendReply}
+                  disabled={!reply.trim() || sendingReply}
+                  className="w-11 h-11 rounded-full items-center justify-center active:opacity-80"
+                  style={{ backgroundColor: PRIMARY, opacity: !reply.trim() || sendingReply ? 0.5 : 1 }}
+                >
+                  <Ionicons name="send" size={17} color="#ffffff" />
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Details */}
         <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">Details</Text>
         <View className="bg-white rounded-2xl overflow-hidden border-line" style={{ borderWidth: 0.5 }}>
@@ -404,6 +466,56 @@ function DetailRow({ label, value, last }: { label: string; value: string; last?
     <View className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: last ? 0 : 0.5, borderBottomColor: "#ece6df" }}>
       <Text className="text-xs font-sans-semibold text-ink-3">{label}</Text>
       <Text className="text-[13px] font-sans-bold text-ink">{value}</Text>
+    </View>
+  );
+}
+
+function DisputeBubble({ msg, vendorName }: { msg: DisputeMessage; vendorName?: string | null }) {
+  // Centre system notes ("PropertyLoop is mediating…") as a quiet divider.
+  if (msg.role === "SYSTEM") {
+    return (
+      <Text className="text-[11px] text-ink-3 text-center font-sans-medium">
+        {msg.body}
+      </Text>
+    );
+  }
+  const isYou = msg.role === "CUSTOMER";
+  const isAdmin = msg.role === "ADMIN";
+  const label = isYou
+    ? "You"
+    : isAdmin
+      ? "PropertyLoop"
+      : vendorName ?? "Vendor";
+  return (
+    <View className={isYou ? "items-end" : "items-start"}>
+      <View style={{ maxWidth: "86%" }}>
+        <Text
+          className="text-[10.5px] font-sans-bold mb-0.5"
+          style={{ color: isAdmin ? PRIMARY_INK : INK_3 }}
+        >
+          {label}
+        </Text>
+        <View
+          className="rounded-2xl px-3 py-2"
+          style={{ backgroundColor: isYou ? PRIMARY : isAdmin ? "#e3efe7" : "#f0f0f0" }}
+        >
+          <Text className="text-[13px] leading-5" style={{ color: isYou ? "#ffffff" : INK }}>
+            {msg.body}
+          </Text>
+        </View>
+        {msg.attachments?.length > 0 && (
+          <View className="flex-row flex-wrap gap-1.5 mt-1.5">
+            {msg.attachments.map((url) => (
+              <Image
+                key={url}
+                source={{ uri: url }}
+                style={{ width: 84, height: 84, borderRadius: 10 }}
+                contentFit="cover"
+              />
+            ))}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
