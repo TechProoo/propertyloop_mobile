@@ -28,6 +28,7 @@ const TYPE_TAG: Record<Listing["type"], string> = {
 export default function SearchResultsScreen() {
   const params = useLocalSearchParams<{
     q?: string;
+    type?: string;
     propertyType?: string;
     minPrice?: string;
     maxPrice?: string;
@@ -50,6 +51,7 @@ export default function SearchResultsScreen() {
     reload,
   } = useListings({
     search: submitted || undefined,
+    type: params.type as any || undefined,
     propertyType: params.propertyType || undefined,
     minPrice: num(params.minPrice),
     maxPrice: num(params.maxPrice),
