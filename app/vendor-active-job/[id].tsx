@@ -163,6 +163,8 @@ export default function VendorActiveJobScreen() {
   // (dispute) node with everything before it done — not clamped back to 0.
   const stageIdx = disputed ? 3 : Math.max(0, ORDER.indexOf(job.status));
   const canComplete = job.status === "IN_PROGRESS";
+  // A vendor can only start once the customer's payment is locked in escrow.
+  const escrowFunded = job.escrowStatus === "LOCKED";
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -332,9 +334,23 @@ export default function VendorActiveJobScreen() {
             <BouncyLoader color={PRIMARY} />
           </View>
         ) : job.status === "ACCEPTED" ? (
-          <Pressable onPress={startJob} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>
-            <Text className="text-white font-sans-bold text-[15px]">Start job</Text>
-          </Pressable>
+          escrowFunded ? (
+            <Pressable onPress={startJob} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>
+              <Text className="text-white font-sans-bold text-[15px]">Start job</Text>
+            </Pressable>
+          ) : (
+            <View className="rounded-full items-center" style={{ paddingVertical: 13, backgroundColor: "#f0f0f0" }}>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="lock-closed" size={15} color={INK_2} />
+                <Text className="font-sans-bold text-[13.5px]" style={{ color: INK_2 }}>
+                  Waiting for payment to escrow
+                </Text>
+              </View>
+              <Text className="text-[11.5px] mt-0.5" style={{ color: INK_2, opacity: 0.7 }}>
+                You can start once the customer secures payment.
+              </Text>
+            </View>
+          )
         ) : job.status === "IN_PROGRESS" ? (
           <Pressable onPress={complete} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>
             <Text className="text-white font-sans-bold text-[15px]">Mark complete & request release</Text>
