@@ -1,17 +1,12 @@
 import { useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useListings } from "@/api/hooks/useListings";
+import { useSearchFilters, activeFilterCount } from "@/lib/searchFilters";
 import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
@@ -26,19 +21,16 @@ const TYPE_TAG: Record<Listing["type"], string> = {
 };
 
 export default function SearchResultsScreen() {
-  const params = useLocalSearchParams<{
-    q?: string;
-    type?: string;
-    propertyType?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    minBeds?: string;
-    minBaths?: string;
-  }>();
+  const params = useLocalSearchParams<{ q?: string }>();
   const [query, setQuery] = useState(params.q ?? "");
   const [submitted, setSubmitted] = useState((params.q ?? "").trim());
 
-  const num = (v?: string) => (v ? Number(v) : undefined);
+  // Live filters from the shared store — the Filters modal writes here on
+  // "Show homes", this subscription re-renders us, useListings sees changed
+  // params and refetches. (Route params were unreliable for re-applies: an
+  // already-mounted screen kept its stale useLocalSearchParams.)
+  const filters = useSearchFilters();
+  const filterCount = activeFilterCount(filters);
 
   const {
     items,
@@ -51,12 +43,12 @@ export default function SearchResultsScreen() {
     reload,
   } = useListings({
     search: submitted || undefined,
-    type: params.type as any || undefined,
-    propertyType: params.propertyType || undefined,
-    minPrice: num(params.minPrice),
-    maxPrice: num(params.maxPrice),
-    minBeds: num(params.minBeds),
-    minBaths: num(params.minBaths),
+    type: filters.type,
+    propertyType: filters.propertyType,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    minBeds: filters.minBeds,
+    minBaths: filters.minBaths,
     sort: "newest",
   });
 
@@ -102,11 +94,33 @@ export default function SearchResultsScreen() {
             )}
           </View>
           <Pressable
-            onPress={() => router.push("/filters" as Href)}
+            onPress={() => router.push("/filters?from=results" as Href)}
             className="w-9 h-9 rounded-full items-center justify-center"
             style={{ backgroundColor: INK }}
           >
             <Ionicons name="options-outline" size={16} color="#ffffff" />
+            {filterCount > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -3,
+                  right: -3,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  backgroundColor: PRIMARY,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 3,
+                  borderWidth: 1.5,
+                  borderColor: "#fffbf4",
+                }}
+              >
+                <Text className="text-white font-sans-bold" style={{ fontSize: 9 }}>
+                  {filterCount}
+                </Text>
+              </View>
+            )}
           </Pressable>
         </View>
       </View>
@@ -119,11 +133,16 @@ export default function SearchResultsScreen() {
         <Text className="text-[13px] font-sans-bold text-ink">
           {loading ? "Searching…" : `${total} home${total === 1 ? "" : "s"}`}
           {submitted ? (
-            <Text className="font-sans-semibold text-ink-3"> · “{submitted}”</Text>
+            <Text className="font-sans-semibold text-ink-3">
+              {" "}
+              · “{submitted}”
+            </Text>
           ) : null}
         </Text>
         <View className="flex-row items-center gap-1">
-          <Text className="text-[12.5px] font-sans-bold text-ink-2">Newest</Text>
+          <Text className="text-[12.5px] font-sans-bold text-ink-2">
+            Newest
+          </Text>
           <Ionicons name="chevron-down" size={12} color={INK_2} />
         </View>
       </View>
@@ -235,7 +254,9 @@ function ResultCard({ listing }: { listing: Listing }) {
         <View className="flex-row gap-3 mt-2">
           <Stat icon="bed-outline" value={`${listing.beds} bed`} />
           <Stat icon="water-outline" value={`${listing.baths} bath`} />
-          {!!listing.sqft && <Stat icon="resize-outline" value={`${listing.sqft} m²`} />}
+          {!!listing.sqft && (
+            <Stat icon="resize-outline" value={`${listing.sqft} m²`} />
+          )}
         </View>
       </View>
     </Pressable>
@@ -252,7 +273,9 @@ function Stat({
   return (
     <View className="flex-row items-center gap-1">
       <Ionicons name={icon} size={13} color={INK_2} />
-      <Text className="text-[11.5px] font-sans-semibold text-ink-2">{value}</Text>
+      <Text className="text-[11.5px] font-sans-semibold text-ink-2">
+        {value}
+      </Text>
     </View>
   );
 }

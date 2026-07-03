@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { Stack, router, type Href } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import {
+  getSearchFilters,
+  setSearchFilters,
+  type SearchFilters,
+} from "@/lib/searchFilters";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -46,18 +51,28 @@ function fmtNaira(n: number) {
   return `₦${n}`;
 }
 
+// Reverse-map the stored filters back to the chip labels so reopening the
+// modal shows what's actually applied (previously it always showed defaults).
+function chipFromStore(f: SearchFilters): string {
+  if (f.type === "SALE") return "Sale";
+  if (f.type === "RENT") return "Rent";
+  return f.propertyType ?? "Any";
+}
+
 export default function FiltersScreen() {
   const insets = useSafeAreaInsets();
-  const [type, setType] = useState("Any");
-  const [beds, setBeds] = useState("3+");
-  const [baths, setBaths] = useState("Any");
-  const [minPrice, setMinPrice] = useState("60000000");
-  const [maxPrice, setMaxPrice] = useState("150000000");
-  const [amenities, setAmenities] = useState<string[]>([
-    "Generator",
-    "Parking",
-  ]);
-  const [trust, setTrust] = useState<string[]>(["Verified agent"]);
+  // `from=results` → opened on top of search-results, so applying just goes
+  // back; otherwise (Home/Explore) applying navigates to search-results.
+  const params = useLocalSearchParams<{ from?: string }>();
+  const applied = getSearchFilters();
+
+  const [type, setType] = useState(chipFromStore(applied));
+  const [beds, setBeds] = useState(applied.minBeds ? `${applied.minBeds}+` : "Any");
+  const [baths, setBaths] = useState(applied.minBaths ? `${applied.minBaths}+` : "Any");
+  const [minPrice, setMinPrice] = useState(applied.minPrice ? String(applied.minPrice) : "");
+  const [maxPrice, setMaxPrice] = useState(applied.maxPrice ? String(applied.maxPrice) : "");
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [trust, setTrust] = useState<string[]>([]);
 
   const toggle = (
     setter: React.Dispatch<React.SetStateAction<string[]>>,
@@ -78,25 +93,25 @@ export default function FiltersScreen() {
   };
 
   const apply = () => {
-    const q: Record<string, string> = {};
-
-    // Map Sale/Rent to type parameter, others to propertyType
+    // Commit to the shared store — search-results subscribes and refetches the
+    // moment this changes. Filters used to travel as route params, but
+    // replacing/pushing to an already-mounted search-results didn't refresh
+    // its useLocalSearchParams, so a second "Show homes" kept stale results.
+    const next: SearchFilters = {};
     if (type !== "Any") {
-      if (type === "Sale") {
-        q.type = "SALE";
-      } else if (type === "Rent") {
-        q.type = "RENT";
-      } else {
-        // Residential, Commercial, Land, Apartment, etc. → propertyType
-        q.propertyType = type;
-      }
+      if (type === "Sale") next.type = "SALE";
+      else if (type === "Rent") next.type = "RENT";
+      // Residential, Commercial, Land, Apartment, etc. → propertyType
+      else next.propertyType = type;
     }
+    if (beds !== "Any") next.minBeds = parseInt(beds, 10);
+    if (baths !== "Any") next.minBaths = parseInt(baths, 10);
+    if (minPrice) next.minPrice = Number(minPrice);
+    if (maxPrice) next.maxPrice = Number(maxPrice);
+    setSearchFilters(next);
 
-    if (beds !== "Any") q.minBeds = String(parseInt(beds, 10));
-    if (baths !== "Any") q.minBaths = String(parseInt(baths, 10));
-    if (minPrice) q.minPrice = minPrice;
-    if (maxPrice) q.maxPrice = maxPrice;
-    router.push({ pathname: "/search-results", params: q } as Href);
+    if (params.from === "results") router.back();
+    else router.replace("/search-results" as Href);
   };
 
   return (
