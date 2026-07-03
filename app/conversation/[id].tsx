@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
+  Keyboard,
   Linking,
   Platform,
   Pressable,
@@ -9,6 +9,9 @@ import {
   TextInput,
   View,
 } from "react-native";
+// Keyboard-controller's KAV actually works on Android (RN's is iOS-only in
+// behavior), so the composer rises above the keyboard on both platforms.
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
@@ -33,7 +36,9 @@ const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
 const CREAM_2 = "#efeae1";
 
-const MAX_ATT = 10;
+// Up to 3 media files per message — picker, staging strip and send all share
+// this cap (the backend accepts up to 10, so 3 keeps well inside it).
+const MAX_ATT = 3;
 
 type PendingAttachment = {
   localUri: string;
@@ -391,21 +396,33 @@ export default function ConversationScreen() {
   // top of the input and send button. `insets.bottom` carries the real height
   // once measured; on Android it can read 0 before that resolves, so fall back
   // to the tallest common nav bar rather than let the buttons tuck under.
+  // While the keyboard is up the nav-bar area is covered by the keyboard
+  // itself, so the pad collapses — otherwise there'd be a dead gap between
+  // the composer and the keyboard.
   const insets = useSafeAreaInsets();
-  const composerBottomPad =
-    (insets.bottom > 0
-      ? insets.bottom
-      : Platform.OS === "android"
-        ? 48
-        : 0) + 10;
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  useEffect(() => {
+    const showEvt = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvt = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const s = Keyboard.addListener(showEvt, () => setKeyboardOpen(true));
+    const h = Keyboard.addListener(hideEvt, () => setKeyboardOpen(false));
+    return () => {
+      s.remove();
+      h.remove();
+    };
+  }, []);
+  const composerBottomPad = keyboardOpen
+    ? 10
+    : (insets.bottom > 0
+        ? insets.bottom
+        : Platform.OS === "android"
+          ? 48
+          : 0) + 10;
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
         {/* Header */}
         <View
           className="flex-row items-center gap-2.5 px-4 pt-1 pb-3 bg-cream"
@@ -589,6 +606,27 @@ export default function ConversationScreen() {
                 </Pressable>
               </View>
             ))}
+            {/* Add-more tile — makes the up-to-3 limit discoverable */}
+            {attachments.length < MAX_ATT && (
+              <Pressable
+                onPress={onAttach}
+                style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: 12,
+                  borderWidth: 1.5,
+                  borderStyle: "dashed",
+                  borderColor: "#d3cdc1",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="add" size={18} color={INK_2} />
+                <Text style={{ fontSize: 8, color: INK_3, marginTop: 1 }}>
+                  {attachments.length}/{MAX_ATT}
+                </Text>
+              </Pressable>
+            )}
           </ScrollView>
         )}
 
