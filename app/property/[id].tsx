@@ -13,6 +13,7 @@ import {
 import { Alert } from "@/lib/dialog";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
+import { useVideoPlayer, VideoView } from "expo-video";
 import Animated, {
   Easing,
   FadeIn,
@@ -163,6 +164,19 @@ function ListingDetail({
     ),
   );
   const photoCount = gallery.length;
+
+  // Videos attached to the listing. `videoUrls` is the source of truth;
+  // `videoUrl` is the legacy single-video field. Dedupe and drop empties.
+  const videos = Array.from(
+    new Set(
+      (listing.videoUrls?.length
+        ? listing.videoUrls
+        : listing.videoUrl
+          ? [listing.videoUrl]
+          : []
+      ).filter(Boolean),
+    ),
+  );
 
   const onPhotoScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / screenW);
@@ -522,6 +536,20 @@ function ListingDetail({
             </>
           )}
 
+          {/* Video tour */}
+          {videos.length > 0 && (
+            <>
+              <Text className="text-[15px] font-sans-bold text-ink mt-6 mb-2.5">
+                {videos.length > 1 ? "Video tours" : "Video tour"}
+              </Text>
+              <View className="gap-3">
+                {videos.map((uri) => (
+                  <ListingVideo key={uri} uri={uri} />
+                ))}
+              </View>
+            </>
+          )}
+
           {/* Listed by */}
           {listing.agent && (
             <Appear delay={stagger(6, 200)}>
@@ -696,5 +724,30 @@ function HeroImage({
         contentFit="cover"
       />
     </Animated.View>
+  );
+}
+
+/**
+ * A single listing video. Doesn't autoplay — the buyer taps play, so opening a
+ * listing never blasts audio. Native controls give scrub/fullscreen for free.
+ */
+function ListingVideo({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={{
+        width: "100%",
+        aspectRatio: 16 / 9,
+        borderRadius: 16,
+        backgroundColor: "#000000",
+      }}
+      nativeControls
+      allowsFullscreen
+      contentFit="contain"
+    />
   );
 }
