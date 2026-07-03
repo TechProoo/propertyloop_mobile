@@ -9,7 +9,7 @@ const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-const TYPES = ["Any", "Apartment", "Duplex", "Detached", "Semi-detached", "Penthouse"];
+const TYPES = ["Any", "Sale", "Rent", "Residential", "Commercial", "Land", "Apartment", "Duplex", "Detached", "Semi-detached", "Penthouse"];
 const BEDS = ["Any", "1+", "2+", "3+", "4+", "5+"];
 const BATHS = ["Any", "1+", "2+", "3+", "4+"];
 const AMENITIES = [
@@ -53,10 +53,20 @@ export default function FiltersScreen() {
   };
 
   const apply = () => {
-    // Only the backend-supported filters are forwarded. Amenities + trust
-    // signals aren't filterable server-side yet.
     const q: Record<string, string> = {};
-    if (type !== "Any") q.propertyType = type;
+    
+    // Map Sale/Rent to type parameter, others to propertyType
+    if (type !== "Any") {
+      if (type === "Sale") {
+        q.type = "SALE";
+      } else if (type === "Rent") {
+        q.type = "RENT";
+      } else {
+        // Residential, Commercial, Land, Apartment, etc. → propertyType
+        q.propertyType = type;
+      }
+    }
+    
     if (beds !== "Any") q.minBeds = String(parseInt(beds, 10));
     if (baths !== "Any") q.minBaths = String(parseInt(baths, 10));
     if (minPrice) q.minPrice = minPrice;
