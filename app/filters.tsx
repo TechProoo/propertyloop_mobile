@@ -96,7 +96,7 @@ export default function FiltersScreen() {
     if (baths !== "Any") q.minBaths = String(parseInt(baths, 10));
     if (minPrice) q.minPrice = minPrice;
     if (maxPrice) q.maxPrice = maxPrice;
-    router.replace({ pathname: "/search-results", params: q } as Href);
+    router.push({ pathname: "/search-results", params: q } as Href);
   };
 
   return (
