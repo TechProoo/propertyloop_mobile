@@ -46,8 +46,55 @@ type PendingAttachment = {
 type ChatMessage = Message & {
   pending?: boolean;
   failed?: boolean;
+  errorReason?: string;
   localAttachments?: PendingAttachment[];
 };
+
+// Outbox — pending/failed outgoing messages that must survive leaving and
+// returning to a thread. The screen unmounts on navigate-back, so component
+// state alone loses them (the bug where failed uploads "auto-deleted"). This
+// module-level cache keeps them for the app session, keyed by conversation id;
+// entries are dropped the moment they deliver, so it stays small.
+const outbox = new Map<string, ChatMessage[]>();
+
+function outboxUpsert(convId: string, msg: ChatMessage) {
+  const list = outbox.get(convId) ?? [];
+  const idx = list.findIndex((m) => m.id === msg.id);
+  const next = idx >= 0 ? list.map((m) => (m.id === msg.id ? msg : m)) : [...list, msg];
+  outbox.set(convId, next);
+}
+
+function outboxRemove(convId: string, msgId: string) {
+  const list = outbox.get(convId);
+  if (!list) return;
+  const next = list.filter((m) => m.id !== msgId);
+  if (next.length) outbox.set(convId, next);
+  else outbox.delete(convId);
+}
+
+function outboxGet(convId: string): ChatMessage[] {
+  return outbox.get(convId) ?? [];
+}
+
+// Merge server messages with any still-undelivered local ones for this thread,
+// so returning to a conversation keeps pending/failed bubbles the user can retry.
+function mergeOutbox(convId: string, server: Message[]): ChatMessage[] {
+  const pending = outboxGet(convId).filter(
+    (o) => !server.some((s) => s.id === o.id),
+  );
+  return [...server, ...pending];
+}
+
+// Pull a human-readable reason out of an axios error so the failed bubble can
+// say *why* (e.g. "File must be an image or PDF", "File too large").
+function reasonFromError(e: any): string {
+  const msg = e?.response?.data?.message;
+  if (Array.isArray(msg)) return msg.join(", ");
+  if (typeof msg === "string") return msg;
+  if (e?.response?.status === 413) return "File too large";
+  if (e?.message === "Network Error") return "No connection";
+  return "Couldn't send. Tap to retry.";
+}
 
 function initialsOf(name?: string | null) {
   if (!name) return "PL";
@@ -108,6 +155,10 @@ export default function ConversationScreen() {
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const scrollRef = useRef<ScrollView | null>(null);
+  // Guards against launching a second image/document picker while one is still
+  // open — expo-document-picker throws "Different document picking in progress"
+  // (and the image picker misbehaves) if called concurrently.
+  const pickingRef = useRef(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -116,7 +167,9 @@ export default function ConversationScreen() {
         messagesService.getMessages(id),
         messagesService.listConversations(),
       ]);
-      setMessages(msgs);
+      // Keep any pending/failed local messages so they survive re-entering the
+      // thread and can still be retried.
+      setMessages(mergeOutbox(id, msgs));
       setConv(convos.items.find((c) => c.id === id) ?? null);
     } catch {
       /* leave empty */
@@ -173,44 +226,61 @@ export default function ConversationScreen() {
     setAttachments((cur) => [...cur, ...items].slice(0, MAX_ATT));
 
   const pickImages = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Photos", "Allow photo access in Settings to attach images.");
-      return;
+    if (pickingRef.current) return;
+    pickingRef.current = true;
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Photos", "Allow photo access in Settings to attach images.");
+        return;
+      }
+      const remaining = MAX_ATT - attachments.length;
+      const r = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: true,
+        selectionLimit: remaining,
+        quality: 0.85,
+      });
+      if (r.canceled) return;
+      addAttachments(
+        r.assets.map((a) => ({
+          localUri: a.uri,
+          name: a.fileName ?? `photo-${Date.now()}.jpg`,
+          mimeType: a.mimeType ?? "image/jpeg",
+          kind: "image" as const,
+        })),
+      );
+    } finally {
+      pickingRef.current = false;
     }
-    const remaining = MAX_ATT - attachments.length;
-    const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      selectionLimit: remaining,
-      quality: 0.85,
-    });
-    if (r.canceled) return;
-    addAttachments(
-      r.assets.map((a) => ({
-        localUri: a.uri,
-        name: a.fileName ?? `photo-${Date.now()}.jpg`,
-        mimeType: a.mimeType ?? "image/jpeg",
-        kind: "image" as const,
-      })),
-    );
   };
 
   const pickDocs = async () => {
-    const r = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      copyToCacheDirectory: true,
-      multiple: true,
-    });
-    if (r.canceled) return;
-    addAttachments(
-      r.assets.map((a) => ({
-        localUri: a.uri,
-        name: a.name,
-        mimeType: a.mimeType ?? "application/octet-stream",
-        kind: a.mimeType?.startsWith("image/") ? "image" : "file",
-      })),
-    );
+    if (pickingRef.current) return;
+    pickingRef.current = true;
+    try {
+      const r = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+        multiple: true,
+      });
+      if (r.canceled) return;
+      addAttachments(
+        r.assets.map((a) => ({
+          localUri: a.uri,
+          name: a.name,
+          mimeType: a.mimeType ?? "application/octet-stream",
+          kind: a.mimeType?.startsWith("image/") ? "image" : "file",
+        })),
+      );
+    } catch (e: any) {
+      // Swallow the concurrent-pick race; surface anything else.
+      if (!String(e?.message ?? "").includes("Different document picking")) {
+        Alert.alert("Couldn't open files", "Please try again.");
+      }
+    } finally {
+      pickingRef.current = false;
+    }
   };
 
   const onAttach = () => {
@@ -243,16 +313,31 @@ export default function ConversationScreen() {
         urls.push(url);
       }
       const msg = await messagesService.sendMessage(id, text, urls);
+      outboxRemove(id, tempId); // delivered — stop tracking it
       setMessages((arr) => {
         const withoutTemp = arr.filter((m) => m.id !== tempId);
         return withoutTemp.some((m) => m.id === msg.id)
           ? withoutTemp
           : [...withoutTemp, msg];
       });
-    } catch {
+    } catch (e) {
+      const errorReason = reasonFromError(e);
+      // Persist the failure so it survives leaving the thread (module-level),
+      // and reflect it in the UI if we're still mounted.
+      const existing = outboxGet(id).find((m) => m.id === tempId);
+      if (existing) {
+        outboxUpsert(id, {
+          ...existing,
+          pending: false,
+          failed: true,
+          errorReason,
+        });
+      }
       setMessages((arr) =>
         arr.map((m) =>
-          m.id === tempId ? { ...m, pending: false, failed: true } : m,
+          m.id === tempId
+            ? { ...m, pending: false, failed: true, errorReason }
+            : m,
         ),
       );
     }
@@ -276,6 +361,9 @@ export default function ConversationScreen() {
       pending: true,
       localAttachments: atts,
     };
+    // Track it in the outbox up front so a failure survives navigating away
+    // mid-send (the screen can unmount before deliver settles).
+    outboxUpsert(id, optimistic);
     setMessages((arr) => [...arr, optimistic]);
     setDraft("");
     setAttachments([]);
@@ -283,9 +371,13 @@ export default function ConversationScreen() {
   };
 
   const retry = (m: ChatMessage) => {
+    if (!id) return;
+    outboxUpsert(id, { ...m, failed: false, pending: true, errorReason: undefined });
     setMessages((arr) =>
       arr.map((x) =>
-        x.id === m.id ? { ...x, failed: false, pending: true } : x,
+        x.id === m.id
+          ? { ...x, failed: false, pending: true, errorReason: undefined }
+          : x,
       ),
     );
     void deliver(m.id, m.text, m.localAttachments ?? []);
@@ -733,18 +825,34 @@ function Bubble({
           {message.failed ? (
             <Pressable
               onPress={onRetry}
-              style={{ flexDirection: "row", alignItems: "center", gap: 3 }}
+              style={{ alignItems: "flex-end", gap: 1 }}
             >
-              <Ionicons name="alert-circle" size={12} color="#d9534f" />
-              <Text
-                style={{
-                  fontFamily: "Inter_600SemiBold",
-                  fontSize: 10.5,
-                  color: "#d9534f",
-                }}
-              >
-                Failed · Tap to retry
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                <Ionicons name="alert-circle" size={12} color="#d9534f" />
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 10.5,
+                    color: "#d9534f",
+                  }}
+                >
+                  Failed · Tap to retry
+                </Text>
+              </View>
+              {message.errorReason ? (
+                <Text
+                  style={{
+                    fontFamily: "Inter_500Medium",
+                    fontSize: 9.5,
+                    color: "#d9534f",
+                    opacity: 0.85,
+                    maxWidth: 220,
+                    textAlign: "right",
+                  }}
+                >
+                  {message.errorReason}
+                </Text>
+              ) : null}
             </Pressable>
           ) : message.pending ? (
             <>
