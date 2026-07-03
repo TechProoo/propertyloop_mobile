@@ -62,9 +62,27 @@ const agentsService = {
   },
   initCheckout(
     tier: "STANDARD" | "PRO",
+    returnUrl?: string,
   ): Promise<{ paymentUrl: string; reference: string }> {
     return api
-      .post("/agents/me/subscription/checkout", { tier })
+      .post("/agents/me/subscription/checkout", {
+        tier,
+        ...(returnUrl ? { returnUrl } : {}),
+      })
+      .then((r) => r.data);
+  },
+  /**
+   * Actively confirm a subscription charge with Paystack (verify-on-return).
+   * Activates the plan server-side without waiting on the webhook.
+   */
+  verifySubscription(reference: string): Promise<{
+    paymentStatus: "success" | "failed" | "pending";
+    tier: AgentSubscription["tier"];
+    status: AgentSubscription["status"];
+    renewsAt: string | null;
+  }> {
+    return api
+      .get(`/payments/subscription/verify/${reference}`)
       .then((r) => r.data);
   },
   cancelSubscription(): Promise<{ success: boolean }> {

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Linking,
   Pressable,
   ScrollView,
   Text,
@@ -8,6 +7,8 @@ import {
 } from "react-native";
 import { Alert } from "@/lib/dialog";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import agentsService from "@/api/services/agents";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -61,18 +62,55 @@ export default function AgentPayScreen() {
       );
       return;
     }
-    // Paid tiers: get a Paystack checkout URL and open it in the browser.
+    // Paid tiers: open Paystack in an in-app browser that returns via deep
+    // link, then actively verify with the backend so the plan is ACTIVE
+    // before we route to the dashboard (no more "paid but not activated"
+    // when the webhook is slow or missed).
     setPaying(true);
     try {
-      const { paymentUrl } = await agentsService.initCheckout(
+      const returnUrl = Linking.createURL("payment-callback");
+      const { paymentUrl, reference } = await agentsService.initCheckout(
         tier as "STANDARD" | "PRO",
+        returnUrl,
       );
-      await Linking.openURL(paymentUrl);
-      Alert.alert(
-        "Complete payment",
-        "Finish checkout in your browser. Your plan activates once payment is confirmed.",
-        [{ text: "Done", onPress: () => router.replace("/(agent-tabs)" as Href) }],
-      );
+
+      const result = await WebBrowser.openAuthSessionAsync(paymentUrl, returnUrl);
+
+      // Whether it redirected back or the user closed the sheet, confirm the
+      // charge with Paystack — retrying briefly while it settles.
+      let activated = false;
+      for (let i = 0; i < 6 && !activated; i++) {
+        try {
+          const res = await agentsService.verifySubscription(reference);
+          if (res.paymentStatus === "success" || res.status === "ACTIVE") {
+            activated = true;
+            break;
+          }
+          if (res.paymentStatus === "failed") break;
+        } catch {
+          /* keep trying while the charge settles */
+        }
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+
+      if (activated) {
+        Alert.alert(
+          "Plan activated",
+          `Your ${TIER_LABEL[tier]} is live. Welcome aboard!`,
+          [{ text: "Continue", onPress: () => router.replace("/(agent-tabs)" as Href) }],
+        );
+      } else if (result.type === "cancel" || result.type === "dismiss") {
+        Alert.alert(
+          "Payment not completed",
+          "If you finished paying, your plan will activate shortly — check your profile in a moment.",
+        );
+      } else {
+        Alert.alert(
+          "Confirming payment",
+          "We're confirming your payment with Paystack. Your plan will show as active shortly.",
+          [{ text: "OK", onPress: () => router.replace("/(agent-tabs)" as Href) }],
+        );
+      }
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? "Couldn't start checkout. Try again.";
       Alert.alert("Checkout failed", Array.isArray(msg) ? msg.join(", ") : msg);
