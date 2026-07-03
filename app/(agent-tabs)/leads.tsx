@@ -90,6 +90,9 @@ export default function AgentLeadsScreen() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  // Which viewing is mid-action (confirm/decline) — drives the card loader so
+  // the agent gets feedback while the request is in flight.
+  const [busyViewingId, setBusyViewingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -125,15 +128,21 @@ export default function AgentLeadsScreen() {
   // ─── Viewing actions ────────────────────────────────────────────────────
   const patchViewing = (u: Viewing) => setViewings((arr) => arr.map((x) => (x.id === u.id ? u : x)));
   const confirmViewing = async (v: Viewing) => {
+    if (busyViewingId) return;
+    setBusyViewingId(v.id);
     try { patchViewing(await viewingsService.confirm(v.id)); }
     catch { Alert.alert("Couldn’t confirm", "Please try again."); }
+    finally { setBusyViewingId(null); }
   };
   const cancelViewing = (v: Viewing) =>
     Alert.alert("Decline viewing?", `${v.clientName} · ${v.listing?.title ?? "this listing"}`, [
       { text: "Keep", style: "cancel" },
       { text: "Decline", style: "destructive", onPress: async () => {
+        if (busyViewingId) return;
+        setBusyViewingId(v.id);
         try { patchViewing(await viewingsService.cancel(v.id)); }
         catch { Alert.alert("Couldn’t decline", "Please try again."); }
+        finally { setBusyViewingId(null); }
       } },
     ]);
   const rescheduleViewing = (v: Viewing) =>
@@ -184,7 +193,7 @@ export default function AgentLeadsScreen() {
         ) : (
           <View className="px-4 pt-3 gap-3">
             {showViewings && viewings.map((v) => (
-              <ViewingCard key={v.id} viewing={v} onConfirm={() => confirmViewing(v)} onDecline={() => cancelViewing(v)} onReschedule={() => rescheduleViewing(v)} />
+              <ViewingCard key={v.id} viewing={v} busy={busyViewingId === v.id} onConfirm={() => confirmViewing(v)} onDecline={() => cancelViewing(v)} onReschedule={() => rescheduleViewing(v)} />
             ))}
             {showInquiries && leads.map((l) => (
               <LeadCard key={l.id} lead={l} viewerRole={user?.role as ConversationRole} onChanged={load} />
@@ -314,7 +323,7 @@ function OfferCard({ offer, onChanged }: { offer: Offer; onChanged: () => void }
 }
 
 // ─── Real viewing card (unchanged behaviour) ──────────────────────────────
-function ViewingCard({ viewing, onConfirm, onDecline, onReschedule }: { viewing: Viewing; onConfirm: () => void; onDecline: () => void; onReschedule: () => void }) {
+function ViewingCard({ viewing, busy, onConfirm, onDecline, onReschedule }: { viewing: Viewing; busy?: boolean; onConfirm: () => void; onDecline: () => void; onReschedule: () => void }) {
   const meta = V_STATUS[viewing.status];
   const open = viewing.status === "PENDING" || viewing.status === "CONFIRMED";
 
@@ -344,11 +353,21 @@ function ViewingCard({ viewing, onConfirm, onDecline, onReschedule }: { viewing:
       </View>
 
       {open && (
-        <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
-          <ActionBtn label="Reschedule" soft onPress={onReschedule} />
-          <ActionBtn label="Decline" onPress={onDecline} color="#b3261e" />
-          {viewing.status === "PENDING" ? <ActionBtn label="Confirm" filled onPress={onConfirm} /> : null}
-        </View>
+        busy ? (
+          <View
+            className="flex-row items-center justify-center gap-2"
+            style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df", paddingVertical: 13 }}
+          >
+            <BouncyLoader size="small" color={PRIMARY} />
+            <Text className="text-[13px] font-sans-bold text-ink-3">Working…</Text>
+          </View>
+        ) : (
+          <View className="flex-row" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
+            <ActionBtn label="Reschedule" soft onPress={onReschedule} />
+            <ActionBtn label="Decline" onPress={onDecline} color="#b3261e" />
+            {viewing.status === "PENDING" ? <ActionBtn label="Confirm" filled onPress={onConfirm} /> : null}
+          </View>
+        )
       )}
     </View>
   );
