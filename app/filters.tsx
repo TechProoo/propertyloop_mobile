@@ -2,19 +2,41 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-const TYPES = ["Any", "Sale", "Rent", "Residential", "Commercial", "Land", "Apartment", "Duplex", "Detached", "Semi-detached", "Penthouse"];
+const TYPES = [
+  "Any",
+  "Sale",
+  "Rent",
+  "Residential",
+  "Commercial",
+  "Land",
+  "Apartment",
+  "Duplex",
+  "Detached",
+  "Semi-detached",
+  "Penthouse",
+];
 const BEDS = ["Any", "1+", "2+", "3+", "4+", "5+"];
 const BATHS = ["Any", "1+", "2+", "3+", "4+"];
 const AMENITIES = [
-  "Pool", "Gym", "Generator", "Security", "Parking", "Furnished",
-  "Pet-friendly", "Garden", "Sea view",
+  "Pool",
+  "Gym",
+  "Generator",
+  "Security",
+  "Parking",
+  "Furnished",
+  "Pet-friendly",
+  "Garden",
+  "Sea view",
 ];
 const TRUST = ["Verified agent", "Title-verified", "PropertyLoop logbook"];
 
@@ -31,7 +53,10 @@ export default function FiltersScreen() {
   const [baths, setBaths] = useState("Any");
   const [minPrice, setMinPrice] = useState("60000000");
   const [maxPrice, setMaxPrice] = useState("150000000");
-  const [amenities, setAmenities] = useState<string[]>(["Generator", "Parking"]);
+  const [amenities, setAmenities] = useState<string[]>([
+    "Generator",
+    "Parking",
+  ]);
   const [trust, setTrust] = useState<string[]>(["Verified agent"]);
 
   const toggle = (
@@ -54,7 +79,7 @@ export default function FiltersScreen() {
 
   const apply = () => {
     const q: Record<string, string> = {};
-    
+
     // Map Sale/Rent to type parameter, others to propertyType
     if (type !== "Any") {
       if (type === "Sale") {
@@ -66,7 +91,7 @@ export default function FiltersScreen() {
         q.propertyType = type;
       }
     }
-    
+
     if (beds !== "Any") q.minBeds = String(parseInt(beds, 10));
     if (baths !== "Any") q.minBaths = String(parseInt(baths, 10));
     if (minPrice) q.minPrice = minPrice;
@@ -81,7 +106,12 @@ export default function FiltersScreen() {
       {/* Drag handle */}
       <View className="items-center pt-2 pb-1">
         <View
-          style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: "#d3cdc1" }}
+          style={{
+            width: 38,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: "#d3cdc1",
+          }}
         />
       </View>
 
@@ -103,8 +133,18 @@ export default function FiltersScreen() {
         {/* Price */}
         <SectionLabel>Price range</SectionLabel>
         <View className="flex-row gap-2.5 mt-2">
-          <PriceField label="Min" value={minPrice} onChange={setMinPrice} placeholder="₦0" />
-          <PriceField label="Max" value={maxPrice} onChange={setMaxPrice} placeholder="₦ any" />
+          <PriceField
+            label="Min"
+            value={minPrice}
+            onChange={setMinPrice}
+            placeholder="₦0"
+          />
+          <PriceField
+            label="Max"
+            value={maxPrice}
+            onChange={setMaxPrice}
+            placeholder="₦ any"
+          />
         </View>
         <Text className="text-[11.5px] text-ink-3 mt-2">
           {minPrice ? fmtNaira(Number(minPrice)) : "₦0"} —{" "}
@@ -151,9 +191,13 @@ export default function FiltersScreen() {
                     borderColor: "#d3cdc1",
                   }}
                 >
-                  {on && <Ionicons name="checkmark" size={13} color="#ffffff" />}
+                  {on && (
+                    <Ionicons name="checkmark" size={13} color="#ffffff" />
+                  )}
                 </View>
-                <Text className="flex-1 text-[13.5px] font-sans-bold text-ink">{t}</Text>
+                <Text className="flex-1 text-[13.5px] font-sans-bold text-ink">
+                  {t}
+                </Text>
                 <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
               </Pressable>
             );
