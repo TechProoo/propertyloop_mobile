@@ -104,8 +104,16 @@ export function DialogHost() {
   const dismiss = useCallback(() => setQueue((q) => q.slice(1)), []);
   const press = useCallback(
     (b: AlertButton) => {
-      b.onPress?.();
+      // Close this dialog first, then run the action once the modal has fully
+      // dismissed. On iOS a second modal — an image/document picker, share
+      // sheet, etc. — cannot present while this dialog is still on screen, so a
+      // picker launched straight from a button's onPress would silently never
+      // appear. Deferring past the dismiss animation is what lets it open.
       dismiss();
+      if (b.onPress) {
+        const run = b.onPress;
+        setTimeout(run, 300);
+      }
     },
     [dismiss],
   );
