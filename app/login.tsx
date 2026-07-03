@@ -218,7 +218,10 @@ export default function LoginScreen() {
         {/* Footer */}
         <View className="px-6 pb-8 flex-row items-center justify-center">
           <Text className="text-[13px] text-ink-3">New here? </Text>
-          <Pressable onPress={() => router.replace("/role-select" as Href)}>
+          <Pressable
+            onPress={() => router.push("/role-select" as Href)}
+            hitSlop={8}
+          >
             <Text className="text-[13px] font-sans-bold text-primary">
               Create an account
             </Text>
