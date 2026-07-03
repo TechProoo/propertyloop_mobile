@@ -144,7 +144,11 @@ export default function ExploreMapScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 12, paddingHorizontal: 18, paddingTop: 12 }}
+          contentContainerStyle={{
+            gap: 12,
+            paddingHorizontal: 18,
+            paddingTop: 12,
+          }}
         >
           {items.slice(0, 20).map((c) => (
             <Pressable
@@ -186,9 +190,22 @@ export default function ExploreMapScreen() {
                 >
                   {c.title}
                 </Text>
-                <Text className="text-[11px] text-ink-3 mt-0.5" numberOfLines={1}>
-                  {c.location} · {c.beds}B / {c.baths}Ba
-                </Text>
+                <View className="flex-row items-center gap-1.5 mt-0.5">
+                  <Text
+                    className="text-[11px] text-ink-3 flex-1"
+                    numberOfLines={1}
+                  >
+                    {c.location}
+                  </Text>
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons name="bed-outline" size={10} color={INK_2} />
+                    <Text className="text-[10px] text-ink-3">{c.beds}</Text>
+                  </View>
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons name="water-outline" size={10} color={INK_2} />
+                    <Text className="text-[10px] text-ink-3">{c.baths}</Text>
+                  </View>
+                </View>
               </View>
             </Pressable>
           ))}

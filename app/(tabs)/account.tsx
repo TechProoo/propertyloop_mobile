@@ -8,7 +8,10 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
 import bookmarksService from "@/api/services/bookmarks";
 import viewingsService, { type Viewing } from "@/api/services/viewings";
-import offersService, { type Offer, type PropertyPurchase } from "@/api/services/offers";
+import offersService, {
+  type Offer,
+  type PropertyPurchase,
+} from "@/api/services/offers";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
 
 type IonName = keyof typeof Ionicons.glyphMap;
@@ -41,7 +44,20 @@ const TONE_FG: Record<UpNextTone, string> = {
 };
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function fmtWhen(iso: string) {
   const d = new Date(iso);
@@ -79,7 +95,9 @@ export default function AccountScreen() {
         viewingsService.listMine().catch(() => ({ items: [] as Viewing[] })),
         offersService.listMine().catch(() => ({ items: [] as Offer[] })),
         offersService.listPurchases().catch(() => [] as PropertyPurchase[]),
-        vendorJobsService.listMine({ limit: 20 }).catch(() => ({ items: [] as VendorJob[] })),
+        vendorJobsService
+          .listMine({ limit: 20 })
+          .catch(() => ({ items: [] as VendorJob[] })),
       ]);
       setBookmarksCount(bm.length);
       setViewings(vw.items);
@@ -109,12 +127,14 @@ export default function AccountScreen() {
         )
         .sort(
           (a, b) =>
-            new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime(),
+            new Date(a.scheduledFor).getTime() -
+            new Date(b.scheduledFor).getTime(),
         ),
     [viewings],
   );
   const activeOffers = useMemo(
-    () => offers.filter((o) => o.status === "PENDING" || o.status === "COUNTERED"),
+    () =>
+      offers.filter((o) => o.status === "PENDING" || o.status === "COUNTERED"),
     [offers],
   );
   const activePurchases = useMemo(
@@ -134,7 +154,11 @@ export default function AccountScreen() {
         : null,
     },
     { n: String(activeOffers.length), l: "Offers", href: "/offers" },
-    { n: String(activePurchases.length), l: "Closing", href: "/purchase-progress" },
+    {
+      n: String(activePurchases.length),
+      l: "Log Book",
+      href: "/purchase-progress",
+    },
   ];
 
   const upNext = useMemo<UpNextItem[]>(() => {
@@ -202,7 +226,10 @@ export default function AccountScreen() {
   }, [upcomingViewings, offers, activePurchases]);
 
   const openJobs = jobs.filter(
-    (j) => j.status !== "CONFIRMED" && j.status !== "CANCELLED" && j.status !== "DECLINED",
+    (j) =>
+      j.status !== "CONFIRMED" &&
+      j.status !== "CANCELLED" &&
+      j.status !== "DECLINED",
   );
 
   return (
@@ -215,7 +242,12 @@ export default function AccountScreen() {
           {/* Hero */}
           <View className="bg-primary-soft px-5 pt-3 pb-5">
             <View className="flex-row items-center gap-3.5">
-              <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={56} tone="primary" />
+              <PLAvatar
+                initials={initialsOf(user?.name)}
+                uri={user?.avatarUrl}
+                size={56}
+                tone="primary"
+              />
               <View className="flex-1">
                 <Text
                   className="text-[11px] font-sans-bold tracking-widest uppercase"
@@ -241,7 +273,11 @@ export default function AccountScreen() {
                 className="w-10 h-10 rounded-full bg-white items-center justify-center"
                 hitSlop={6}
               >
-                <Ionicons name="settings-outline" size={18} color={PRIMARY_INK} />
+                <Ionicons
+                  name="settings-outline"
+                  size={18}
+                  color={PRIMARY_INK}
+                />
               </Pressable>
             </View>
 
@@ -261,7 +297,8 @@ export default function AccountScreen() {
             </View>
           ) : upNext.length === 0 ? (
             <Text className="px-5 pt-2 text-[12.5px] text-ink-3 leading-5">
-              Nothing needs your attention right now. Book a viewing or make an offer and it’ll show up here.
+              Nothing needs your attention right now. Book a viewing or make an
+              offer and it’ll show up here.
             </Text>
           ) : (
             <View className="px-4 pt-2.5 gap-2">
@@ -272,7 +309,9 @@ export default function AccountScreen() {
           )}
 
           {/* Service Loop · open jobs */}
-          <SectionLabel className="px-5 pt-4">Service Loop · open jobs</SectionLabel>
+          <SectionLabel className="px-5 pt-4">
+            Service Loop · open jobs
+          </SectionLabel>
           {loading ? (
             <View className="py-8 items-center">
               <BouncyLoader color={PRIMARY} />
@@ -296,19 +335,37 @@ export default function AccountScreen() {
 
 // ─── Subcomponents ───────────────────────────────────────────
 
-function StatBox({ n, l, href }: { n: string; l: string; href: string | null }) {
+function StatBox({
+  n,
+  l,
+  href,
+}: {
+  n: string;
+  l: string;
+  href: string | null;
+}) {
   const body = (
-    <>
-      <Text className="font-serif text-ink" style={{ fontSize: 20, letterSpacing: -0.4 }}>
+    <View className="items-center justify-center">
+      <Text
+        className="font-serif text-ink"
+        style={{ fontSize: 20, letterSpacing: -0.4 }}
+      >
         {n}
       </Text>
-      <Text className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5">
+      <Text
+        className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5"
+        numberOfLines={1}
+      >
         {l}
       </Text>
-    </>
+    </View>
   );
   const boxClass = "flex-1 bg-white rounded-xl border-line";
-  const boxStyle = { borderWidth: 0.5, paddingHorizontal: 8, paddingVertical: 10 } as const;
+  const boxStyle = {
+    borderWidth: 0.5,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  } as const;
 
   // No destination (e.g. no upcoming viewings) → dimmed, non-interactive.
   if (!href) {
@@ -375,7 +432,9 @@ function UpNextRow({ item }: { item: UpNextItem }) {
           {item.detail}
         </Text>
       </View>
-      <Text className="text-[12.5px] font-sans-bold text-primary">{item.cta}</Text>
+      <Text className="text-[12.5px] font-sans-bold text-primary">
+        {item.cta}
+      </Text>
     </Pressable>
   );
 }
@@ -407,26 +466,41 @@ function ServiceJobRow({ job }: { job: VendorJob }) {
     >
       <PLAvatar initials={initials || "SV"} size={36} tone="primary" />
       <View className="flex-1">
-        <Text className="text-[13.5px] font-sans-bold text-ink" numberOfLines={1}>
+        <Text
+          className="text-[13.5px] font-sans-bold text-ink"
+          numberOfLines={1}
+        >
           {job.vendor?.name ?? "Vendor"}
         </Text>
         <Text className="text-[11.5px] text-ink-3" numberOfLines={1}>
           {job.title}
         </Text>
         <View className="flex-row items-center gap-1.5 mt-1">
-          <View style={{ width: 6, height: 6, borderRadius: 6, backgroundColor: meta.dot }} />
+          <View
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 6,
+              backgroundColor: meta.dot,
+            }}
+          />
           <Text className="text-[10px] font-sans-bold text-ink-2 tracking-widest uppercase">
             {meta.label}
           </Text>
         </View>
       </View>
       <View className="items-end">
-        <Text className="font-serif text-ink" style={{ fontSize: 15, letterSpacing: -0.3 }}>
+        <Text
+          className="font-serif text-ink"
+          style={{ fontSize: 15, letterSpacing: -0.3 }}
+        >
           ₦{Math.round(job.vendorFee).toLocaleString("en-NG")}
         </Text>
         {job.status === "COMPLETED" && (
           <View className="mt-1 bg-primary rounded-full px-2.5 py-1">
-            <Text className="text-[10.5px] font-sans-bold text-white tracking-wider">Release</Text>
+            <Text className="text-[10.5px] font-sans-bold text-white tracking-wider">
+              Release
+            </Text>
           </View>
         )}
       </View>
