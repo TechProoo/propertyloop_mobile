@@ -4,9 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
 import { TabBarIcon, MorphingTabIndicator } from "@/components/anim";
 import { useTabBarStyle } from "@/hooks/use-tab-bar";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const PRIMARY = "#1f6f43"; // brand green — active tab (was blue in the reference)
 const INK_3 = "#7f857f";
+const BADGE = "#e5484d";
 
 type IonName = keyof typeof Ionicons.glyphMap;
 
@@ -37,6 +39,7 @@ export default function TabLayout() {
   const { tabBarStyle } = useTabBarStyle("#ffffff");
   const activeIndex = useActiveTabIndex();
   const tabBarHeight = Number(tabBarStyle.height ?? 60);
+  const unread = useUnreadMessages();
 
   return (
     <View style={{ flex: 1 }}>
@@ -69,7 +72,14 @@ export default function TabLayout() {
         <Tabs.Screen name="index"   options={{ title: "Home" }} />
         <Tabs.Screen name="explore" options={{ title: "Explore" }} />
         <Tabs.Screen name="saved"   options={{ title: "Saved" }} />
-        <Tabs.Screen name="inbox"   options={{ title: "Inbox" }} />
+        <Tabs.Screen
+          name="inbox"
+          options={{
+            title: "Inbox",
+            tabBarBadge: unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
+            tabBarBadgeStyle: { backgroundColor: BADGE, color: "#ffffff", fontSize: 10 },
+          }}
+        />
         <Tabs.Screen name="account" options={{ title: "Account" }} />
       </Tabs>
 
