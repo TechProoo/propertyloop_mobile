@@ -24,6 +24,20 @@ export function getChatSocket(): Socket {
   socket.io.on("reconnect_attempt", () => {
     if (socket) socket.io.opts.query = { token: tokenStore.getAccess() ?? "" };
   });
+  // The gateway hard-disconnects sockets whose JWT is missing/expired — and
+  // socket.io does NOT auto-reconnect after an explicit server disconnect
+  // ("io server disconnect"). Without this handler one stale token at
+  // handshake killed realtime for the whole app session (messages only
+  // appeared after leaving and reopening a chat, via the REST reload).
+  socket.on("disconnect", (reason) => {
+    if (reason === "io server disconnect" && socket) {
+      setTimeout(() => {
+        if (!socket || socket.connected) return;
+        socket.io.opts.query = { token: tokenStore.getAccess() ?? "" };
+        socket.connect();
+      }, 1500);
+    }
+  });
   return socket;
 }
 

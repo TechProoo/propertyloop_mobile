@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
   Linking,
@@ -21,7 +21,9 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { PLAvatar } from "@/components/brand/PLAvatar";
+import { PhotoViewer } from "@/components/PhotoViewer";
 import { Appear, PressableScale } from "@/components/anim/motion";
+import { useAuth } from "@/context/auth";
 import messagesService, {
   type Conversation,
   type Message,
@@ -35,10 +37,16 @@ const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
 const CREAM_2 = "#efeae1";
+const ONLINE = "#34c759";
+const READ_TICK = "#9be8b7"; // read ✓✓ on the green bubble
 
 // Up to 3 media files per message — picker, staging strip and send all share
 // this cap (the backend accepts up to 10, so 3 keeps well inside it).
 const MAX_ATT = 3;
+
+// Messages from the same sender within this window collapse into one visual
+// group (tighter spacing, single timestamp/tail on the last bubble).
+const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
 type PendingAttachment = {
   localUri: string;
@@ -152,18 +160,41 @@ const fileNameFromUrl = (u: string) => {
   }
 };
 
+// Two messages collapse into the same visual group when they're from the same
+// sender, on the same day, and close together in time.
+function sameGroup(a: ChatMessage, b: ChatMessage) {
+  return (
+    a.isYou === b.isYou &&
+    a.senderUserId === b.senderUserId &&
+    dayLabel(a.createdAt) === dayLabel(b.createdAt) &&
+    Math.abs(new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) <
+      GROUP_WINDOW_MS
+  );
+}
+
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+  const myId = user?.id;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conv, setConv] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
+  // Presence of the other participant(s), keyed by userId.
+  const [presence, setPresence] = useState<Record<string, boolean>>({});
+  const [otherTyping, setOtherTyping] = useState(false);
+  // Full-screen image viewer over every image in the thread.
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView | null>(null);
   // Guards against launching a second image/document picker while one is still
   // open — expo-document-picker throws "Different document picking in progress"
   // (and the image picker misbehaves) if called concurrently.
   const pickingRef = useRef(false);
+  // Throttle for typing pings + idle timer that sends the stop signal.
+  const lastTypingSentRef = useRef(0);
+  const typingIdleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -192,7 +223,8 @@ export default function ConversationScreen() {
     if (id) messagesService.markRead(id).catch(() => {});
   }, [id]);
 
-  // Realtime: join the conversation room and append incoming messages live.
+  // Realtime: join the room; live-append messages; track presence, typing and
+  // read receipts so the screen behaves like a modern messenger.
   useEffect(() => {
     if (!id) return;
     const socket = getChatSocket();
@@ -210,14 +242,63 @@ export default function ConversationScreen() {
           : arr;
         return [...cleaned, msg];
       });
+      // We're looking at the thread — mark their message read immediately so
+      // their ✓ flips to ✓✓ and our inbox badge stays at zero.
+      if (!msg.isYou) {
+        socket.emit("mark_read", { conversationId: id });
+        setOtherTyping(false);
+      }
     };
     socket.on("new_message", onNew);
 
+    const onPresence = (p: { userId: string; online: boolean }) => {
+      setPresence((cur) =>
+        cur[p.userId] === p.online ? cur : { ...cur, [p.userId]: p.online },
+      );
+    };
+    socket.on("presence", onPresence);
+
+    const onRead = (p: {
+      conversationId: string;
+      readerUserId: string;
+      readAt: string;
+    }) => {
+      if (p.conversationId !== id || p.readerUserId === myId) return;
+      setMessages((arr) =>
+        arr.some((m) => m.isYou && !m.read && !m.pending && !m.failed)
+          ? arr.map((m) =>
+              m.isYou && !m.pending && !m.failed ? { ...m, read: true } : m,
+            )
+          : arr,
+      );
+    };
+    socket.on("messages_read", onRead);
+
+    const onTyping = (p: {
+      conversationId: string;
+      userId: string;
+      isTyping: boolean;
+    }) => {
+      if (p.conversationId !== id || p.userId === myId) return;
+      setOtherTyping(p.isTyping);
+      // Safety: never let a lost "stopped typing" strand the indicator.
+      if (typingClearTimer.current) clearTimeout(typingClearTimer.current);
+      if (p.isTyping) {
+        typingClearTimer.current = setTimeout(() => setOtherTyping(false), 5000);
+      }
+    };
+    socket.on("user_typing", onTyping);
+
     return () => {
       socket.off("new_message", onNew);
+      socket.off("presence", onPresence);
+      socket.off("messages_read", onRead);
+      socket.off("user_typing", onTyping);
       socket.off("connect", join);
+      if (typingIdleTimer.current) clearTimeout(typingIdleTimer.current);
+      if (typingClearTimer.current) clearTimeout(typingClearTimer.current);
     };
-  }, [id]);
+  }, [id, myId]);
 
   useEffect(() => {
     const t = setTimeout(
@@ -225,7 +306,25 @@ export default function ConversationScreen() {
       80,
     );
     return () => clearTimeout(t);
-  }, [messages.length]);
+  }, [messages.length, otherTyping]);
+
+  // Tell the other side we're typing (throttled), and auto-send the stop
+  // signal after a short idle pause.
+  const onDraftChange = (text: string) => {
+    setDraft(text);
+    if (!id) return;
+    const socket = getChatSocket();
+    const now = Date.now();
+    if (text.length > 0 && now - lastTypingSentRef.current > 1500) {
+      lastTypingSentRef.current = now;
+      socket.emit("typing", { conversationId: id, isTyping: true });
+    }
+    if (typingIdleTimer.current) clearTimeout(typingIdleTimer.current);
+    typingIdleTimer.current = setTimeout(() => {
+      socket.emit("typing", { conversationId: id, isTyping: false });
+      lastTypingSentRef.current = 0;
+    }, 2200);
+  };
 
   const addAttachments = (items: PendingAttachment[]) =>
     setAttachments((cur) => [...cur, ...items].slice(0, MAX_ATT));
@@ -351,6 +450,11 @@ export default function ConversationScreen() {
   const send = () => {
     const text = draft.trim();
     if ((!text && attachments.length === 0) || !id) return;
+    // Sending implies we've stopped typing.
+    getChatSocket().emit("typing", { conversationId: id, isTyping: false });
+    if (typingIdleTimer.current) clearTimeout(typingIdleTimer.current);
+    lastTypingSentRef.current = 0;
+
     const atts = attachments;
     const tempId = `temp-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
     const optimistic: ChatMessage = {
@@ -388,8 +492,36 @@ export default function ConversationScreen() {
     void deliver(m.id, m.text, m.localAttachments ?? []);
   };
 
+  // Every image in the thread, in order — powers the full-screen viewer so
+  // users can swipe through a conversation's photos like a gallery.
+  const galleryUrls = useMemo(
+    () =>
+      messages.flatMap((m) =>
+        attachmentsOf(m)
+          .filter((a) => a.isImage)
+          .map((a) => a.uri),
+      ),
+    [messages],
+  );
+  const openImage = (uri: string) => {
+    const idx = galleryUrls.indexOf(uri);
+    if (idx >= 0) setViewerIndex(idx);
+  };
+
   const title = conv?.name ?? "Conversation";
   const canSend = draft.trim().length > 0 || attachments.length > 0;
+  const otherOnline = conv?.otherUserId
+    ? presence[conv.otherUserId]
+    : undefined;
+  const subtitle = otherTyping
+    ? "typing…"
+    : otherOnline === true
+      ? "Online"
+      : otherOnline === false
+        ? "Offline"
+        : conv?.role
+          ? conv.role.charAt(0) + conv.role.slice(1).toLowerCase()
+          : "";
 
   // Reserve room below the composer for the system nav bar. The app runs
   // edge-to-edge on Android, so without this the 3-button nav (≈48dp) sits on
@@ -441,19 +573,37 @@ export default function ConversationScreen() {
           >
             <Ionicons name="chevron-back" size={22} color={INK} />
           </PressableScale>
-          {conv?.avatar ? (
-            <Image
-              source={{ uri: conv.avatar }}
-              style={{ width: 38, height: 38, borderRadius: 19 }}
-              contentFit="cover"
-            />
-          ) : (
-            <PLAvatar initials={initialsOf(title)} size={38} tone="primary" />
-          )}
+          <View>
+            {conv?.avatar ? (
+              <Image
+                source={{ uri: conv.avatar }}
+                style={{ width: 40, height: 40, borderRadius: 20 }}
+                contentFit="cover"
+              />
+            ) : (
+              <PLAvatar initials={initialsOf(title)} size={40} tone="primary" />
+            )}
+            {/* Presence dot pinned to the avatar */}
+            {otherOnline !== undefined && (
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: -1,
+                  right: -1,
+                  width: 13,
+                  height: 13,
+                  borderRadius: 7,
+                  backgroundColor: otherOnline ? ONLINE : "#b9b3a8",
+                  borderWidth: 2.5,
+                  borderColor: "#fffbf4",
+                }}
+              />
+            )}
+          </View>
           <View className="flex-1">
             <View className="flex-row items-center gap-1">
               <Text
-                className="text-[14.5px] font-sans-bold text-ink"
+                className="text-[15px] font-sans-bold text-ink"
                 numberOfLines={1}
               >
                 {title}
@@ -462,9 +612,18 @@ export default function ConversationScreen() {
                 <Ionicons name="shield-checkmark" size={13} color={PRIMARY} />
               ) : null}
             </View>
-            {conv?.role ? (
-              <Text className="text-[11px] font-sans-semibold text-ink-3 mt-0.5">
-                {conv.role.charAt(0) + conv.role.slice(1).toLowerCase()}
+            {subtitle ? (
+              <Text
+                className="text-[11.5px] font-sans-semibold mt-0.5"
+                style={{
+                  color: otherTyping
+                    ? PRIMARY
+                    : otherOnline
+                      ? ONLINE
+                      : INK_3,
+                }}
+              >
+                {subtitle}
               </Text>
             ) : null}
           </View>
@@ -499,7 +658,7 @@ export default function ConversationScreen() {
         ) : (
           <ScrollView
             ref={scrollRef}
-            contentContainerStyle={{ padding: 16, gap: 10 }}
+            contentContainerStyle={{ padding: 16, paddingBottom: 10 }}
             showsVerticalScrollIndicator={false}
             onContentSizeChange={() =>
               scrollRef.current?.scrollToEnd({ animated: false })
@@ -527,18 +686,80 @@ export default function ConversationScreen() {
             ) : (
               messages.map((m, i) => {
                 const prev = messages[i - 1];
+                const next = messages[i + 1];
                 const showDay =
-                  !prev ||
-                  dayLabel(prev.createdAt) !== dayLabel(m.createdAt);
+                  !prev || dayLabel(prev.createdAt) !== dayLabel(m.createdAt);
+                const groupedWithPrev = !!prev && !showDay && sameGroup(prev, m);
+                const groupedWithNext =
+                  !!next &&
+                  dayLabel(next.createdAt) === dayLabel(m.createdAt) &&
+                  sameGroup(m, next);
                 return (
                   <View key={m.id}>
                     {showDay ? <DaySeparator iso={m.createdAt} /> : null}
                     <Appear from="up" duration={320}>
-                      <Bubble message={m} onRetry={() => retry(m)} />
+                      <Bubble
+                        message={m}
+                        isLastInGroup={!groupedWithNext}
+                        groupedWithPrev={groupedWithPrev}
+                        avatarUri={conv?.avatar}
+                        avatarInitials={initialsOf(conv?.name)}
+                        onRetry={() => retry(m)}
+                        onImagePress={openImage}
+                      />
                     </Appear>
                   </View>
                 );
               })
+            )}
+            {/* Typing indicator bubble */}
+            {otherTyping && (
+              <Appear from="up" duration={220}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    gap: 6,
+                    marginTop: 10,
+                  }}
+                >
+                  {conv?.avatar ? (
+                    <Image
+                      source={{ uri: conv.avatar }}
+                      style={{ width: 24, height: 24, borderRadius: 12 }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <PLAvatar
+                      initials={initialsOf(conv?.name)}
+                      size={24}
+                      tone="primary"
+                    />
+                  )}
+                  <View
+                    style={{
+                      backgroundColor: "#ffffff",
+                      borderWidth: 0.5,
+                      borderColor: LINE,
+                      borderRadius: 18,
+                      borderBottomLeftRadius: 6,
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: "Inter_700Bold",
+                        fontSize: 14,
+                        letterSpacing: 2,
+                        color: INK_3,
+                      }}
+                    >
+                      •••
+                    </Text>
+                  </View>
+                </View>
+              </Appear>
             )}
           </ScrollView>
         )}
@@ -665,7 +886,7 @@ export default function ConversationScreen() {
           >
             <TextInput
               value={draft}
-              onChangeText={setDraft}
+              onChangeText={onDraftChange}
               placeholder={`Message ${conv?.name ?? ""}…`}
               placeholderTextColor={INK_3}
               className="text-[14px] text-ink"
@@ -703,13 +924,21 @@ export default function ConversationScreen() {
           </PressableScale>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Full-screen image viewer — swipe through every photo in the thread */}
+      <PhotoViewer
+        visible={viewerIndex !== null}
+        images={galleryUrls}
+        initialIndex={Math.max(0, viewerIndex ?? 0)}
+        onClose={() => setViewerIndex(null)}
+      />
     </SafeAreaView>
   );
 }
 
 function DaySeparator({ iso }: { iso: string }) {
   return (
-    <View style={{ alignItems: "center", marginVertical: 6 }}>
+    <View style={{ alignItems: "center", marginVertical: 10 }}>
       <View
         style={{
           paddingHorizontal: 12,
@@ -752,12 +981,33 @@ function attachmentsOf(m: ChatMessage): RenderAttachment[] {
   }));
 }
 
+/** Sent/read ticks on your own delivered messages: ✓ sent, ✓✓ read. */
+function Ticks({ read }: { read?: boolean }) {
+  return (
+    <Ionicons
+      name={read ? "checkmark-done" : "checkmark"}
+      size={13}
+      color={read ? READ_TICK : "rgba(255,255,255,0.75)"}
+    />
+  );
+}
+
 function Bubble({
   message,
+  isLastInGroup,
+  groupedWithPrev,
+  avatarUri,
+  avatarInitials,
   onRetry,
+  onImagePress,
 }: {
   message: ChatMessage;
+  isLastInGroup: boolean;
+  groupedWithPrev: boolean;
+  avatarUri?: string | null;
+  avatarInitials: string;
   onRetry: () => void;
+  onImagePress: (uri: string) => void;
 }) {
   const isMe = message.isYou;
   const atts = attachmentsOf(message);
@@ -765,27 +1015,54 @@ function Bubble({
   const textColor = isMe ? "#ffffff" : INK;
   const subColor = isMe ? "rgba(255,255,255,0.75)" : INK_3;
 
-  const openRemote = (a: RenderAttachment) => {
-    if (a.remote) Linking.openURL(a.uri).catch(() => {});
+  const openAttachment = (a: RenderAttachment) => {
+    if (a.isImage) {
+      onImagePress(a.uri);
+    } else if (a.remote) {
+      Linking.openURL(a.uri).catch(() => {});
+    }
   };
 
   return (
-    <View style={{ alignItems: isMe ? "flex-end" : "flex-start" }}>
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: isMe ? "flex-end" : "flex-start",
+        alignItems: "flex-end",
+        gap: 6,
+        marginTop: groupedWithPrev ? 2 : 10,
+      }}
+    >
+      {/* Other party's avatar — once per group, aligned to the last bubble */}
+      {!isMe &&
+        (isLastInGroup ? (
+          avatarUri ? (
+            <Image
+              source={{ uri: avatarUri }}
+              style={{ width: 24, height: 24, borderRadius: 12 }}
+              contentFit="cover"
+            />
+          ) : (
+            <PLAvatar initials={avatarInitials} size={24} tone="primary" />
+          )
+        ) : (
+          <View style={{ width: 24 }} />
+        ))}
       <View
         style={{
-          maxWidth: "80%",
+          maxWidth: "78%",
           paddingHorizontal: atts.length && !message.text ? 6 : 12,
           paddingVertical: atts.length && !message.text ? 6 : 9,
-          borderRadius: 20,
-          borderBottomRightRadius: isMe ? 6 : 20,
-          borderBottomLeftRadius: isMe ? 20 : 6,
+          borderRadius: 18,
+          borderBottomRightRadius: isMe && isLastInGroup ? 5 : 18,
+          borderBottomLeftRadius: !isMe && isLastInGroup ? 5 : 18,
           backgroundColor: bubbleBg,
           borderWidth: isMe ? 0 : 0.5,
           borderColor: LINE,
           gap: atts.length ? 6 : 0,
           shadowColor: isMe ? PRIMARY : "#1a2120",
-          shadowOpacity: isMe ? 0.18 : 0.05,
-          shadowRadius: 6,
+          shadowOpacity: isMe ? 0.16 : 0.04,
+          shadowRadius: 5,
           shadowOffset: { width: 0, height: 2 },
           elevation: 1,
         }}
@@ -793,17 +1070,17 @@ function Bubble({
         {/* Attachments */}
         {atts.map((a, i) =>
           a.isImage ? (
-            <Pressable key={i} onPress={() => openRemote(a)}>
+            <Pressable key={i} onPress={() => openAttachment(a)}>
               <Image
                 source={{ uri: a.uri }}
-                style={{ width: 200, height: 150, borderRadius: 12 }}
+                style={{ width: 210, height: 158, borderRadius: 12 }}
                 contentFit="cover"
               />
             </Pressable>
           ) : (
             <Pressable
               key={i}
-              onPress={() => openRemote(a)}
+              onPress={() => openAttachment(a)}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -840,8 +1117,8 @@ function Bubble({
           <Text
             style={{
               fontFamily: "Inter_500Medium",
-              fontSize: 14,
-              lineHeight: 20,
+              fontSize: 14.5,
+              lineHeight: 21,
               color: textColor,
               paddingHorizontal: atts.length && !message.text ? 6 : 0,
             }}
@@ -850,65 +1127,74 @@ function Bubble({
           </Text>
         ) : null}
 
-        {/* Meta: time / sending / failed */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            alignSelf: "flex-end",
-            gap: 4,
-            marginTop: 3,
-          }}
-        >
-          {message.failed ? (
-            <Pressable
-              onPress={onRetry}
-              style={{ alignItems: "flex-end", gap: 1 }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                <Ionicons name="alert-circle" size={12} color="#d9534f" />
-                <Text
-                  style={{
-                    fontFamily: "Inter_600SemiBold",
-                    fontSize: 10.5,
-                    color: "#d9534f",
-                  }}
-                >
-                  Failed · Tap to retry
-                </Text>
-              </View>
-              {message.errorReason ? (
-                <Text
-                  style={{
-                    fontFamily: "Inter_500Medium",
-                    fontSize: 9.5,
-                    color: "#d9534f",
-                    opacity: 0.85,
-                    maxWidth: 220,
-                    textAlign: "right",
-                  }}
-                >
-                  {message.errorReason}
-                </Text>
-              ) : null}
-            </Pressable>
-          ) : message.pending ? (
-            <>
-              <Ionicons name="time-outline" size={11} color={subColor} />
+        {/* Meta: time + ticks / sending / failed — only on the last of a group */}
+        {message.failed ? (
+          <Pressable
+            onPress={onRetry}
+            style={{ alignItems: "flex-end", gap: 1, marginTop: 3 }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Ionicons name="alert-circle" size={12} color="#ffd3d0" />
               <Text
-                style={{ fontFamily: "Inter_500Medium", fontSize: 10, color: subColor }}
+                style={{
+                  fontFamily: "Inter_600SemiBold",
+                  fontSize: 10.5,
+                  color: isMe ? "#ffd3d0" : "#d9534f",
+                }}
               >
-                Sending…
+                Failed · Tap to retry
               </Text>
-            </>
-          ) : (
+            </View>
+            {message.errorReason ? (
+              <Text
+                style={{
+                  fontFamily: "Inter_500Medium",
+                  fontSize: 9.5,
+                  color: isMe ? "#ffd3d0" : "#d9534f",
+                  opacity: 0.9,
+                  maxWidth: 220,
+                  textAlign: "right",
+                }}
+              >
+                {message.errorReason}
+              </Text>
+            ) : null}
+          </Pressable>
+        ) : message.pending ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              alignSelf: "flex-end",
+              gap: 4,
+              marginTop: 3,
+            }}
+          >
+            <Ionicons name="time-outline" size={11} color={subColor} />
+          </View>
+        ) : isLastInGroup ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              alignSelf: "flex-end",
+              gap: 4,
+              marginTop: 3,
+            }}
+          >
             <Text
               style={{ fontFamily: "Inter_500Medium", fontSize: 10, color: subColor }}
             >
               {formatTime(message.createdAt)}
             </Text>
-          )}
-        </View>
+            {isMe ? <Ticks read={message.read} /> : null}
+          </View>
+        ) : isMe ? (
+          // Grouped middles still show ticks (tiny), so read state is never hidden
+          <View style={{ alignSelf: "flex-end", marginTop: 2 }}>
+            <Ticks read={message.read} />
+          </View>
+        ) : null}
       </View>
     </View>
   );
