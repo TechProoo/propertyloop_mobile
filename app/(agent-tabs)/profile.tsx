@@ -30,7 +30,7 @@ const TIER_LABEL: Record<string, string> = {
 const TIER_PRICE: Record<string, string> = {
   FOUNDING: "Free forever",
   STANDARD: "₦5,000 / month",
-  PRO: "₦12,000 / month",
+  PRO: "₦20,000 / month",
 };
 
 type ToggleTab = "profile" | "settings";

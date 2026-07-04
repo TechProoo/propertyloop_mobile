@@ -49,7 +49,7 @@ const PLANS: Plan[] = [
   {
     id: "PRO",
     name: "Pro",
-    price: "₦12,000",
+    price: "₦20,000",
     period: "/ month",
     hint: "Unlimited listings + everything",
     features: [

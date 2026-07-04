@@ -19,7 +19,7 @@ type Tier = "FOUNDING" | "STANDARD" | "PRO";
 const PRICES_NAIRA: Record<Tier, number> = {
   FOUNDING: 0,
   STANDARD: 5000,
-  PRO: 12000,
+  PRO: 20000,
 };
 const VAT_RATE = 0.075;
 
