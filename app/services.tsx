@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,7 +12,7 @@ import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { SERVICE_CATEGORIES_GRID } from "@/mocks/services";
 import vendorsService from "@/api/services/vendors";
@@ -58,6 +59,11 @@ function initialsOf(name?: string | null) {
 }
 
 export default function ServicesScreen() {
+  const insets = useSafeAreaInsets();
+  // Clear the edge-to-edge Android nav bar (falls back to 48dp before the
+  // inset resolves) so the escrow strip isn't tucked under the nav buttons.
+  const bottomPad =
+    (insets.bottom > 0 ? insets.bottom : Platform.OS === "android" ? 48 : 0) + 20;
   const [selected, setSelected] = useState("all");
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +154,7 @@ export default function ServicesScreen() {
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: bottomPad }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
