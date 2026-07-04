@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Pressable,
   Text,
@@ -12,6 +12,11 @@ import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
+import {
+  RichEditor,
+  RichToolbar,
+  actions,
+} from "react-native-pell-rich-editor";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import {
@@ -124,6 +129,8 @@ export default function CreateListingScreen() {
   const [year, setYear] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
   const [description, setDescription] = useState("");
+  // Rich description editor (HTML in/out — matches the website's Quill).
+  const richRef = useRef<RichEditor>(null);
 
   // Editing: load the real listing and prefill every field.
   useEffect(() => {
@@ -326,8 +333,14 @@ export default function CreateListingScreen() {
 
   // Description must reach a minimum word count so buyers get a real picture
   // of the home — short blurbs hurt match quality and listing trust.
+  // The editor produces HTML (same as the website's Quill), so strip markup
+  // and entities before counting words.
   const MIN_WORDS = 15;
-  const wordCount = description.trim() ? description.trim().split(/\s+/).length : 0;
+  const descriptionText = description
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&[a-z#0-9]+;/gi, " ")
+    .trim();
+  const wordCount = descriptionText ? descriptionText.split(/\s+/).length : 0;
   const wordsLeft = Math.max(0, MIN_WORDS - wordCount);
 
   const canNext =
@@ -794,16 +807,46 @@ export default function CreateListingScreen() {
               </View>
 
               <Label className="mt-5">Description</Label>
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                textAlignVertical="top"
-                placeholder="What makes this home special? Layout, neighbourhood, finishes."
-                placeholderTextColor={INK_3}
-                className="bg-white border border-line rounded-2xl px-4 py-3 text-ink text-[14px] mt-2"
-                style={{ minHeight: 120 }}
-              />
+              <View
+                className="bg-white border border-line rounded-2xl mt-2 overflow-hidden"
+                style={{ borderWidth: 1 }}
+              >
+                {/* Formatting toolbar — bold / italic / lists, mirroring the
+                    website's Quill editor. Output is HTML, which both the web
+                    and the app's RichText renderer already display. */}
+                <RichToolbar
+                  editor={richRef}
+                  actions={[
+                    actions.setBold,
+                    actions.setItalic,
+                    actions.insertBulletsList,
+                    actions.insertOrderedList,
+                    actions.undo,
+                    actions.redo,
+                  ]}
+                  iconTint={INK_2}
+                  selectedIconTint={PRIMARY}
+                  style={{
+                    backgroundColor: "#f7f4ee",
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#ece6df",
+                  }}
+                />
+                <RichEditor
+                  ref={richRef}
+                  initialContentHTML={description}
+                  onChange={setDescription}
+                  placeholder="What makes this home special? Layout, neighbourhood, finishes."
+                  initialHeight={140}
+                  editorStyle={{
+                    backgroundColor: "#ffffff",
+                    color: INK,
+                    placeholderColor: INK_3,
+                    contentCSSText:
+                      "font-size:14px; line-height:1.5; padding:10px 12px;",
+                  }}
+                />
+              </View>
               <Text
                 className="text-[11px] mt-1.5"
                 style={{ color: wordCount < MIN_WORDS ? "#b3261e" : INK_3 }}
