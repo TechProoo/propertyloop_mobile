@@ -4,9 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
 import { TabBarIcon, MorphingTabIndicator } from "@/components/anim";
 import { useTabBarStyle } from "@/hooks/use-tab-bar";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const PRIMARY = "#1f6f43";
 const INK_3 = "#7f857f";
+const BADGE = "#e5484d";
 
 type IonName = keyof typeof Ionicons.glyphMap;
 
@@ -33,6 +35,7 @@ export default function VendorTabLayout() {
   const { tabBarStyle } = useTabBarStyle("rgba(255,255,255,0.96)");
   const activeIndex = useActiveTabIndex();
   const tabBarHeight = Number(tabBarStyle.height ?? 60);
+  const unread = useUnreadMessages();
 
   return (
     <View style={{ flex: 1 }}>
@@ -64,7 +67,14 @@ export default function VendorTabLayout() {
       >
         <Tabs.Screen name="index"    options={{ title: "Home" }} />
         <Tabs.Screen name="jobs"     options={{ title: "Jobs" }} />
-        <Tabs.Screen name="inbox"    options={{ title: "Inbox" }} />
+        <Tabs.Screen
+          name="inbox"
+          options={{
+            title: "Inbox",
+            tabBarBadge: unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
+            tabBarBadgeStyle: { backgroundColor: BADGE, color: "#ffffff", fontSize: 10 },
+          }}
+        />
         <Tabs.Screen name="earnings" options={{ title: "Earnings" }} />
         <Tabs.Screen name="profile"  options={{ title: "Profile" }} />
       </Tabs>
