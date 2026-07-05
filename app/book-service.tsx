@@ -114,8 +114,10 @@ export default function BookServiceScreen() {
   }, [vendorId]);
 
   const service = services.find((s) => s.id === serviceId) ?? null;
+  // The buyer pays the vendor's listed price with no markup — PropertyLoop's
+  // commission is taken out of the vendor's cut, not added on top.
   const vendorFee = service?.priceNaira ?? 0;
-  const total = Math.round(vendorFee * 1.1);
+  const total = vendorFee;
   const scheduledFor = dates[dateIdx];
   // A vendor can't book their own service (the backend rejects it too).
   const isOwn = !!user?.id && user.id === vendorId;

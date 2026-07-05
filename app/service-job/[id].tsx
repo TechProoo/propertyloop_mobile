@@ -242,8 +242,9 @@ export default function ServiceJobScreen() {
   const needsPayment =
     escrowStatus === "NONE" &&
     ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(job.status);
-  // Total the buyer pays = vendor fee + 10% platform fee (held in escrow).
-  const escrowTotal = job.escrowAmount ?? Math.round(job.vendorFee * 1.1);
+  // What the buyer pays and what's held in escrow = the vendor's listed price
+  // (no markup). Falls back to vendorFee only for legacy jobs missing the field.
+  const escrowTotal = job.escrowAmount || job.vendorFee;
   // A dispute can only be raised after completion, so keep the tracker at the
   // "Complete" stage instead of letting indexOf(-1) reset it to "Booked".
   const stageIdx = Math.max(0, ORDER.indexOf(isDisputed ? "COMPLETED" : job.status));
@@ -291,7 +292,7 @@ export default function ServiceJobScreen() {
                         : "Requested · awaiting vendor"}
             </Text>
           </View>
-          <Text className="font-serif text-white mt-2" style={{ fontSize: 34, letterSpacing: -0.6 }}>{naira(needsPayment ? escrowTotal : job.vendorFee)}</Text>
+          <Text className="font-serif text-white mt-2" style={{ fontSize: 34, letterSpacing: -0.6 }}>{naira(escrowTotal)}</Text>
           <Text className="text-[12.5px] text-white/70 mt-1 leading-5">
             {job.status === "CONFIRMED"
               ? "You released this payment to the vendor."
@@ -412,7 +413,7 @@ export default function ServiceJobScreen() {
                 <Text className="text-white font-sans-bold text-[15px]">Pay {naira(escrowTotal)} to secure escrow</Text>
               </Pressable>
               <Text className="text-[11px] text-ink-3 text-center">
-                {naira(job.vendorFee)} to the vendor + 10% platform fee · held until you confirm · Paystack
+                Held in escrow · released to the vendor after you confirm the job is done · Paystack
               </Text>
             </>
           )}
@@ -448,7 +449,7 @@ export default function ServiceJobScreen() {
           ) : (
             <>
               <Pressable onPress={confirm} className="bg-primary rounded-full items-center active:opacity-80" style={{ paddingVertical: 16 }}>
-                <Text className="text-white font-sans-bold text-[15px]">Confirm &amp; release {naira(job.vendorFee)}</Text>
+                <Text className="text-white font-sans-bold text-[15px]">Confirm &amp; release {naira(escrowTotal)}</Text>
               </Pressable>
               <Pressable onPress={() => setDisputing(true)} className="items-center active:opacity-70" style={{ paddingVertical: 8 }}>
                 <Text className="text-[13px] font-sans-bold" style={{ color: DISPUTE }}>Something&apos;s wrong — raise a dispute</Text>
