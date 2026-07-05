@@ -50,12 +50,21 @@ const AREAS = [
 
 const MAX_AREAS = 4;
 
+// Budget ranges adapt to intent: yearly rent bands vs purchase bands. Stored
+// as the display string on BuyerProfile.budgetRange (see backend signup DTO).
+const BUDGETS: Record<Intent, string[]> = {
+  RENTING: ["Under ₦1M / yr", "₦1M – ₦3M / yr", "₦3M – ₦10M / yr", "₦10M+ / yr"],
+  BUYING: ["Under ₦50M", "₦50M – ₦100M", "₦100M – ₦200M", "₦200M+"],
+  BROWSING: [],
+};
+
 export default function BuyerPreferencesScreen() {
   const insets = useSafeAreaInsets();
   // Measure the sticky CTA so the scroll content can pad past it — a fixed
   // padding leaves the last section hidden behind a taller CTA on some devices.
   const [footerH, setFooterH] = useState(0);
   const [intent, setIntent] = useState<Intent>("RENTING");
+  const [budget, setBudget] = useState<string | null>(null);
   const [areas, setAreas] = useState<string[]>([
     "Lekki Phase 1",
     "Ikoyi",
@@ -83,6 +92,7 @@ export default function BuyerPreferencesScreen() {
         role: "BUYER",
         intent,
         areas: areas.join("|"),
+        ...(budget ? { budget } : {}),
       },
     } as Href);
   };
@@ -129,7 +139,11 @@ export default function BuyerPreferencesScreen() {
               return (
                 <Pressable
                   key={opt.id}
-                  onPress={() => setIntent(opt.id)}
+                  onPress={() => {
+                    setIntent(opt.id);
+                    // Rent and buy bands differ — clear a stale pick on switch.
+                    setBudget(null);
+                  }}
                   className={`rounded-3xl p-4 flex-row items-center gap-3 border-2 active:opacity-80 ${
                     selected
                       ? "bg-primary-soft border-primary"
@@ -215,15 +229,41 @@ export default function BuyerPreferencesScreen() {
             </View>
           </View>
 
-          {/* Budget placeholder — TODO: add range slider */}
-          <View className="mt-7">
-            <Text className="text-ink font-sans-bold text-base">
-              Yearly budget
-            </Text>
-            <Text className="text-ink-2 text-[13px] mt-1">
-              Coming soon — we'll add budget filtering shortly.
-            </Text>
-          </View>
+          {/* Budget — optional, bands adapt to rent vs buy. Hidden for browsers. */}
+          {BUDGETS[intent].length > 0 && (
+            <View className="mt-7">
+              <View className="flex-row items-baseline justify-between">
+                <Text className="text-ink font-sans-bold text-base">
+                  {intent === "RENTING" ? "Yearly budget" : "Budget"}
+                </Text>
+                <Text className="text-ink-3 text-xs">optional</Text>
+              </View>
+              <View className="flex-row flex-wrap gap-2 mt-3">
+                {BUDGETS[intent].map((b) => {
+                  const selected = budget === b;
+                  return (
+                    <Pressable
+                      key={b}
+                      onPress={() => setBudget(selected ? null : b)}
+                      className={`px-4 py-2 rounded-full border ${
+                        selected
+                          ? "bg-slate-900 border-slate-900"
+                          : "bg-white border-line"
+                      } active:opacity-80`}
+                    >
+                      <Text
+                        className={`text-sm font-sans-medium ${
+                          selected ? "text-white" : "text-ink-2"
+                        }`}
+                      >
+                        {b}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
         </ScrollView>
 
         {/* Sticky bottom CTA — bottom padding tracks the safe-area inset so the

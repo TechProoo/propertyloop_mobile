@@ -7,7 +7,7 @@ export interface SignupPayload {
   password: string;
   phone?: string;
   role: "BUYER" | "AGENT" | "VENDOR";
-  buyer?: { preferredLocations?: string };
+  buyer?: { preferredLocations?: string; lookingFor?: string; budgetRange?: string };
   agent?: { agencyName: string; licenseNumber: string; businessAddress: string };
   vendor?: { serviceCategory: string; yearsExperience: string; serviceArea: string };
 }
