@@ -98,7 +98,15 @@ export default function PayoutBankScreen() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q ? banks.filter((b) => b.name.toLowerCase().includes(q)) : banks;
-    return list.slice(0, 40);
+    // Paystack's bank list can list the same code twice (e.g. separate channel
+    // entries) — dedupe so list keys stay unique.
+    const seen = new Set<string>();
+    const deduped = list.filter((b) => {
+      if (seen.has(b.code)) return false;
+      seen.add(b.code);
+      return true;
+    });
+    return deduped.slice(0, 40);
   }, [banks, query]);
 
   const onSave = async () => {
