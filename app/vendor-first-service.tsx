@@ -23,7 +23,7 @@ const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-const FEE_RATE = 0.1;
+const FEE_RATE = 0.2;
 
 export default function VendorFirstServiceScreen() {
   const insets = useSafeAreaInsets();
@@ -213,7 +213,7 @@ export default function VendorFirstServiceScreen() {
                 style={{ fontSize: 26, padding: 0, letterSpacing: -0.4 }}
               />
               <Text className="text-[11px] font-sans-semibold text-ink-3">
-                You keep ₦{net.toLocaleString()} after 10% fee
+                You keep ₦{net.toLocaleString()} after 20% fee
               </Text>
             </View>
 
@@ -253,8 +253,8 @@ export default function VendorFirstServiceScreen() {
                   How you get paid
                 </Text>
                 <Text className="text-[11.5px] mt-1 leading-4" style={{ color: PRIMARY_INK, opacity: 0.78 }}>
-                  Customers pay into escrow. After they confirm the job's done, PropertyLoop releases
-                  your share (minus a 10% platform fee) to your bank.
+                  Customers pay your listed price into escrow. After they confirm the job's done,
+                  PropertyLoop releases your share (minus a 20% platform fee) to your bank.
                 </Text>
               </View>
             </View>
