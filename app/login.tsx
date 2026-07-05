@@ -8,7 +8,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Alert } from "@/lib/dialog";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -67,9 +66,6 @@ export default function LoginScreen() {
       setSubmitting(false);
     }
   };
-
-  const stub = (label: string) =>
-    Alert.alert("Coming soon", `${label} isn't wired up yet.`);
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -202,17 +198,6 @@ export default function LoginScreen() {
             </Text>
           </Pressable>
 
-          {/* Face ID stub */}
-          <Pressable
-            onPress={() => stub("Face ID")}
-            className="rounded-full items-center justify-center flex-row gap-2.5 mt-2.5 active:opacity-80"
-            style={{ paddingVertical: 14, borderWidth: 1, borderColor: "#e1dcd3" }}
-          >
-            <Ionicons name="scan-outline" size={20} color={INK} />
-            <Text className="text-ink font-sans-bold text-[14px]">
-              Use Face ID
-            </Text>
-          </Pressable>
         </ScrollView>
 
         {/* Footer */}

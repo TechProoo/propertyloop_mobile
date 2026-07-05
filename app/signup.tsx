@@ -32,12 +32,21 @@ const ROLE_LABEL: Record<Role, string> = {
 // Mirrors backend: 8+ chars, at least 1 lowercase, 1 uppercase, 1 digit.
 // Source: backend/src/auth/dto/signup.dto.ts password regex.
 const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Onboarding intent → BuyerProfile.lookingFor label (see buyer-preferences.tsx).
+const INTENT_LABEL: Record<string, string> = {
+  RENTING: "Rent a home",
+  BUYING: "Buy a home",
+  BROWSING: "Just browsing",
+};
 
 export default function SignupScreen() {
   const params = useLocalSearchParams<{
     role?: string;
     areas?: string;
     intent?: string;
+    budget?: string;
     // Forwarded from /agent-setup
     agencyName?: string;
     licenseNumber?: string;
@@ -55,6 +64,11 @@ export default function SignupScreen() {
     role === "BUYER" && params.areas
       ? params.areas.split("|").join(", ")
       : undefined;
+  // Intent + budget chosen on the preferences screen, carried into the buyer
+  // profile so the account starts personalised instead of blank.
+  const lookingFor =
+    role === "BUYER" && params.intent ? INTENT_LABEL[params.intent] : undefined;
+  const budgetRange = role === "BUYER" ? params.budget : undefined;
 
   // Common
   const [name, setName] = useState("");
@@ -80,7 +94,7 @@ export default function SignupScreen() {
 
   const validate = (): string | null => {
     if (!name.trim()) return "Please enter your full name.";
-    if (!email.trim()) return "Please enter your email.";
+    if (!EMAIL_RULE.test(email.trim())) return "Please enter a valid email address.";
     if (!PASSWORD_RULE.test(password)) {
       return "Password must be 8+ characters with an uppercase letter, lowercase letter, and number.";
     }
@@ -116,8 +130,8 @@ export default function SignupScreen() {
       password,
       phone: phone.trim() || undefined,
       role,
-      ...(role === "BUYER" && preferredLocations
-        ? { buyer: { preferredLocations } }
+      ...(role === "BUYER" && (preferredLocations || lookingFor || budgetRange)
+        ? { buyer: { preferredLocations, lookingFor, budgetRange } }
         : {}),
       ...(role === "AGENT"
         ? {
