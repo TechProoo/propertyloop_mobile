@@ -74,19 +74,27 @@ const SECTIONS: { h: string; b: string[] }[] = [
     ],
   },
   {
-    h: "6. Cookies & analytics",
+    h: "6. App permissions",
+    b: [
+      "Camera — so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages. Only used at the moment you choose to take a photo.",
+      "Photos — so you can upload listing images, a profile picture, verification documents, and chat attachments. Only the images you pick are accessed; we never read your whole library.",
+      "Both are optional and requested only when you use a feature that needs them. You can decline and still use the rest of the app, and change your choice any time in your device settings.",
+    ],
+  },
+  {
+    h: "7. Cookies & analytics",
     b: [
       "We use minimal, first-party analytics to measure app performance. No third-party advertising trackers are embedded.",
     ],
   },
   {
-    h: "7. Children",
+    h: "8. Children",
     b: [
       "PropertyLoop is not intended for users under 18. We do not knowingly collect data from minors.",
     ],
   },
   {
-    h: "8. Changes",
+    h: "9. Changes",
     b: [
       "We will notify you in-app at least 14 days before any material change to this Policy takes effect.",
     ],

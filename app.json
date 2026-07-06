@@ -47,7 +47,14 @@
         }
       ],
       "expo-secure-store",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PropertyLoop needs access to your photos so you can upload listing images, a profile picture, verification documents, proof of completed work, and photo attachments in chat.",
+          "cameraPermission": "PropertyLoop needs access to your camera so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
