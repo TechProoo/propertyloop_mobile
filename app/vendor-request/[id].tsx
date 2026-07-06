@@ -135,10 +135,10 @@ export default function VendorRequestScreen() {
           <Text className="text-[11px] font-sans-bold tracking-widest uppercase" style={{ color: PRIMARY_INK }}>You'll earn</Text>
           <View className="flex-row items-baseline gap-2 mt-1">
             <Text className="font-serif" style={{ fontSize: 32, letterSpacing: -0.6, color: PRIMARY_INK }}>{naira(job.vendorFee)}</Text>
-            <Text className="text-[12px] font-sans-bold" style={{ color: PRIMARY_INK, opacity: 0.7 }}>after 20% fee</Text>
+            <Text className="text-[12px] font-sans-bold" style={{ color: PRIMARY_INK, opacity: 0.7 }}>after 10% fee</Text>
           </View>
           <Text className="text-[11.5px] mt-1" style={{ color: PRIMARY_INK, opacity: 0.75 }}>
-            Customer pays {naira(job.escrowAmount ?? job.amount)} into escrow · PropertyLoop keeps {naira(job.platformFee)} (20%)
+            Customer pays {naira(job.escrowAmount ?? job.amount)} into escrow · PropertyLoop keeps {naira(job.platformFee)} (10%)
           </Text>
         </View>
 

@@ -204,9 +204,9 @@ export default function VendorActiveJobScreen() {
           </View>
         )}
 
-        {/* Your earnings — the vendor keeps 80%; PropertyLoop's 20% commission
+        {/* Your earnings — the vendor keeps 90%; PropertyLoop's 10% commission
             comes out of the job price. Shown plainly so the vendor understands
-            why they receive ₦160 on a ₦200 job (never surprised at payout). */}
+            why they receive ₦180 on a ₦200 job (never surprised at payout). */}
         <View className="bg-white rounded-2xl px-4 py-3.5 mt-4 border-line" style={{ borderWidth: 0.5 }}>
           <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
             Your earnings
@@ -218,7 +218,7 @@ export default function VendorActiveJobScreen() {
             </Text>
           </View>
           <View className="flex-row items-center justify-between mt-1.5">
-            <Text className="text-[13px] text-ink-2">PropertyLoop fee (20%)</Text>
+            <Text className="text-[13px] text-ink-2">PropertyLoop fee (10%)</Text>
             <Text className="text-[13px] font-sans-semibold" style={{ color: DISPUTE }}>
               −{naira(job.platformFee)}
             </Text>
