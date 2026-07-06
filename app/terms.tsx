@@ -37,8 +37,9 @@ const SECTIONS: { h: string; b: string[] }[] = [
   {
     h: "5. Fees",
     b: [
-      "Buyers, renters and shortlet guests use PropertyLoop free of charge. Payment processing fees (typically 1.5% via Paystack) are shown at checkout and added to the total.",
-      "Agents and vendors are billed per their listing or membership plan, separately accepted on signup.",
+      "Buyers, renters and shortlet guests pay the price listed by the agent or vendor — PropertyLoop adds no mark-up to what you pay. Payments are processed securely through Paystack.",
+      "For Service Loop bookings, PropertyLoop charges the vendor a 20% commission, deducted from the job price when escrow is released. The vendor receives the remaining 80%; the price the customer pays is unchanged.",
+      "Agents are billed according to their subscription plan, which is shown and separately accepted before purchase.",
     ],
   },
   {
@@ -103,7 +104,7 @@ export default function TermsScreen() {
           Terms of <Text className="font-serif-italic">service</Text>
         </Text>
         <Text className="text-[11.5px] text-ink-3 mt-2 font-sans-semibold">
-          Last updated · 28 May 2026 · v3.2
+          Last updated · 6 Jul 2026 · v3.3
         </Text>
 
         <Text className="text-[13px] text-ink-2 mt-3 leading-5">

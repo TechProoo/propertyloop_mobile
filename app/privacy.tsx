@@ -36,6 +36,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
       "Activity: listings viewed, searches saved, offers made, vendors booked, messages sent.",
       "Device: model, OS, app version, language, time zone, approximate location (city level) when you grant permission.",
       "Payment: tokenised card references via Paystack — we never store full card numbers.",
+      "Payout details: for vendors, the bank account you provide to receive escrow payouts.",
     ],
   },
   {
@@ -51,7 +52,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "3. Who we share with",
     b: [
       "Agents, landlords and vendors you contact — only your name, contact and the listing context.",
-      "Processors acting on our behalf — Paystack (payments), Twilio (SMS), AWS (hosting), all under data-processing agreements.",
+      "Processors acting on our behalf — Paystack (payments) and our cloud hosting and file-storage providers — all under data-processing agreements.",
       "Regulators and courts when legally compelled. We will challenge over-broad requests where appropriate.",
     ],
   },
@@ -122,7 +123,7 @@ export default function PrivacyScreen() {
           Privacy <Text className="font-serif-italic">policy</Text>
         </Text>
         <Text className="text-[11.5px] text-ink-3 mt-2 font-sans-semibold">
-          Last updated · 28 May 2026 · v2.4
+          Last updated · 6 Jul 2026 · v2.5
         </Text>
         <Text className="text-[13px] text-ink-2 mt-3 leading-5">
           The short version: we collect what we need to run the service, encrypt
