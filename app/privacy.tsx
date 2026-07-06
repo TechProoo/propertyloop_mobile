@@ -67,7 +67,8 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "5. Your rights",
     b: [
       "Under the NDPR you may request access to, correction of, or deletion of your personal data.",
-      "Email support.propertyloop@propertyloop.ng with the request. We respond within 30 days.",
+      "You can delete your account any time from Settings → Delete account — this closes your account and revokes access immediately.",
+      "For access or correction requests, email support.propertyloop@propertyloop.ng. We respond within 30 days.",
       "You can also withdraw consent for non-essential processing (e.g. marketing) from Settings → Notifications.",
     ],
   },

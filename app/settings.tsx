@@ -8,8 +8,10 @@ import { Alert } from "@/lib/dialog";
 import { Stack, router, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Constants from "expo-constants";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
+import usersService from "@/api/services/users";
 
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
@@ -27,6 +29,7 @@ const TINTS: Record<string, { bg: string; fg: string }> = {
   terms:   { bg: "#ebe6fb", fg: "#6741d9" }, // violet
   privacy: { bg: "#e4ecfb", fg: "#3b5bdb" }, // blue
   out:     { bg: "#fde6e4", fg: DESTRUCTIVE }, // red (destructive)
+  delete:  { bg: "#fde6e4", fg: DESTRUCTIVE }, // red (destructive)
 };
 
 type SettingsLink = {
@@ -68,6 +71,12 @@ const GROUPS: { label: string; links: SettingsLink[] }[] = [
       { id: "out", icon: "log-out-outline", title: "Sign out", destructive: true },
     ],
   },
+  {
+    label: "Danger zone",
+    links: [
+      { id: "delete", icon: "trash-outline", title: "Delete account", detail: "Permanently close your account", destructive: true },
+    ],
+  },
 ];
 
 function initialsOf(name?: string | null) {
@@ -90,8 +99,48 @@ export default function SettingsScreen() {
       },
     ]);
 
+  // Permanently close the account. Two-step so it can't be triggered by a
+  // stray tap: warn first, then a final confirm before we call the API.
+  const doDelete = async () => {
+    try {
+      await usersService.deleteAccount();
+      await signOut();
+      router.replace("/welcome" as Href);
+      Alert.alert(
+        "Account deleted",
+        "Your account has been closed. We're sorry to see you go.",
+      );
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again in a moment.";
+      Alert.alert("Couldn't delete account", Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  };
+
+  const onDeleteAccount = () =>
+    Alert.alert(
+      "Delete your account?",
+      "This permanently closes your PropertyLoop account and signs you out everywhere. Your listings, bookings, messages and saved items will no longer be accessible. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Are you absolutely sure?",
+              `${user?.email ?? "Your account"} will be closed. This is your last chance to keep it.`,
+              [
+                { text: "Keep my account", style: "cancel" },
+                { text: "Yes, delete", style: "destructive", onPress: doDelete },
+              ],
+            ),
+        },
+      ],
+    );
+
   const onLink = (link: SettingsLink) => {
     if (link.id === "out") return onSignOut();
+    if (link.id === "delete") return onDeleteAccount();
     if (link.href) router.push(link.href as Href);
   };
 
@@ -195,7 +244,7 @@ export default function SettingsScreen() {
         ))}
 
         <Text className="text-center text-[11px] text-ink-3 mt-6">
-          PropertyLoop · v0.1.0
+          PropertyLoop · v{Constants.expoConfig?.version ?? "1.0.1"}
         </Text>
       </ScrollView>
     </SafeAreaView>
