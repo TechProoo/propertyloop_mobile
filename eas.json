@@ -21,7 +21,13 @@
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://propertyloopbackend-production.up.railway.app/api"
+      }
     }
   },
   "submit": {

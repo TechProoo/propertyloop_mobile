@@ -23,6 +23,14 @@ const usersService = {
       .patch<UserSettings>("/users/me/settings", payload)
       .then((r) => r.data);
   },
+  /**
+   * Permanently close the signed-in user's account. Backend soft-deletes the
+   * record, revokes all sessions, and frees nothing sensitive to the client.
+   * Required by Google Play's account-deletion policy — surfaced in Settings.
+   */
+  deleteAccount(): Promise<{ success: boolean }> {
+    return api.delete("/users/me").then((r) => r.data);
+  },
 };
 
 export interface UserSettings {
