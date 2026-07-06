@@ -204,6 +204,34 @@ export default function VendorActiveJobScreen() {
           </View>
         )}
 
+        {/* Your earnings — the vendor keeps 80%; PropertyLoop's 20% commission
+            comes out of the job price. Shown plainly so the vendor understands
+            why they receive ₦160 on a ₦200 job (never surprised at payout). */}
+        <View className="bg-white rounded-2xl px-4 py-3.5 mt-4 border-line" style={{ borderWidth: 0.5 }}>
+          <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">
+            Your earnings
+          </Text>
+          <View className="flex-row items-center justify-between mt-2.5">
+            <Text className="text-[13px] text-ink-2">Job price</Text>
+            <Text className="text-[13px] font-sans-semibold text-ink">
+              {naira(job.escrowAmount ?? job.vendorFee + job.platformFee)}
+            </Text>
+          </View>
+          <View className="flex-row items-center justify-between mt-1.5">
+            <Text className="text-[13px] text-ink-2">PropertyLoop fee (20%)</Text>
+            <Text className="text-[13px] font-sans-semibold" style={{ color: DISPUTE }}>
+              −{naira(job.platformFee)}
+            </Text>
+          </View>
+          <View className="h-px bg-line my-2.5" />
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[13.5px] font-sans-bold text-ink">You keep</Text>
+            <Text className="text-[16px] font-sans-bold" style={{ color: PRIMARY }}>
+              {naira(job.vendorFee)}
+            </Text>
+          </View>
+        </View>
+
         {/* Tracker */}
         <View className="mt-5">
           {track.map((s, i, arr) => {
@@ -318,7 +346,7 @@ export default function VendorActiveJobScreen() {
               Waiting on the customer to confirm
             </Text>
             <Text className="text-[11.5px] mt-0.5" style={{ color: "#134a2d", opacity: 0.8 }}>
-              Once they confirm, your share is released from escrow.
+              Once they confirm, your {naira(job.vendorFee)} is released from escrow to your balance.
             </Text>
           </View>
         ) : null}
