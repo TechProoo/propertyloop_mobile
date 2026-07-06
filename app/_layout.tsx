@@ -103,6 +103,8 @@ export default function RootLayout() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         {/* Email verification — "check your inbox" after signup / blocked login */}
         <Stack.Screen name="verify-email-sent" options={{ headerShown: false }} />
+        {/* Deep-link landing after Paystack in-app checkout returns to the app */}
+        <Stack.Screen name="payment-callback" options={{ headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: 'modal' }} />
         {/* Inbox thread */}
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
