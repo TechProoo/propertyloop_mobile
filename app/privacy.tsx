@@ -23,7 +23,7 @@ const PRINCIPLES = [
     icon: "people-outline" as const,
     title: "Minimum sharing",
     detail:
-      "Agents and vendors only see what they need — name, contact, the listing you're enquiring about.",
+      "Agents and vendors only see what they need: name, contact, the listing you're enquiring about.",
   },
 ];
 
@@ -35,24 +35,24 @@ const SECTIONS: { h: string; b: string[] }[] = [
       "Verification: NIN, selfie, proof-of-address documents (when you choose to verify).",
       "Activity: listings viewed, searches saved, offers made, vendors booked, messages sent.",
       "Device: model, OS, app version, language, time zone, approximate location (city level) when you grant permission.",
-      "Payment: tokenised card references via Paystack — we never store full card numbers.",
+      "Payment: tokenised card references via Paystack, and we never store full card numbers.",
       "Payout details: for vendors, the bank account you provide to receive escrow payouts.",
     ],
   },
   {
     h: "2. Why we use it",
     b: [
-      "To run the service — show you relevant listings, route messages, process escrow payments.",
-      "To verify identity and prevent fraud — comparing submitted ID against authoritative sources (e.g. NIMC for NIN).",
-      "To improve the product — anonymised usage metrics to understand which flows work.",
-      "To comply with Nigerian law — NDPR, AML obligations, tax reporting where required.",
+      "To run the service: show you relevant listings, route messages, process escrow payments.",
+      "To verify identity and prevent fraud, by comparing submitted ID against authoritative sources (e.g. NIMC for NIN).",
+      "To improve the product, using anonymised usage metrics to understand which flows work.",
+      "To comply with Nigerian law, including NDPR, AML obligations, and tax reporting where required.",
     ],
   },
   {
     h: "3. Who we share with",
     b: [
-      "Agents, landlords and vendors you contact — only your name, contact and the listing context.",
-      "Processors acting on our behalf — Paystack (payments) and our cloud hosting and file-storage providers — all under data-processing agreements.",
+      "Agents, landlords and vendors you contact: only your name, contact and the listing context.",
+      "Processors acting on our behalf, such as Paystack (payments) and our cloud hosting and file-storage providers, all under data-processing agreements.",
       "Regulators and courts when legally compelled. We will challenge over-broad requests where appropriate.",
     ],
   },
@@ -68,7 +68,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "5. Your rights",
     b: [
       "Under the NDPR you may request access to, correction of, or deletion of your personal data.",
-      "You can delete your account any time from Settings → Delete account — this closes your account and revokes access immediately.",
+      "You can delete your account any time from Settings → Delete account. This closes your account and revokes access immediately.",
       "For access or correction requests, email support.propertyloop@propertyloop.ng. We respond within 30 days.",
       "You can also withdraw consent for non-essential processing (e.g. marketing) from Settings → Notifications.",
     ],
@@ -76,8 +76,8 @@ const SECTIONS: { h: string; b: string[] }[] = [
   {
     h: "6. App permissions",
     b: [
-      "Camera — so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages. Only used at the moment you choose to take a photo.",
-      "Photos — so you can upload listing images, a profile picture, verification documents, and chat attachments. Only the images you pick are accessed; we never read your whole library.",
+      "Camera: so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages. Only used at the moment you choose to take a photo.",
+      "Photos: so you can upload listing images, a profile picture, verification documents, and chat attachments. Only the images you pick are accessed; we never read your whole library.",
       "Both are optional and requested only when you use a feature that needs them. You can decline and still use the rest of the app, and change your choice any time in your device settings.",
     ],
   },
@@ -131,7 +131,7 @@ export default function PrivacyScreen() {
           Privacy <Text className="font-serif-italic">policy</Text>
         </Text>
         <Text className="text-[11.5px] text-ink-3 mt-2 font-sans-semibold">
-          Last updated · 6 Jul 2026 · v2.5
+          Last updated · 7 Jul 2026 · v2.6
         </Text>
         <Text className="text-[13px] text-ink-2 mt-3 leading-5">
           The short version: we collect what we need to run the service, encrypt
@@ -177,7 +177,7 @@ export default function PrivacyScreen() {
         ))}
 
         <Text className="text-[11px] text-ink-3 mt-8 text-center leading-4">
-          Questions? support.propertyloop@propertyloop.ng — we reply within 30
+          Questions? support.propertyloop@propertyloop.ng. We reply within 30
           days.
         </Text>
       </ScrollView>
