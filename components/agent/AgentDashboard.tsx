@@ -20,10 +20,7 @@ import {
 import { useStaggeredEntrance } from "@/hooks/useStaggeredEntrance";
 import { useAuth } from "@/context/auth";
 import { NotificationBell } from "@/components/brand/NotificationBell";
-import agentsService, {
-  type AgentStats,
-  type AgentSubscription,
-} from "@/api/services/agents";
+import agentsService, { type AgentStats } from "@/api/services/agents";
 import listingsService from "@/api/services/listings";
 import offersService from "@/api/services/offers";
 import vendorJobsService, { type VendorJob } from "@/api/services/vendorJobs";
@@ -105,23 +102,20 @@ export default function AgentDashboard({ embedded = false }: { embedded?: boolea
   const [offersToReview, setOffersToReview] = useState(0);
   const [jobs, setJobs] = useState<VendorJob[]>([]);
   const [unread, setUnread] = useState(0);
-  const [sub, setSub] = useState<AgentSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [s, l, offers, subscription, myJobs, notif] = await Promise.all([
+      const [s, l, offers, myJobs, notif] = await Promise.all([
         agentsService.getStats(),
         listingsService.listMine({ limit: 5 }),
         offersService.listReceived().catch(() => ({ items: [] as any[] })),
-        agentsService.getSubscription().catch(() => null),
         vendorJobsService.listMine({ limit: 20 }).catch(() => ({ items: [] as VendorJob[] })),
         notificationsService.unreadCount().catch(() => ({ unread: 0 })),
       ]);
       setStats(s);
       setListings(l.items);
-      setSub(subscription);
       setJobs(myJobs.items.filter((j) => LIVE_JOB_STATUSES.includes(j.status)));
       setUnread(notif.unread);
       setOffersToReview(
@@ -351,9 +345,6 @@ export default function AgentDashboard({ embedded = false }: { embedded?: boolea
           </View>
         </Appear>
 
-        {/* Subscription alert — surfaces a lapsed/cancelling plan up front */}
-        <SubscriptionBanner sub={sub} />
-
         {loading ? (
           <View className="py-16 items-center">
             <BouncyLoader color={PRIMARY} />
@@ -535,71 +526,6 @@ export default function AgentDashboard({ embedded = false }: { embedded?: boolea
           </>
         )}
       </RevealScrollView>
-    </View>
-  );
-}
-
-function SubscriptionBanner({ sub }: { sub: AgentSubscription | null }) {
-  if (!sub || (sub.status !== "LAPSED" && sub.status !== "CANCELLED")) {
-    return null;
-  }
-  const lapsed = sub.status === "LAPSED";
-  const ends = sub.renewsAt
-    ? new Date(sub.renewsAt).toLocaleDateString("en-NG", {
-        day: "numeric",
-        month: "short",
-      })
-    : null;
-
-  // Lapsed = payment failed, listings already paused → urgent red.
-  // Cancelled = plan winding down → warm amber heads-up.
-  const ui = lapsed
-    ? {
-        bg: "#fdecea",
-        border: "#f1b5ab",
-        fg: "#7a1d12",
-        icon: "alert-circle" as const,
-        iconColor: "#b3261e",
-        title: "Payment failed — your listings are paused",
-        body: "Renew your plan to put your listings back live and start getting leads again.",
-        cta: "Renew now",
-      }
-    : {
-        bg: "#faf0dd",
-        border: "#e7d2a6",
-        fg: "#6b4a16",
-        icon: "time-outline" as const,
-        iconColor: "#b9842c",
-        title: "Your plan is ending",
-        body: ends
-          ? `You've cancelled — your plan stays active until ${ends}, then your listings will be paused.`
-          : "You've cancelled — your listings will be paused when the plan expires.",
-        cta: "Reactivate plan",
-      };
-
-  return (
-    <View className="px-4 pt-4">
-      <Pressable
-        onPress={() => router.push("/agent-plan" as Href)}
-        className="rounded-2xl px-4 py-3.5 flex-row items-start gap-3 active:opacity-90"
-        style={{ backgroundColor: ui.bg, borderWidth: 1, borderColor: ui.border }}
-      >
-        <Ionicons name={ui.icon} size={20} color={ui.iconColor} style={{ marginTop: 1 }} />
-        <View className="flex-1">
-          <Text className="text-[13px] font-sans-bold" style={{ color: ui.fg }}>
-            {ui.title}
-          </Text>
-          <Text className="text-[11.5px] mt-0.5 leading-4" style={{ color: ui.fg, opacity: 0.85 }}>
-            {ui.body}
-          </Text>
-          <View className="flex-row items-center gap-1 mt-2">
-            <Text className="text-[12px] font-sans-bold" style={{ color: ui.fg }}>
-              {ui.cta}
-            </Text>
-            <Ionicons name="arrow-forward" size={12} color={ui.fg} />
-          </View>
-        </View>
-      </Pressable>
     </View>
   );
 }
