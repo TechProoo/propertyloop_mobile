@@ -83,7 +83,9 @@ export default function AgentVerifyScreen() {
         documentUrls: [licenseUrl],
         selfieUrl,
       });
-      router.push("/agent-plan" as Href);
+      // PropertyLoop is free for all agents — no plan/payment step. Straight
+      // to the dashboard once KYC is submitted.
+      router.replace("/(agent-tabs)" as Href);
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? "Couldn't submit. Please try again.";
       Alert.alert("Submission failed", Array.isArray(msg) ? msg.join(", ") : msg);
@@ -114,7 +116,7 @@ export default function AgentVerifyScreen() {
             </Text>
             <View style={{ width: 36 }} />
           </View>
-          <OnboardingProgress step={2} total={4} className="px-5 mt-3" />
+          <OnboardingProgress step={2} total={2} className="px-5 mt-3" />
 
           <ScrollView
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }}

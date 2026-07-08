@@ -143,7 +143,7 @@ export default function AgentSetupScreen() {
             </Text>
             <View className="w-9" />
           </View>
-          <OnboardingProgress step={1} total={4} className="px-5 mt-3" />
+          <OnboardingProgress step={1} total={2} className="px-5 mt-3" />
 
           <ScrollView
             contentContainerClassName="px-5 pb-32"
