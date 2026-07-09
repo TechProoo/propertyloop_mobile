@@ -659,9 +659,6 @@ function ServiceLoopEntry() {
   );
 }
 
-//_________________________________________________________________
-// ADVERTISE WITH US _
-
 // ─────────────────────────────────────────────────────────────────
 // Advertise entry — brands can sponsor placements. Info-only in-app
 // (booking + payment happen on the website); taps open the info screen.
