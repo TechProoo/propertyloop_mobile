@@ -122,9 +122,17 @@ export default function HomeScreen() {
     const loc = location ? { location } : {};
     const empty = { items: [] as Listing[] };
     Promise.all([
-      listingsService.list({ sort: "newest", limit: 10, ...loc }).catch(() => empty),
       listingsService
-        .list({ type: "RENT", maxPrice: AFFORDABLE_MAX, sort: "price_asc", limit: 10, ...loc })
+        .list({ sort: "newest", limit: 10, ...loc })
+        .catch(() => empty),
+      listingsService
+        .list({
+          type: "RENT",
+          maxPrice: AFFORDABLE_MAX,
+          sort: "price_asc",
+          limit: 10,
+          ...loc,
+        })
         .catch(() => empty),
       agentsService
         .list({ sort: "most_listings", limit: 12 })
@@ -170,7 +178,10 @@ export default function HomeScreen() {
         <ModeChips active={mode} onSelect={setMode} />
 
         {/* Paid brand banner — renders nothing when no campaign is live */}
-        <AdSlot placement="HOME_BANNER" style={{ marginHorizontal: 20, marginTop: 16 }} />
+        <AdSlot
+          placement="HOME_BANNER"
+          style={{ marginHorizontal: 20, marginTop: 16 }}
+        />
 
         {/* Jump back in — recently viewed (returning users only) */}
         {recentlyViewed.length > 0 && (
@@ -202,7 +213,11 @@ export default function HomeScreen() {
                 {/* Sponsored card as its own grid cell after the 4th listing.
                     AdSlot renders null with no live campaign — no empty cell. */}
                 {i === 4 && (
-                  <AdSlot placement="HOME_FEED" variant="card" style={{ width: "47.5%" }} />
+                  <AdSlot
+                    placement="HOME_FEED"
+                    variant="card"
+                    style={{ width: "47.5%" }}
+                  />
                 )}
                 <Reveal style={{ width: "47.5%" }}>
                   <HomeCard listing={h} />
@@ -326,7 +341,12 @@ function Header() {
           accessibilityRole="button"
           accessibilityLabel="Open your profile"
         >
-          <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
+          <PLAvatar
+            initials={initialsOf(user?.name)}
+            uri={user?.avatarUrl}
+            size={40}
+            tone="primary"
+          />
         </Pressable>
       </View>
     </View>
@@ -340,7 +360,8 @@ function Greeting() {
   const { user } = useAuth();
   const first = (user?.name ?? "").trim().split(/\s+/)[0];
   const h = new Date().getHours();
-  const tod = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  const tod =
+    h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   return (
     <View className="px-5 pt-4">
       <Text
@@ -520,7 +541,10 @@ function HomeCard({ listing }: { listing: Listing }) {
               className="px-2.5 py-1 rounded-full"
               style={{ backgroundColor: "rgba(26,33,32,0.8)", flexShrink: 1 }}
             >
-              <Text numberOfLines={1} className="text-[12.5px] font-sans-bold text-white">
+              <Text
+                numberOfLines={1}
+                className="text-[12.5px] font-sans-bold text-white"
+              >
                 {listing.priceLabel}
                 {shortPeriod(listing.period)}
               </Text>
@@ -565,7 +589,11 @@ function HomeCard({ listing }: { listing: Listing }) {
             {listing.title}
           </Text>
           <View className="flex-row items-center gap-1 mt-0.5">
-            <Ionicons name="location" size={11} color="rgba(255,255,255,0.85)" />
+            <Ionicons
+              name="location"
+              size={11}
+              color="rgba(255,255,255,0.85)"
+            />
             <Text
               className="text-[11px] font-sans-medium text-white/85"
               numberOfLines={1}
@@ -612,7 +640,8 @@ function ServiceLoopEntry() {
               Need an artisan or service provider?
             </Text>
             <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">
-              Hire verified electricians, plumbers &amp; more — payment via escrow.
+              Hire verified electricians, plumbers &amp; more — payment via
+              escrow.
             </Text>
           </View>
         </View>
@@ -620,13 +649,18 @@ function ServiceLoopEntry() {
           className="flex-row items-center justify-center gap-1.5 mt-3 rounded-full py-2.5"
           style={{ backgroundColor: PRIMARY }}
         >
-          <Text className="text-white font-sans-bold text-[13px]">Explore Service</Text>
+          <Text className="text-white font-sans-bold text-[13px]">
+            Explore Service
+          </Text>
           <Ionicons name="arrow-forward" size={15} color="#ffffff" />
         </View>
       </PressableScale>
     </Appear>
   );
 }
+
+//_________________________________________________________________
+// ADVERTISE WITH US _
 
 // ─────────────────────────────────────────────────────────────────
 // Advertise entry — brands can sponsor placements. Info-only in-app
@@ -684,10 +718,14 @@ function SectionHeader({
 }) {
   return (
     <View className="px-5 pt-6 flex-row items-baseline justify-between">
-      <Text className="text-[16px] font-sans-bold text-ink tracking-tight">{title}</Text>
+      <Text className="text-[16px] font-sans-bold text-ink tracking-tight">
+        {title}
+      </Text>
       {actionLabel && onAction ? (
         <Pressable onPress={onAction} hitSlop={8}>
-          <Text className="text-xs font-sans-bold text-primary">{actionLabel}</Text>
+          <Text className="text-xs font-sans-bold text-primary">
+            {actionLabel}
+          </Text>
         </Pressable>
       ) : null}
     </View>
@@ -718,7 +756,10 @@ function ListingRailCard({ listing }: { listing: RailListing }) {
       activeScale={0.96}
       style={{ width: 178 }}
     >
-      <View style={{ height: 120 }} className="relative rounded-2xl overflow-hidden">
+      <View
+        style={{ height: 120 }}
+        className="relative rounded-2xl overflow-hidden"
+      >
         <Image
           source={listing.coverImage}
           style={{ width: "100%", height: "100%" }}
@@ -729,7 +770,10 @@ function ListingRailCard({ listing }: { listing: RailListing }) {
           className="absolute top-2 right-2 px-2 py-0.5 rounded-full"
           style={{ backgroundColor: "rgba(26,33,32,0.8)", maxWidth: 122 }}
         >
-          <Text numberOfLines={1} className="text-[11.5px] font-sans-bold text-white">
+          <Text
+            numberOfLines={1}
+            className="text-[11.5px] font-sans-bold text-white"
+          >
             {listing.priceLabel}
             {shortPeriod(listing.period)}
           </Text>
@@ -748,7 +792,10 @@ function ListingRailCard({ listing }: { listing: RailListing }) {
           <SaveHeart id={listing.id} size={15} />
         </View>
       </View>
-      <Text className="text-[13px] font-sans-bold text-ink mt-1.5" numberOfLines={1}>
+      <Text
+        className="text-[13px] font-sans-bold text-ink mt-1.5"
+        numberOfLines={1}
+      >
         {listing.title}
       </Text>
       <View className="flex-row items-center gap-1 mt-0.5">
@@ -787,15 +834,25 @@ function AgentRailCard({ agent }: { agent: PublicAgent }) {
       className="rounded-2xl bg-cream-2 items-center px-3 py-4"
       style={{ width: 150 }}
     >
-      <PLAvatar initials={initialsOf(agent.name)} uri={agent.avatarUrl ?? undefined} size={56} tone="primary" />
-      <Text className="text-[13px] font-sans-bold text-ink mt-2 text-center" numberOfLines={1}>
+      <PLAvatar
+        initials={initialsOf(agent.name)}
+        uri={agent.avatarUrl ?? undefined}
+        size={56}
+        tone="primary"
+      />
+      <Text
+        className="text-[13px] font-sans-bold text-ink mt-2 text-center"
+        numberOfLines={1}
+      >
         {agent.name}
       </Text>
       <View className="flex-row items-center gap-1 mt-1">
         {hasRating && (
           <>
             <Ionicons name="star" size={11} color={ACCENT} />
-            <Text className="text-[11px] font-sans-bold text-ink">{agent.rating}</Text>
+            <Text className="text-[11px] font-sans-bold text-ink">
+              {agent.rating}
+            </Text>
             <Text className="text-[11px] text-ink-3">·</Text>
           </>
         )}
