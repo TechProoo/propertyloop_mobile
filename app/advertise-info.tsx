@@ -1,0 +1,173 @@
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Stack, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+
+const PRIMARY = "#1f6f43";
+const INK = "#1a2120";
+const INK_2 = "#4d524f";
+const INK_3 = "#7f857f";
+const ACCENT_BG = "#f5ead4";
+const ACCENT_FG = "#6b4a16";
+
+const WEBSITE_URL = "https://propertyloop.ng/advertise";
+
+const PLACEMENTS: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  detail: string;
+}[] = [
+  {
+    icon: "phone-portrait-outline",
+    title: "App open",
+    detail: "A full-screen spot the moment the app opens — maximum visibility.",
+  },
+  {
+    icon: "megaphone-outline",
+    title: "Home banner",
+    detail: "A wide banner at the top of the home screen, seen by every user.",
+  },
+  {
+    icon: "search-outline",
+    title: "Search results",
+    detail: "A native card inside property search results.",
+  },
+  {
+    icon: "albums-outline",
+    title: "In-feed card",
+    detail: "A sponsored card between listings as people browse.",
+  },
+];
+
+export default function AdvertiseInfoScreen() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
+      <Stack.Screen options={{ headerShown: false }} />
+
+      {/* Top bar */}
+      <View className="flex-row items-center justify-between px-5 pt-1 pb-2">
+        <Pressable
+          onPress={() => router.back()}
+          className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"
+        >
+          <Ionicons name="close" size={18} color={INK_2} />
+        </Pressable>
+        <Text className="text-[14px] font-sans-bold text-ink">Advertise with us</Text>
+        <View style={{ width: 36 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 150 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Emblem */}
+        <View className="items-center mt-3">
+          <View
+            className="w-16 h-16 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: PRIMARY }}
+          >
+            <Ionicons name="megaphone" size={30} color="#ffffff" />
+          </View>
+          <Text
+            className="font-serif text-ink text-center mt-4"
+            style={{ fontSize: 26, letterSpacing: -0.5, lineHeight: 30 }}
+          >
+            Put your brand in front of{" "}
+            <Text className="font-serif-italic">home movers</Text>
+          </Text>
+          <Text className="text-[13.5px] text-ink-2 text-center mt-2 leading-5">
+            Buyers, renters, agents and homeowners use PropertyLoop every day.
+            Reach them with a sponsored placement across the app and website.
+          </Text>
+        </View>
+
+        {/* Placements */}
+        <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-7 mb-2">
+          Where your brand shows
+        </Text>
+        <View className="gap-2">
+          {PLACEMENTS.map((p) => (
+            <View
+              key={p.title}
+              className="bg-white rounded-2xl px-3.5 py-3 flex-row items-center gap-3 border-line"
+              style={{ borderWidth: 0.5 }}
+            >
+              <View
+                className="w-9 h-9 rounded-xl items-center justify-center"
+                style={{ backgroundColor: "#e3efe7" }}
+              >
+                <Ionicons name={p.icon} size={17} color={PRIMARY} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[13.5px] font-sans-bold text-ink">{p.title}</Text>
+                <Text className="text-[11.5px] text-ink-3 mt-0.5 leading-4">{p.detail}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* How it works */}
+        <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-7 mb-2">
+          How it works
+        </Text>
+        <View className="bg-white rounded-2xl px-4 py-3.5 border-line gap-3" style={{ borderWidth: 0.5 }}>
+          {[
+            "Pick a placement and how long it runs — simple flat weekly pricing.",
+            "Upload your creative and pay securely online.",
+            "Our team reviews it, and it goes live to thousands of users.",
+          ].map((t, i) => (
+            <View key={i} className="flex-row gap-2.5">
+              <View
+                className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
+                style={{ backgroundColor: PRIMARY }}
+              >
+                <Text className="text-[10px] font-sans-bold text-white">{i + 1}</Text>
+              </View>
+              <Text className="flex-1 text-[12.5px] text-ink-2 leading-5">{t}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Website note */}
+        <View
+          className="mt-6 rounded-2xl px-4 py-3.5 flex-row gap-2.5 items-start"
+          style={{ backgroundColor: ACCENT_BG }}
+        >
+          <Ionicons name="globe-outline" size={17} color={ACCENT_FG} style={{ marginTop: 1 }} />
+          <Text className="flex-1 text-[12px] leading-5" style={{ color: ACCENT_FG }}>
+            Booking and payment for adverts are handled on our website. Visit{" "}
+            <Text className="font-sans-bold">propertyloop.ng/advertise</Text> to see full
+            details, pricing, and to book a campaign.
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Sticky CTA */}
+      <View
+        className="absolute left-0 right-0 bottom-0 bg-cream border-line"
+        style={{
+          borderTopWidth: 0.5,
+          paddingHorizontal: 16,
+          paddingTop: 14,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
+        }}
+      >
+        <Pressable
+          onPress={() => Linking.openURL(WEBSITE_URL).catch(() => {})}
+          className="bg-primary rounded-full items-center justify-center flex-row gap-2 active:opacity-80"
+          style={{ paddingVertical: 16 }}
+        >
+          <Text className="text-white font-sans-bold text-[15px]">
+            Get more info on the website
+          </Text>
+          <Ionicons name="open-outline" size={16} color="#ffffff" />
+        </Pressable>
+        <Text className="text-center text-[11px] text-ink-3 mt-2">
+          Opens propertyloop.ng/advertise
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}

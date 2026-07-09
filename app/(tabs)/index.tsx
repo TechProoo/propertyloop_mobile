@@ -165,6 +165,7 @@ export default function HomeScreen() {
         <Header />
         <Greeting />
         <ServiceLoopEntry />
+        <AdvertiseEntry />
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
 
@@ -622,6 +623,48 @@ function ServiceLoopEntry() {
           <Text className="text-white font-sans-bold text-[13px]">Explore Service</Text>
           <Ionicons name="arrow-forward" size={15} color="#ffffff" />
         </View>
+      </PressableScale>
+    </Appear>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Advertise entry — brands can sponsor placements. Info-only in-app
+// (booking + payment happen on the website); taps open the info screen.
+// ─────────────────────────────────────────────────────────────────
+function AdvertiseEntry() {
+  return (
+    <Appear delay={90} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
+      <PressableScale
+        onPress={() => {
+          tapLight();
+          router.push("/advertise-info" as Href);
+        }}
+        activeScale={0.98}
+        className="rounded-2xl px-4 py-3 flex-row items-center gap-3"
+        style={{
+          backgroundColor: "#ffffff",
+          borderWidth: 1,
+          borderColor: "#e1dcd3",
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Advertise with PropertyLoop — put your brand in front of home movers"
+      >
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center"
+          style={{ backgroundColor: "#f5ead4" }}
+        >
+          <Ionicons name="megaphone" size={19} color="#6b4a16" />
+        </View>
+        <View className="flex-1">
+          <Text className="text-[14px] font-sans-bold text-ink tracking-tight">
+            Advertise with us
+          </Text>
+          <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">
+            Put your brand in front of thousands of home movers.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color="#7f857f" />
       </PressableScale>
     </Appear>
   );
