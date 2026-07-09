@@ -31,6 +31,13 @@ const usersService = {
   deleteAccount(): Promise<{ success: boolean }> {
     return api.delete("/users/me").then((r) => r.data);
   },
+  /**
+   * Reversible pause: signs the account out everywhere immediately. Logging
+   * back in with the correct email/password reactivates it automatically.
+   */
+  deactivateAccount(): Promise<{ success: boolean }> {
+    return api.patch("/users/me/deactivate").then((r) => r.data);
+  },
 };
 
 export interface UserSettings {

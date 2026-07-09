@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
+import usersService from "@/api/services/users";
 import bookmarksService from "@/api/services/bookmarks";
 import viewingsService, { type Viewing } from "@/api/services/viewings";
 import offersService, {
@@ -80,7 +82,7 @@ function initialsOf(name?: string | null) {
 }
 
 export default function AccountScreen() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [bookmarksCount, setBookmarksCount] = useState(0);
   const [viewings, setViewings] = useState<Viewing[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -116,6 +118,66 @@ export default function AccountScreen() {
   );
 
   const firstName = (user?.name ?? "").trim().split(/\s+/)[0] || "there";
+
+  // ─── Account controls ───────────────────────────────────────
+  const doDeactivate = async () => {
+    try {
+      await usersService.deactivateAccount();
+      await signOut();
+      router.replace("/welcome" as Href);
+      Alert.alert(
+        "Account deactivated",
+        "Your account is hidden until you sign back in. Log in anytime to reactivate it.",
+      );
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again in a moment.";
+      Alert.alert("Couldn't deactivate", Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  };
+
+  const doDelete = async () => {
+    try {
+      await usersService.deleteAccount();
+      await signOut();
+      router.replace("/welcome" as Href);
+      Alert.alert("Account deleted", "Your account has been closed. We're sorry to see you go.");
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again in a moment.";
+      Alert.alert("Couldn't delete account", Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  };
+
+  const onDeactivate = () =>
+    Alert.alert(
+      "Deactivate your account?",
+      "Your profile and activity will be hidden and you'll be signed out everywhere. Simply sign back in anytime with your email and password to reactivate — nothing is deleted.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Deactivate", style: "destructive", onPress: doDeactivate },
+      ],
+    );
+
+  const onDelete = () =>
+    Alert.alert(
+      "Delete your account?",
+      "This permanently closes your PropertyLoop account and signs you out everywhere. Your bookings, offers, messages and saved items will no longer be accessible. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Are you absolutely sure?",
+              `${user?.email ?? "Your account"} will be closed. This is your last chance to keep it.`,
+              [
+                { text: "Keep my account", style: "cancel" },
+                { text: "Yes, delete", style: "destructive", onPress: doDelete },
+              ],
+            ),
+        },
+      ],
+    );
 
   const upcomingViewings = useMemo(
     () =>
@@ -327,6 +389,27 @@ export default function AccountScreen() {
               ))}
             </View>
           )}
+
+          {/* Account controls */}
+          <SectionLabel className="px-5 pt-5">Account</SectionLabel>
+          <View className="px-4 pt-2.5 gap-2">
+            <DangerRow
+              icon="pause-circle-outline"
+              tint="#fbeacd"
+              fg="#b9842c"
+              title="Deactivate account"
+              detail="Hide your account — sign back in anytime to reactivate"
+              onPress={onDeactivate}
+            />
+            <DangerRow
+              icon="trash-outline"
+              tint="#fde6e4"
+              fg="#b3261e"
+              title="Delete account"
+              detail="Permanently close your account"
+              onPress={onDelete}
+            />
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -382,6 +465,43 @@ function StatBox({
       style={boxStyle}
     >
       {body}
+    </Pressable>
+  );
+}
+
+function DangerRow({
+  icon,
+  tint,
+  fg,
+  title,
+  detail,
+  onPress,
+}: {
+  icon: IonName;
+  tint: string;
+  fg: string;
+  title: string;
+  detail: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="bg-white rounded-2xl px-3.5 py-3.5 flex-row items-center gap-3 border-line active:opacity-90"
+      style={{ borderWidth: 0.5 }}
+    >
+      <View
+        className="w-9 h-9 rounded-xl items-center justify-center"
+        style={{ backgroundColor: tint }}
+      >
+        <Ionicons name={icon} size={17} color={fg} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-[13.5px] font-sans-bold" style={{ color: fg }}>
+          {title}
+        </Text>
+        <Text className="text-[11.5px] text-ink-3 mt-0.5">{detail}</Text>
+      </View>
     </Pressable>
   );
 }
