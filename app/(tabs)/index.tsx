@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -25,6 +25,7 @@ import { useAuth } from "@/context/auth";
 import { useSelectedLocation, labelForLocation } from "@/lib/location";
 import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { LocationSheet } from "@/components/LocationSheet";
+import { AdSlot, SplashAd } from "@/components/AdSlot";
 
 // The minimal shape the horizontal rail cards render — satisfied by both a full
 // Listing and a stored RecentListing.
@@ -167,6 +168,9 @@ export default function HomeScreen() {
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
 
+        {/* Paid brand banner — renders nothing when no campaign is live */}
+        <AdSlot placement="HOME_BANNER" style={{ marginHorizontal: 20, marginTop: 16 }} />
+
         {/* Jump back in — recently viewed (returning users only) */}
         {recentlyViewed.length > 0 && (
           <>
@@ -192,10 +196,17 @@ export default function HomeScreen() {
           <EmptyState query={query} mode={mode} />
         ) : (
           <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
-            {filtered.map((h) => (
-              <Reveal key={h.id} style={{ width: "47.5%" }}>
-                <HomeCard listing={h} />
-              </Reveal>
+            {filtered.map((h, i) => (
+              <Fragment key={h.id}>
+                {/* Sponsored card as its own grid cell after the 4th listing.
+                    AdSlot renders null with no live campaign — no empty cell. */}
+                {i === 4 && (
+                  <AdSlot placement="HOME_FEED" variant="card" style={{ width: "47.5%" }} />
+                )}
+                <Reveal style={{ width: "47.5%" }}>
+                  <HomeCard listing={h} />
+                </Reveal>
+              </Fragment>
             ))}
           </View>
         )}
@@ -227,6 +238,10 @@ export default function HomeScreen() {
           </>
         )}
       </RevealScrollView>
+
+      {/* Full-screen sponsored interstitial — once per session, only when a
+          SPLASH campaign is live. */}
+      <SplashAd />
     </SafeAreaView>
   );
 }

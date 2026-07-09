@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Image } from "expo-image";
@@ -8,6 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useListings } from "@/api/hooks/useListings";
 import { useSearchFilters, activeFilterCount } from "@/lib/searchFilters";
 import type { Listing } from "@/api/types";
+import { AdSlot } from "@/components/AdSlot";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -186,8 +187,13 @@ export default function SearchResultsScreen() {
           }}
           scrollEventThrottle={400}
         >
-          {items.map((c) => (
-            <ResultCard key={c.id} listing={c} />
+          {items.map((c, i) => (
+            <Fragment key={c.id}>
+              {/* Sponsored card after the 3rd result — renders nothing when
+                  no campaign is live for this slot. */}
+              {i === 3 && <AdSlot placement="SEARCH_INLINE" />}
+              <ResultCard listing={c} />
+            </Fragment>
           ))}
           {loadingMore && (
             <BouncyLoader color={PRIMARY} style={{ marginTop: 4 }} />
