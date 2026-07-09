@@ -42,6 +42,7 @@ function iconFor(type: string): {
 } {
   if (type.startsWith("OFFER")) return { icon: "pricetag-outline", tone: "accent" };
   if (type.startsWith("PURCHASE")) return { icon: "trail-sign-outline", tone: "primary" };
+  if (type.startsWith("WITHDRAWAL")) return { icon: "cash-outline", tone: "primary" };
   if (type.startsWith("JOB")) return { icon: "construct-outline", tone: "primary" };
   if (type.startsWith("VIEWING")) return { icon: "calendar-outline", tone: "primary" };
   if (type.startsWith("KYC")) return { icon: "shield-checkmark-outline", tone: "accent" };
@@ -65,6 +66,9 @@ function hrefFor(n: AppNotification, role?: string): Href | null {
       isAgent ? "/(agent-tabs)/leads?tab=viewing" : "/(tabs)/account"
     ) as Href;
   }
+  // Withdrawal decisions land the vendor on their earnings tab, where the
+  // paid/returned balance is visible.
+  if (d.withdrawalId) return "/(vendor-tabs)/earnings" as Href;
   // Job events route to the recipient's own job screen: the vendor's
   // active-job view (surfaces the dispute banner), or the buyer's service-job
   // view (where they confirm/release escrow).

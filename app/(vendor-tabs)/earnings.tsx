@@ -58,8 +58,8 @@ export default function VendorEarningsScreen() {
       const res = await vendorEarningsService.withdraw();
       await load();
       Alert.alert(
-        "Withdrawal on its way",
-        `${naira(res.amount)} is being sent to ${res.bankName} ••${res.accountNumber.slice(-4)}. It usually lands within 24 hours.`,
+        "Withdrawal requested",
+        `${naira(res.amount)} will be transferred to ${res.bankName} ••${res.accountNumber.slice(-4)} by our payouts team — usually within 24 hours. We'll notify you once it's sent.`,
       );
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? "Please try again.";
@@ -243,7 +243,7 @@ export default function VendorEarningsScreen() {
                           {disputed
                             ? "On hold · customer raised a dispute"
                             : e.status === "PROCESSING"
-                              ? "Sending to your bank"
+                              ? "Withdrawal pending · being processed"
                               : "Held until client confirms"}
                         </Text>
                       </View>
