@@ -14,6 +14,7 @@ import { SegmentedToggle } from "@/components/ui/SegmentedToggle";
 import AgentDashboard from "@/components/agent/AgentDashboard";
 import { useAuth } from "@/context/auth";
 import agentsService from "@/api/services/agents";
+import usersService from "@/api/services/users";
 
 const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
@@ -85,6 +86,13 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
       { id: "out",     icon: "log-out-outline", title: "Sign out", destructive: true },
     ],
   },
+  {
+    label: "Danger zone",
+    rows: [
+      { id: "deactivate", icon: "pause-circle-outline", title: "Deactivate account", detail: "Sign back in anytime to reactivate", destructive: true },
+      { id: "delete",     icon: "trash-outline",        title: "Delete account",     detail: "Permanently close your account", destructive: true },
+    ],
+  },
 ];
 
 export default function AgentProfileTab() {
@@ -97,6 +105,33 @@ export default function AgentProfileTab() {
       agentsService.getMe().then(setMe).catch(() => {});
     }, []),
   );
+
+  const doDeactivate = async () => {
+    try {
+      await usersService.deactivateAccount();
+      await signOut();
+      router.replace("/welcome" as Href);
+      Alert.alert(
+        "Account deactivated",
+        "Your account is hidden until you sign back in. Log in anytime to reactivate it.",
+      );
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again in a moment.";
+      Alert.alert("Couldn't deactivate", Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  };
+
+  const doDelete = async () => {
+    try {
+      await usersService.deleteAccount();
+      await signOut();
+      router.replace("/welcome" as Href);
+      Alert.alert("Account deleted", "Your account has been closed. We're sorry to see you go.");
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again in a moment.";
+      Alert.alert("Couldn't delete account", Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  };
 
   const onLink = (l: LinkRow) => {
     if (l.id === "out") {
@@ -111,6 +146,40 @@ export default function AgentProfileTab() {
           },
         },
       ]);
+      return;
+    }
+    if (l.id === "deactivate") {
+      Alert.alert(
+        "Deactivate your account?",
+        "Your public profile and listings will be hidden and you'll be signed out everywhere. Sign back in anytime with your email and password to reactivate — nothing is deleted.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Deactivate", style: "destructive", onPress: doDeactivate },
+        ],
+      );
+      return;
+    }
+    if (l.id === "delete") {
+      Alert.alert(
+        "Delete your account?",
+        "This permanently closes your PropertyLoop account and signs you out everywhere. Your listings, leads, messages and reviews will no longer be accessible. This can't be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete account",
+            style: "destructive",
+            onPress: () =>
+              Alert.alert(
+                "Are you absolutely sure?",
+                `${user?.email ?? "Your account"} will be closed. This is your last chance to keep it.`,
+                [
+                  { text: "Keep my account", style: "cancel" },
+                  { text: "Yes, delete", style: "destructive", onPress: doDelete },
+                ],
+              ),
+          },
+        ],
+      );
       return;
     }
     if (l.id === "public") {
