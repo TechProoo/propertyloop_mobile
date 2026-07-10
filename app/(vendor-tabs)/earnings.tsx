@@ -51,6 +51,11 @@ export default function VendorEarningsScreen() {
   );
 
   const available = summary?.available ?? 0;
+  // Money already withdrawn and clearing to the bank. When there's nothing
+  // available but a payout is in flight, the button says "Processing payout"
+  // instead of the misleading "Nothing to withdraw".
+  const processing = summary?.processing ?? 0;
+  const isProcessing = available <= 0 && processing > 0;
 
   const doWithdraw = async () => {
     setWithdrawing(true);
@@ -119,7 +124,11 @@ export default function VendorEarningsScreen() {
             disabled={available <= 0 || withdrawing}
             className="mt-3 rounded-full items-center justify-center flex-row gap-2"
             style={{
-              backgroundColor: available > 0 ? PRIMARY : "rgba(255,255,255,0.12)",
+              backgroundColor: available > 0
+                ? PRIMARY
+                : isProcessing
+                  ? "rgba(240,201,142,0.16)"
+                  : "rgba(255,255,255,0.12)",
               paddingVertical: 13,
               opacity: withdrawing ? 0.7 : 1,
             }}
@@ -129,15 +138,31 @@ export default function VendorEarningsScreen() {
             ) : (
               <>
                 <Ionicons
-                  name="arrow-up-circle"
+                  name={isProcessing ? "time-outline" : "arrow-up-circle"}
                   size={16}
-                  color={available > 0 ? "#ffffff" : "rgba(255,255,255,0.5)"}
+                  color={
+                    available > 0
+                      ? "#ffffff"
+                      : isProcessing
+                        ? "#f0c98e"
+                        : "rgba(255,255,255,0.5)"
+                  }
                 />
                 <Text
                   className="text-[14px] font-sans-bold"
-                  style={{ color: available > 0 ? "#ffffff" : "rgba(255,255,255,0.5)" }}
+                  style={{
+                    color: available > 0
+                      ? "#ffffff"
+                      : isProcessing
+                        ? "#f0c98e"
+                        : "rgba(255,255,255,0.5)",
+                  }}
                 >
-                  {available > 0 ? `Withdraw ${naira(available)}` : "Nothing to withdraw"}
+                  {available > 0
+                    ? `Withdraw ${naira(available)}`
+                    : isProcessing
+                      ? "Processing payout…"
+                      : "Nothing to withdraw"}
                 </Text>
               </>
             )}
