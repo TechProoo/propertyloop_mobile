@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import listingsService, { type LogbookEntry } from "@/api/services/listings";
 import type { Listing } from "@/api/types";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -35,11 +37,14 @@ function compactNaira(n: number) {
 
 export default function LogbookScreen() {
   const { propertyId } = useLocalSearchParams<{ propertyId?: string }>();
+  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<TabId>("All");
   const [listing, setListing] = useState<Listing | null>(null);
   const [entries, setEntries] = useState<LogbookEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (!propertyId) {
@@ -65,6 +70,17 @@ export default function LogbookScreen() {
       active = false;
     };
   }, [propertyId]);
+
+  // Refetch just the entries after logging a new one.
+  const reloadEntries = useCallback(async () => {
+    if (!propertyId) return;
+    const es = await listingsService.getLogbook(propertyId).catch(() => null);
+    if (es) setEntries(es);
+  }, [propertyId]);
+
+  // Only the property's own agent can log maintenance (backend enforces this too).
+  const isOwner =
+    !!user?.id && user.role === "AGENT" && listing?.agent?.id === user.id;
 
   const summary = useMemo(() => {
     const verified = entries.filter((e) => e.verified).length;
@@ -123,7 +139,7 @@ export default function LogbookScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: isOwner ? 110 : 40 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Property hero */}
@@ -216,7 +232,186 @@ export default function LogbookScreen() {
           </View>
         </ScrollView>
       )}
+
+      {/* Owner-only: log a piece of work manually. */}
+      {!loading && !error && listing && isOwner && (
+        <View
+          className="absolute left-0 right-0 bottom-0 bg-cream border-line"
+          style={{
+            borderTopWidth: 0.5,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: Math.max(insets.bottom, 16) + 8,
+          }}
+        >
+          <Pressable
+            onPress={() => setAdding(true)}
+            className="bg-primary rounded-full items-center justify-center flex-row gap-2 active:opacity-80"
+            style={{ paddingVertical: 15 }}
+          >
+            <Ionicons name="add" size={18} color="#ffffff" />
+            <Text className="text-white font-sans-bold text-[14px]">
+              Log work on this property
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      <AddEntryModal
+        visible={adding}
+        onClose={() => setAdding(false)}
+        onSubmit={async (payload) => {
+          if (!propertyId) return;
+          await listingsService.addLogbookEntry(propertyId, payload);
+          await reloadEntries();
+        }}
+      />
     </SafeAreaView>
+  );
+}
+
+type EntryPayload = {
+  category: string;
+  title: string;
+  description?: string;
+  vendorName: string;
+  cost: number;
+  completedAt?: string;
+};
+
+function AddEntryModal({
+  visible,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (payload: EntryPayload) => Promise<void>;
+}) {
+  const insets = useSafeAreaInsets();
+  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [vendorName, setVendorName] = useState("");
+  const [cost, setCost] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const reset = () => {
+    setCategory("");
+    setTitle("");
+    setDescription("");
+    setVendorName("");
+    setCost("");
+  };
+
+  const submit = async () => {
+    if (saving) return;
+    if (!category.trim() || !title.trim() || !vendorName.trim()) {
+      Alert.alert("Missing details", "Category, title and who did the work are required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSubmit({
+        category: category.trim(),
+        title: title.trim(),
+        description: description.trim() || undefined,
+        vendorName: vendorName.trim(),
+        cost: Math.max(0, Math.round(Number(cost.replace(/[^\d]/g, "")) || 0)),
+        completedAt: new Date().toISOString(),
+      });
+      reset();
+      onClose();
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Please try again.";
+      Alert.alert("Couldn't save entry", Array.isArray(msg) ? msg.join(", ") : msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(10,14,11,0.4)" }}>
+        <View
+          className="bg-cream rounded-t-3xl"
+          style={{ paddingBottom: Math.max(insets.bottom, 16) + 8, maxHeight: "90%" }}
+        >
+          {/* Handle + header */}
+          <View className="items-center pt-2.5 pb-1">
+            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: "#d3cdc1" }} />
+          </View>
+          <View className="flex-row items-center justify-between px-5 pt-1 pb-2">
+            <Text className="text-[15px] font-sans-bold text-ink">Log work</Text>
+            <Pressable onPress={onClose} hitSlop={8}>
+              <Ionicons name="close" size={20} color={INK_2} />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Field label="Category *">
+              <Input value={category} onChangeText={setCategory} placeholder="e.g. Plumbing, Roofing" />
+            </Field>
+            <Field label="What was done *">
+              <Input value={title} onChangeText={setTitle} placeholder="e.g. Replaced kitchen sink pipe" />
+            </Field>
+            <Field label="Details (optional)">
+              <Input
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Any notes about the work"
+                multiline
+              />
+            </Field>
+            <Field label="Who did the work *">
+              <Input value={vendorName} onChangeText={setVendorName} placeholder="Vendor or handyman name" />
+            </Field>
+            <Field label="Cost (₦)">
+              <Input value={cost} onChangeText={setCost} placeholder="0" keyboardType="number-pad" />
+            </Field>
+          </ScrollView>
+
+          <View className="px-5 pt-1">
+            <Pressable
+              onPress={submit}
+              disabled={saving}
+              className="bg-primary rounded-full items-center active:opacity-80"
+              style={{ paddingVertical: 15, opacity: saving ? 0.6 : 1 }}
+            >
+              <Text className="text-white font-sans-bold text-[15px]">
+                {saving ? "Saving…" : "Add to logbook"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View className="mt-3.5">
+      <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-1.5">
+        {label}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
+function Input(props: React.ComponentProps<typeof TextInput>) {
+  return (
+    <TextInput
+      placeholderTextColor={INK_3}
+      className="bg-white border border-line rounded-2xl px-4 py-3 text-ink text-[14px]"
+      style={props.multiline ? { minHeight: 70, textAlignVertical: "top" } : undefined}
+      {...props}
+    />
   );
 }
 

@@ -88,6 +88,25 @@ const listingsService = {
     return data;
   },
 
+  /** Owner (the listing's agent) logs a piece of work manually. */
+  async addLogbookEntry(
+    id: string,
+    payload: {
+      category: string;
+      title: string;
+      description?: string;
+      vendorName: string;
+      cost: number;
+      completedAt?: string; // ISO
+    },
+  ): Promise<LogbookEntry> {
+    const { data } = await api.post<LogbookEntry>(
+      `/listings/${id}/logbook`,
+      payload,
+    );
+    return data;
+  },
+
   /** Upload one file (multipart) via the listings uploader. Returns the URL. */
   async uploadPhoto(
     uri: string,
