@@ -15,12 +15,33 @@ import VendorDashboard from "@/components/vendor/VendorDashboard";
 import { useAuth } from "@/context/auth";
 import vendorsService, { type VendorStats } from "@/api/services/vendors";
 import usersService from "@/api/services/users";
+import { confirmAccountDeletion } from "@/lib/accountSecurity";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
+
+const ROW_TINTS: Record<string, { bg: string; fg: string }> = {
+  menu: { bg: "#e3efe7", fg: PRIMARY },
+  avail: { bg: "#e4ecfb", fg: "#3b5bdb" },
+  reviews: { bg: "#fbeacd", fg: "#b9842c" },
+  cats: { bg: "#dcf0ef", fg: "#0e7c7b" },
+  bank: { bg: "#e3efe7", fg: PRIMARY },
+  earnings: { bg: "#fbeacd", fg: "#b9842c" },
+  edit: { bg: "#e3efe7", fg: PRIMARY },
+  public: { bg: "#e4ecfb", fg: "#3b5bdb" },
+  notif: { bg: "#fbeacd", fg: "#b9842c" },
+  help: { bg: "#e4ecfb", fg: "#3b5bdb" },
+  logbook: { bg: "#dcf0ef", fg: "#0e7c7b" },
+  escrow: { bg: "#e3efe7", fg: PRIMARY },
+  terms: { bg: "#ebe6fb", fg: "#6741d9" },
+  privacy: { bg: "#e4ecfb", fg: "#3b5bdb" },
+  out: { bg: "#fde6e4", fg: DESTRUCTIVE },
+  deactivate: { bg: "#fbeacd", fg: "#b9842c" },
+  delete: { bg: "#fde6e4", fg: DESTRUCTIVE },
+};
 
 type ToggleTab = "profile" | "settings";
 const TOGGLE_OPTIONS = [
@@ -67,8 +88,25 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     rows: [
       { id: "edit",     icon: "create-outline",            title: "Edit business profile",      href: "/vendor-edit-profile" },
       { id: "public",   icon: "eye-outline",               title: "Preview public profile" },
+    ],
+  },
+  {
+    label: "Preferences",
+    rows: [
       { id: "notif",    icon: "notifications-outline",     title: "Notifications", detail: "Messages, email, SMS", href: "/notification-settings" },
-      { id: "help",     icon: "help-circle-outline",       title: "Help & vendor FAQ",          href: "/help" },
+    ],
+  },
+  {
+    label: "Support",
+    rows: [
+      { id: "help",     icon: "help-circle-outline",       title: "Help centre",                 href: "/help" },
+      { id: "logbook",  icon: "document-text-outline",     title: "About the logbook",           href: "/logbook-info" },
+      { id: "escrow",   icon: "lock-closed-outline",       title: "How escrow works",            href: "/escrow-info" },
+    ],
+  },
+  {
+    label: "Legal",
+    rows: [
       { id: "terms",    icon: "reader-outline",            title: "Terms of service",           href: "/terms" },
       { id: "privacy",  icon: "eye-outline",               title: "Privacy policy",             href: "/privacy" },
       { id: "out",      icon: "log-out-outline",           title: "Sign out", destructive: true },
@@ -118,6 +156,7 @@ export default function VendorProfileScreen() {
 
   const doDelete = async () => {
     try {
+      if (!(await confirmAccountDeletion())) return;
       await usersService.deleteAccount();
       await signOut();
       router.replace("/welcome" as Href);
@@ -201,7 +240,7 @@ export default function VendorProfileScreen() {
         <VendorDashboard embedded />
       ) : (
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 36 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 104 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Profile card */}
@@ -289,20 +328,27 @@ export default function VendorProfileScreen() {
                   >
                     <View
                       className="w-9 h-9 rounded-xl items-center justify-center"
-                      style={{ backgroundColor: r.destructive ? "#fde6e4" : "#f0f0f0" }}
+                      style={{ backgroundColor: ROW_TINTS[r.id]?.bg ?? "#f0f0f0" }}
                     >
                       <Ionicons
                         name={r.icon}
                         size={17}
-                        color={r.destructive ? DESTRUCTIVE : INK_2}
+                        color={ROW_TINTS[r.id]?.fg ?? INK_2}
                       />
                     </View>
-                    <Text
-                      className="flex-1 text-[13.5px] font-sans-bold"
-                      style={{ color: r.destructive ? DESTRUCTIVE : "#1a2120" }}
-                    >
-                      {r.title}
-                    </Text>
+                    <View className="flex-1">
+                      <Text
+                        className="text-[13.5px] font-sans-bold"
+                        style={{ color: r.destructive ? (ROW_TINTS[r.id]?.fg ?? DESTRUCTIVE) : "#1a2120" }}
+                      >
+                        {r.title}
+                      </Text>
+                      {!!r.detail && !r.badge && (
+                        <Text className="text-[11.5px] text-ink-3 mt-0.5 leading-4">
+                          {r.detail}
+                        </Text>
+                      )}
+                    </View>
                     {r.badge ? (
                       <View
                         className="flex-row items-center gap-1 px-2 py-0.5 rounded-full"
@@ -316,13 +362,7 @@ export default function VendorProfileScreen() {
                           {r.detail}
                         </Text>
                       </View>
-                    ) : (
-                      r.detail && (
-                        <Text className="text-[12px] font-sans-semibold text-ink-3">
-                          {r.detail}
-                        </Text>
-                      )
-                    )}
+                    ) : null}
                     {!r.destructive && !r.badge && (
                       <Ionicons name="chevron-forward" size={14} color={INK_3} />
                     )}

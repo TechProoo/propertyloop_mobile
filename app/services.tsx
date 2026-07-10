@@ -194,7 +194,7 @@ export default function ServicesScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search plumbers, electricians, painters"
+              placeholder="Search by trade or company name"
               placeholderTextColor={INK_3}
               className="flex-1 text-[14px] text-ink font-sans-medium"
               style={{ paddingVertical: 0 }}
@@ -386,7 +386,7 @@ function VendorCard({
         <View className="flex-1">
           <View className="flex-row items-start gap-2">
             <View className="flex-1">
-              <Text className="text-[14.5px] font-sans-bold text-ink" numberOfLines={1}>
+              <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={2} style={{ lineHeight: 18 }}>
                 {vendor.name}
               </Text>
               <Text className="text-[12px] text-ink-3 mt-0.5" numberOfLines={1}>
@@ -418,7 +418,7 @@ function VendorCard({
               >
                 <Ionicons name="shield-checkmark" size={11} color={PRIMARY} />
                 <Text className="text-[10.5px] font-sans-bold" style={{ color: PRIMARY }}>
-                  Verified
+                  Verified business
                 </Text>
               </View>
             )}
@@ -451,6 +451,7 @@ function VendorCard({
           <View className="flex-row items-center gap-1">
             <Ionicons name="star" size={12} color={ACCENT} />
             <Text className="text-[12px] font-sans-bold text-ink">{rating.toFixed(1)}</Text>
+            <Text className="text-[11px] text-ink-3">({jobs || 0} reviews)</Text>
           </View>
         )}
         {jobs > 0 && (
@@ -469,7 +470,7 @@ function VendorCard({
       </View>
 
       {/* Footer — price + View profile CTA */}
-      <View className="flex-row items-center justify-between mt-3 pt-3 border-line" style={{ borderTopWidth: 0.5 }}>
+      <View className="flex-row items-center justify-between mt-3 pt-3" style={{ borderTopWidth: 0.5, borderTopColor: "#ece6df" }}>
         {priceLabel ? (
           <View>
             <Text className="text-[10px] font-sans-bold text-ink-3 tracking-wider uppercase">From</Text>

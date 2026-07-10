@@ -1,12 +1,14 @@
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import * as WebBrowser from "expo-web-browser";
+import adsService, { type AdPricing } from "@/api/services/ads";
 
 const PRIMARY = "#1f6f43";
-const INK = "#1a2120";
+const PRIMARY_INK = "#134a2d";
 const INK_2 = "#4d524f";
-const INK_3 = "#7f857f";
 const ACCENT_BG = "#f5ead4";
 const ACCENT_FG = "#6b4a16";
 
@@ -41,6 +43,17 @@ const PLACEMENTS: {
 
 export default function AdvertiseInfoScreen() {
   const insets = useSafeAreaInsets();
+  const [pricing, setPricing] = useState<AdPricing | null>(null);
+
+  useEffect(() => {
+    adsService.pricing().then(setPricing).catch(() => {});
+  }, []);
+
+  const openAdvertise = () => {
+    void WebBrowser.openBrowserAsync(WEBSITE_URL, {
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -108,6 +121,34 @@ export default function AdvertiseInfoScreen() {
           ))}
         </View>
 
+        <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-7 mb-2">
+          Simple campaign pricing
+        </Text>
+        <View className="bg-white rounded-2xl overflow-hidden border-line" style={{ borderWidth: 0.5 }}>
+          {PLACEMENTS.slice(0, 3).map((p, index) => {
+            const key = ["SPLASH", "HOME_BANNER", "SEARCH_INLINE"][index] as keyof AdPricing["weeklyRates"];
+            const rate = pricing?.weeklyRates[key];
+            return (
+              <View key={p.title} className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: index === 2 ? 0 : 0.5, borderBottomColor: "#ece6df" }}>
+                <View>
+                  <Text className="text-[13px] font-sans-bold text-ink">{p.title}</Text>
+                  <Text className="text-[11px] text-ink-3 mt-0.5">One-week placement</Text>
+                </View>
+                <Text className="text-[13px] font-sans-bold text-primary">
+                  {rate ? `From ₦${rate.toLocaleString("en-NG")}` : "See rate"}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <View className="mt-5 rounded-2xl p-4" style={{ backgroundColor: "#e3efe7" }}>
+          <Text className="text-[13px] font-sans-bold" style={{ color: PRIMARY_INK }}>Built for high-intent home movers</Text>
+          <Text className="text-[12px] leading-5 mt-1" style={{ color: PRIMARY_INK }}>
+            Put your brand in front of buyers, renters, agents, and property owners while they actively browse and make decisions.
+          </Text>
+        </View>
+
         {/* How it works */}
         <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-7 mb-2">
           How it works
@@ -155,17 +196,17 @@ export default function AdvertiseInfoScreen() {
         }}
       >
         <Pressable
-          onPress={() => Linking.openURL(WEBSITE_URL).catch(() => {})}
+          onPress={openAdvertise}
           className="bg-primary rounded-full items-center justify-center flex-row gap-2 active:opacity-80"
           style={{ paddingVertical: 16 }}
         >
           <Text className="text-white font-sans-bold text-[15px]">
-            Get more info on the website
+            View advertising packages
           </Text>
           <Ionicons name="open-outline" size={16} color="#ffffff" />
         </Pressable>
         <Text className="text-center text-[11px] text-ink-3 mt-2">
-          Opens propertyloop.ng/advertise
+          Opens securely inside PropertyLoop
         </Text>
       </View>
     </SafeAreaView>

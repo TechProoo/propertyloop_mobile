@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import {
   Pressable,
+  Share,
   Text,
   View,
 } from "react-native";
@@ -23,8 +24,13 @@ import { Appear, PressableScale, Reveal, RevealScrollView } from "@/components/a
 const PRIMARY = "#1f6f43";
 const ACCENT = "#b9842c";
 const INK_2 = "#4d524f";
-const INK_3 = "#7f857f";
 const LINE = "#e1dcd3";
+
+function listedWhen(iso: string) {
+  const days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+  return days === 0 ? "Listed today" : days === 1 ? "Listed yesterday" : `Listed ${days} days ago`;
+}
+
 
 export default function SavedScreen() {
   const [items, setItems] = useState<PropertyBookmark[]>([]);
@@ -144,6 +150,10 @@ function SavedCard({
   onUnsave: () => void;
 }) {
   const l = bookmark.listing!;
+  const agentName = l.agent?.name?.trim();
+  const share = async () => {
+    await Share.share({ title: l.title, message: `Take a look at ${l.title} on PropertyLoop.` });
+  };
   return (
     <PressableScale
       onPress={() => router.push(`/property/${l.id}` as Href)}
@@ -154,19 +164,27 @@ function SavedCard({
       <View className="flex-row gap-3 p-3">
         <Image
           source={l.coverImage}
-          style={{ width: 110, height: 110, borderRadius: 12 }}
+          style={{ width: 112, height: 136, borderRadius: 14 }}
           contentFit="cover"
+          transition={160}
         />
         <View className="flex-1">
           <View className="flex-row items-start justify-between gap-2">
             <View className="flex-1">
               <Text
                 className="text-[14.5px] font-sans-bold text-ink"
-                style={{ letterSpacing: -0.1 }}
-                numberOfLines={1}
+                numberOfLines={2}
+                style={{ letterSpacing: -0.1, lineHeight: 19 }}
               >
                 {l.title}
               </Text>
+              {(l.verified || l.status === "ACTIVE") && (
+                <View className="self-start mt-1 rounded-full px-2 py-0.5" style={{ backgroundColor: "#e3efe7" }}>
+                  <Text className="text-[9px] font-sans-bold text-primary">
+                    {l.verified ? "Verified listing" : "Available"}
+                  </Text>
+                </View>
+              )}
               <Text className="text-xs text-ink-3 mt-0.5" numberOfLines={1}>
                 {l.location}
               </Text>
@@ -205,10 +223,37 @@ function SavedCard({
             )}
           </View>
 
-          <View className="flex-row gap-3 mt-2">
+          <View className="flex-row gap-2.5 mt-2">
             <Stat icon="bed-outline" value={`${l.beds} bed`} />
             <Stat icon="water-outline" value={`${l.baths} bath`} />
             {!!l.sqft && <Stat icon="resize-outline" value={`${l.sqft} m²`} />}
+          </View>
+          <Text className="text-[10.5px] text-ink-3 mt-2" numberOfLines={1}>
+            {[agentName ? `By ${agentName}` : null, listedWhen(l.createdAt)].filter(Boolean).join(" · ")}
+          </Text>
+          <View className="flex-row items-center gap-2 mt-2.5">
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                router.push(`/property/${l.id}` as Href);
+              }}
+              className="flex-1 rounded-full py-1.5 items-center"
+              style={{ backgroundColor: "#e3efe7" }}
+            >
+              <Text className="text-[10.5px] font-sans-bold text-primary">View listing</Text>
+            </Pressable>
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                void share();
+              }}
+              className="w-8 h-8 rounded-full items-center justify-center"
+              style={{ backgroundColor: "#f0f0f0" }}
+              accessibilityRole="button"
+              accessibilityLabel={`Share ${l.title}`}
+            >
+              <Ionicons name="share-outline" size={15} color={INK_2} />
+            </Pressable>
           </View>
         </View>
       </View>

@@ -50,6 +50,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow PropertyLoop to use Face ID to protect permanent account actions."
+        }
+      ],
       "expo-video",
       [
         "expo-image-picker",

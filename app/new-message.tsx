@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  Keyboard,
   Pressable,
   ScrollView,
   Text,
@@ -213,6 +214,8 @@ export default function NewMessageScreen() {
             style={{ fontFamily: "Inter_500Medium", paddingVertical: 0 }}
             autoCorrect={false}
             autoCapitalize="none"
+            returnKeyType="done"
+            onSubmitEditing={Keyboard.dismiss}
           />
           {query.length > 0 && (
             <Pressable onPress={() => setQuery("")} hitSlop={6}>
@@ -229,7 +232,7 @@ export default function NewMessageScreen() {
         </View>
       ) : recipients.length === 0 ? (
         <Appear delay={80} from="fade">
-        <View className="flex-1 items-center justify-center px-10">
+        <View className="flex-1 items-center justify-start px-10 pt-10">
           <View
             className="w-20 h-20 rounded-full items-center justify-center"
             style={{ backgroundColor: "#e3efe7" }}
@@ -247,6 +250,8 @@ export default function NewMessageScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={{ paddingBottom: 32 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           {query.trim().length === 0 && recent.length > 0 && (

@@ -20,7 +20,15 @@ export interface PublicAd {
   placement: AdPlacement;
 }
 
+export interface AdPricing {
+  currency: string;
+  weeklyRates: Record<AdPlacement, number>;
+}
+
 const adsService = {
+  pricing(): Promise<AdPricing> {
+    return api.get<AdPricing>("/ads/pricing").then((r) => r.data);
+  },
   serve(placement: AdPlacement): Promise<PublicAd[]> {
     return api
       .get<PublicAd[]>("/ads/serve", { params: { placement } })
