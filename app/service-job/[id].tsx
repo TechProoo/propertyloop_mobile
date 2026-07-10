@@ -123,10 +123,11 @@ export default function ServiceJobScreen() {
         if (
           on &&
           j?.escrowId &&
-          (j.escrowStatus ?? "NONE") === "NONE" &&
-          healedRef.current !== j.escrowId
+          (j.escrowStatus ?? "NONE") === "NONE"
         ) {
-          healedRef.current = j.escrowId;
+          // Recheck the original reference every time this screen regains
+          // focus. Paystack can settle after the first return poll, and a
+          // one-time check leaves a paid escrow permanently looking unpaid.
           const status = await pollVerify(j.escrowId, 2);
           if (on && status && status !== "NONE") load();
         }
@@ -241,7 +242,14 @@ export default function ServiceJobScreen() {
   // they confirm). Released/locked/disputed all mean the money is already in.
   const needsPayment =
     escrowStatus === "NONE" &&
-    ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(job.status);
+    !job.escrowId &&
+    ["ACCEPTED", "IN_PROGRESS"].includes(job.status);
+  // A completed job must never start a new checkout. If its prior payment has
+  // not been reflected yet, keep the buyer in a safe verification state rather
+  // than risking a duplicate Paystack charge.
+  const paymentNeedsVerification =
+    escrowStatus === "NONE" &&
+    (!!job.escrowId || job.status === "COMPLETED");
   // What the buyer pays and what's held in escrow = the vendor's listed price
   // (no markup). Falls back to vendorFee only for legacy jobs missing the field.
   const escrowTotal = job.escrowAmount || job.vendorFee;
@@ -298,8 +306,10 @@ export default function ServiceJobScreen() {
               ? "You released this payment to the vendor."
               : isDisputed
                 ? "Payment is paused while our team reviews your dispute."
-                : needsPayment
-                  ? "Pay now to lock the funds in escrow. The vendor only gets paid after you confirm the work is done."
+                  : needsPayment
+                    ? "Pay now to lock the funds in escrow. The vendor only gets paid after you confirm the work is done."
+                    : paymentNeedsVerification
+                      ? "We’re verifying the escrow payment for this completed job. You will never be charged again from this screen."
                   : escrowStatus === "LOCKED"
                     ? "Held in escrow until you confirm. The vendor only gets paid when you say the work is good."
                     : "Waiting for the vendor to accept your request. You'll pay to secure escrow once they do."}
@@ -385,7 +395,7 @@ export default function ServiceJobScreen() {
         {/* Vendor note */}
         {!!job.completionNotes && (
           <>
-            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">Vendor's note</Text>
+            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-6 mb-2">Vendor&apos;s note</Text>
             <View className="bg-cream-2 rounded-2xl px-4 py-3.5">
               <Text className="font-serif-italic text-ink-2" style={{ fontSize: 14, lineHeight: 21 }}>&quot;{job.completionNotes}&quot;</Text>
             </View>
@@ -417,6 +427,18 @@ export default function ServiceJobScreen() {
               </Text>
             </>
           )}
+        </View>
+      )}
+
+      {paymentNeedsVerification && (
+        <View className="absolute left-0 right-0 bottom-0 border-line bg-cream" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10, gap: 8 }}>
+          <View className="rounded-2xl px-4 py-3 flex-row gap-3" style={{ backgroundColor: "#f5ead4" }}>
+            <Ionicons name="shield-checkmark" size={20} color="#6b4a16" />
+            <View className="flex-1">
+              <Text className="text-[13px] font-sans-bold" style={{ color: "#6b4a16" }}>Payment verification in progress</Text>
+              <Text className="text-[11.5px] mt-0.5 leading-4" style={{ color: "#7a5a25" }}>Do not pay again. Pull to refresh shortly; contact support if this does not update.</Text>
+            </View>
+          </View>
         </View>
       )}
 
