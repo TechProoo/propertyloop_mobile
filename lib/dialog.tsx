@@ -144,24 +144,28 @@ export function DialogHost() {
           onPress={onBackdrop}
         />
         <Animated.View
-          style={{ width: "100%", maxWidth: 384, paddingHorizontal: 28, opacity: anim, transform: [{ scale }] }}
+          style={{ width: "100%", maxWidth: 400, paddingHorizontal: 20, opacity: anim, transform: [{ scale }] }}
         >
-          <View className="bg-cream rounded-[28px] px-6 pt-6 pb-5" style={styles.card}>
-            <View className="flex-row items-center gap-3">
+          <View className="bg-white rounded-[30px] overflow-hidden" style={styles.card}>
+            <View style={{ height: 5, backgroundColor: tone.color }} />
+            <View className="px-6 pt-6 pb-5">
+            <View className="flex-row items-start gap-3">
               <View
-                className="w-11 h-11 rounded-2xl items-center justify-center"
+                className="w-12 h-12 rounded-2xl items-center justify-center"
                 style={{ backgroundColor: tone.bg }}
               >
-                <Ionicons name={tone.icon} size={22} color={tone.color} />
+                <Ionicons name={tone.icon} size={24} color={tone.color} />
               </View>
-              {!!current.title && (
-                <Text
-                  className="flex-1 font-serif text-ink"
-                  style={{ fontSize: 21, lineHeight: 25, letterSpacing: -0.3 }}
-                >
-                  {current.title}
+              <View className="flex-1 pt-0.5">
+                <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: tone.color }}>
+                  {tone === TONES.error ? "Please confirm" : tone === TONES.success ? "All set" : "PropertyLoop"}
                 </Text>
-              )}
+                {!!current.title && (
+                  <Text className="font-serif text-ink mt-1" style={{ fontSize: 22, lineHeight: 26, letterSpacing: -0.35 }}>
+                    {current.title}
+                  </Text>
+                )}
+              </View>
             </View>
 
             {!!current.message && (
@@ -180,6 +184,7 @@ export function DialogHost() {
                 />
               ))}
             </View>
+            </View>
           </View>
         </Animated.View>
       </View>
@@ -197,7 +202,7 @@ function DialogButton({
   stacked: boolean;
 }) {
   const kind = btn.style ?? "default";
-  const bg = kind === "destructive" ? "#d64545" : kind === "cancel" ? "#eceae4" : PRIMARY;
+  const bg = kind === "destructive" ? "#c83b3b" : kind === "cancel" ? "#f1f0ec" : PRIMARY;
   const color = kind === "cancel" ? INK : "#ffffff";
   return (
     <Pressable

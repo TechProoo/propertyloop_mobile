@@ -201,6 +201,14 @@ export default function AgentListingsScreen() {
               <Ionicons name="add" size={23} color="#ffffff" />
             </PressableScale>
           </View>
+          {scope === "mine" && !loadingMine && mine.length > 0 && (
+            <View className="mt-3 self-start rounded-full px-3 py-1.5 flex-row items-center gap-1.5" style={{ backgroundColor: "#e3efe7" }}>
+              <Ionicons name="pulse-outline" size={13} color={PRIMARY} />
+              <Text className="text-[11px] font-sans-bold" style={{ color: PRIMARY_INK }}>
+                {counts.ACTIVE} live · {mine.reduce((sum, l) => sum + (l.viewsCount ?? 0), 0).toLocaleString("en-NG")} total views
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Sticky controls: scope toggle + scope-specific filters */}
@@ -458,19 +466,19 @@ function PortfolioCard({ listing }: { listing: Listing }) {
       <View className="flex-row gap-3 p-3">
         <Image
           source={listing.coverImage}
-          style={{ width: 70, height: 70, borderRadius: 12 }}
+          style={{ width: 82, height: 82, borderRadius: 14 }}
           contentFit="cover"
         />
         <View className="flex-1">
           <View className="flex-row items-baseline justify-between">
-            <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={1} style={{ flex: 1 }}>
+            <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={2} style={{ flex: 1, lineHeight: 18 }}>
               {listing.title}
             </Text>
             <Text className="font-serif text-ink ml-2" style={{ fontSize: 16, letterSpacing: -0.3 }}>
               {listing.priceLabel}
             </Text>
           </View>
-          <Text className="text-[11.5px] text-ink-3 mt-0.5" numberOfLines={1}>
+          <Text className="text-[11.5px] text-ink-3 mt-1" numberOfLines={1}>
             {listing.location}
           </Text>
           <View className="flex-row gap-3 mt-2">
@@ -544,7 +552,7 @@ function MarketCard({ listing, mine }: { listing: Listing; mine: boolean }) {
       {/* Body */}
       <View className="p-3.5">
         <View className="flex-row items-baseline justify-between">
-          <Text className="text-[15px] font-sans-bold text-ink flex-1" numberOfLines={1}>
+          <Text className="text-[15px] font-sans-bold text-ink flex-1" numberOfLines={2} style={{ lineHeight: 19 }}>
             {listing.title}
           </Text>
           {listing.rating > 0 && (

@@ -87,6 +87,7 @@ export default function PublicAgentProfileScreen() {
   const listings: any[] = agent.activeListings ?? [];
   const reviews: any[] = agent.reviews ?? [];
   const specialties: string[] = agent.specialty ?? [];
+  const hasUsefulBio = (agent.bio ?? "").trim().length > 12;
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -102,7 +103,7 @@ export default function PublicAgentProfileScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
         {/* Hero */}
-        <View className="bg-primary-soft px-5 pt-3 pb-5">
+        <View className="bg-primary-soft px-5 pt-4 pb-5">
           <View className="flex-row items-center gap-3">
             {agent.avatarUrl ? (
               <Image source={agent.avatarUrl} style={{ width: 72, height: 72, borderRadius: 36 }} contentFit="cover" />
@@ -115,6 +116,12 @@ export default function PublicAgentProfileScreen() {
                 {agent.verified && <Ionicons name="shield-checkmark" size={15} color={PRIMARY} />}
               </View>
               {!!agent.agency && <Text className="text-[12.5px] mt-0.5" style={{ color: PRIMARY_INK }}>{agent.agency}</Text>}
+              <View className="self-start mt-1.5 rounded-full px-2 py-1 flex-row items-center gap-1" style={{ backgroundColor: "rgba(255,255,255,0.72)" }}>
+                <Ionicons name={agent.verified ? "shield-checkmark" : "person-outline"} size={11} color={PRIMARY} />
+                <Text className="text-[10px] font-sans-bold" style={{ color: PRIMARY_INK }}>
+                  {agent.verified ? "Verified agent" : "PropertyLoop agent"}
+                </Text>
+              </View>
               {/* Rating line hidden until the agent has reviews — no "★ 0 · 0 reviews". */}
               {reviews.length > 0 && (
                 <View className="flex-row items-center gap-2 mt-1">
@@ -147,11 +154,20 @@ export default function PublicAgentProfileScreen() {
 
         {/* Bio */}
         <View className="px-5 pt-5">
-          {!!agent.bio && (
+          {hasUsefulBio && (
             <>
               <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-2">About</Text>
               <Text className="text-[13.5px] text-ink-2 leading-5">{agent.bio}</Text>
             </>
+          )}
+
+          {!hasUsefulBio && (
+            <View className="bg-white rounded-2xl border-line p-4" style={{ borderWidth: 0.5 }}>
+              <Text className="text-[13px] font-sans-bold text-ink">A local property specialist</Text>
+              <Text className="text-[12px] text-ink-3 leading-5 mt-1">
+                Browse active listings or message {agent.name?.split(" ")[0] ?? "this agent"} to discuss your property search.
+              </Text>
+            </View>
           )}
 
           {specialties.length > 0 && (
@@ -180,7 +196,7 @@ export default function PublicAgentProfileScreen() {
                 className="bg-white rounded-2xl overflow-hidden border-line active:opacity-90"
                 style={{ width: 200, borderWidth: 0.5 }}
               >
-                <Image source={l.coverImage} style={{ width: "100%", height: 110 }} contentFit="cover" />
+                <Image source={l.coverImage} style={{ width: "100%", height: 124 }} contentFit="cover" />
                 <View className="px-3 py-2.5">
                   <Text className="font-serif text-ink" style={{ fontSize: 16, letterSpacing: -0.3 }}>
                     {l.priceLabel ?? naira(Number(l.priceNaira))}
