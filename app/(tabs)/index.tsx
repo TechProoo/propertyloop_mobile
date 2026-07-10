@@ -49,6 +49,12 @@ function initialsOf(name?: string | null) {
     .toUpperCase();
 }
 
+// "yinusa" → "Yinusa" so the greeting always reads properly cased, whatever
+// casing the name was entered in.
+function titleCase(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s;
+}
+
 const PRIMARY = "#1f6f43"; // brand green — accent (was blue in the reference)
 const ACCENT = "#b9842c"; // gold — rating stars only
 const INK = "#1a2120";
@@ -358,7 +364,7 @@ function Header() {
 // ─────────────────────────────────────────────────────────────────
 function Greeting() {
   const { user } = useAuth();
-  const first = (user?.name ?? "").trim().split(/\s+/)[0];
+  const first = titleCase((user?.name ?? "").trim().split(/\s+/)[0] ?? "");
   const h = new Date().getHours();
   const tod =
     h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
@@ -403,12 +409,13 @@ function SearchRow({
         <TextInput
           value={query}
           onChangeText={onChange}
-          placeholder="Search Lagos, Abuja, Lekki…"
-          placeholderTextColor={INK_3}
+          placeholder="Search properties in Lagos, Abuja, Ibadan…"
+          placeholderTextColor="#5f655f"
+          numberOfLines={1}
           className="flex-1 text-[14.5px] text-ink font-sans-medium"
           style={{ paddingVertical: 0 }}
           returnKeyType="search"
-          accessibilityLabel="Search by city or area"
+          accessibilityLabel="Search properties by city or area"
         />
         {query.length > 0 ? (
           <Pressable
@@ -672,30 +679,41 @@ function AdvertiseEntry() {
           router.push("/advertise-info" as Href);
         }}
         activeScale={0.98}
-        className="rounded-2xl px-4 py-3 flex-row items-center gap-3"
+        className="rounded-[22px] px-4 py-4 overflow-hidden"
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: "#f5ead4",
           borderWidth: 1,
-          borderColor: "#e1dcd3",
+          borderColor: "#e7d4a8",
         }}
         accessibilityRole="button"
         accessibilityLabel="Advertise with PropertyLoop — put your brand in front of home movers"
       >
+        <View className="flex-row items-start gap-3">
+          <View
+            className="w-12 h-12 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: "#6b4a16" }}
+          >
+            <Ionicons name="megaphone" size={22} color="#f5ead4" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: "#7a5a25" }}>
+              For brands & developers
+            </Text>
+            <Text className="text-[17px] font-sans-bold text-ink tracking-tight mt-0.5">
+              Advertise with us
+            </Text>
+            <Text className="text-[12.5px] text-ink-2 mt-1 leading-4">
+              Put your brand in front of people ready to move, buy and build.
+            </Text>
+          </View>
+        </View>
         <View
-          className="w-10 h-10 rounded-xl items-center justify-center"
-          style={{ backgroundColor: "#f5ead4" }}
+          className="mt-3 flex-row items-center justify-center gap-1.5 rounded-full px-4 py-3"
+          style={{ backgroundColor: "#6b4a16" }}
         >
-          <Ionicons name="megaphone" size={19} color="#6b4a16" />
+          <Text className="text-white font-sans-bold text-[13px]">View advertising packages</Text>
+          <Ionicons name="arrow-forward" size={14} color="#ffffff" />
         </View>
-        <View className="flex-1">
-          <Text className="text-[14px] font-sans-bold text-ink tracking-tight">
-            Advertise with us
-          </Text>
-          <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">
-            Put your brand in front of thousands of home movers.
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={16} color="#7f857f" />
       </PressableScale>
     </Appear>
   );
