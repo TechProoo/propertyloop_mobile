@@ -108,6 +108,12 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
   // A vendor with no active service is hidden from the marketplace (backend
   // filters them out) and can't be booked — push them to add one.
   const needsServices = serviceCount === 0;
+  // Wallet state — mirrors the Earnings screen so both cards agree: show
+  // "Processing…" when a payout is clearing to the bank and nothing is
+  // withdrawable yet, instead of a bare ₦0 with no explanation.
+  const withdrawable = stats?.earnings.available ?? 0;
+  const processing = stats?.earnings.processing ?? 0;
+  const isProcessing = withdrawable <= 0 && processing > 0;
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={embedded ? [] : (["top"] as Edge[])}>
       <RevealScrollView
@@ -198,7 +204,7 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
                 Available balance
               </Text>
             </View>
-            {(stats?.earnings.available ?? 0) > 0 && (
+            {withdrawable > 0 ? (
               <Pressable
                 onPress={() => router.push("/(vendor-tabs)/earnings" as Href)}
                 className="flex-row items-center gap-1 px-3 py-1.5 rounded-full active:opacity-80"
@@ -207,18 +213,31 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
                 <Ionicons name="arrow-up-circle" size={13} color="#ffffff" />
                 <Text className="text-[12px] font-sans-bold text-white">Withdraw</Text>
               </Pressable>
-            )}
+            ) : isProcessing ? (
+              <Pressable
+                onPress={() => router.push("/(vendor-tabs)/earnings" as Href)}
+                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full active:opacity-80"
+                style={{ backgroundColor: "rgba(240,201,142,0.16)" }}
+              >
+                <Ionicons name="time-outline" size={13} color="#f0c98e" />
+                <Text className="text-[12px] font-sans-bold" style={{ color: "#f0c98e" }}>
+                  Processing…
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
           <CountUp
-            value={stats?.earnings.available ?? 0}
+            value={withdrawable}
             format={naira}
             className="font-serif text-white mt-1.5"
             style={{ fontSize: 36, letterSpacing: -0.8 }}
           />
           <Text className="text-[12px] mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>
-            {(stats?.earnings.available ?? 0) > 0
+            {withdrawable > 0
               ? "Yours to withdraw to your bank whenever you like."
-              : "Confirmed jobs land here, ready for you to withdraw."}
+              : isProcessing
+                ? "A payout is on its way to your bank."
+                : "Confirmed jobs land here, ready for you to withdraw."}
           </Text>
           <View className="flex-row gap-3.5 mt-3.5">
             <View className="flex-1">

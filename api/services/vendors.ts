@@ -8,7 +8,7 @@ export interface VendorStats {
     availableForHire: boolean;
   };
   jobs: { pending: number; active: number; completed: number; total: number };
-  earnings: { total: number; paid: number; pending: number; available: number; thisMonth: number };
+  earnings: { total: number; paid: number; pending: number; available: number; processing: number; thisMonth: number };
   reviews: { total: number; averageRating: number; fiveStarPct: number };
 }
 
