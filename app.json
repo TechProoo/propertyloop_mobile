@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "updates": {
-      "url": "https://u.expo.dev/c9560cba-72ee-4279-8252-59c45f2c5b75"
+      "url": "https://u.expo.dev/9f9d95ab-7568-41be-ad3a-101f1ca02a0b"
     },
     "runtimeVersion": {
       "policy": "fingerprint"
@@ -25,7 +25,10 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 3
+      "versionCode": 3,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -63,8 +66,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c9560cba-72ee-4279-8252-59c45f2c5b75"
+        "projectId": "9f9d95ab-7568-41be-ad3a-101f1ca02a0b"
       }
-    }
+    },
+    "owner": "techprooo"
   }
 }
