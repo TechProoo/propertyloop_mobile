@@ -182,6 +182,16 @@ export default function ServicesScreen() {
           <Text className="text-[12.5px] text-ink-2 mt-1.5 leading-5">
             Hire verified artisans and professionals with secure escrow payment.
           </Text>
+          <View className="mt-4 rounded-2xl px-3.5 py-3 flex-row items-center gap-3" style={{ backgroundColor: "#e3efe7", borderWidth: 0.5, borderColor: "#cfe5d8" }}>
+            <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: PRIMARY }}>
+              <Ionicons name="shield-checkmark" size={19} color="#ffffff" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[12.5px] font-sans-bold text-ink">Pay only when the work is done</Text>
+              <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">Every booking is protected by PropertyLoop escrow.</Text>
+            </View>
+            <Ionicons name="lock-closed" size={15} color={PRIMARY} />
+          </View>
         </View>
 
         {/* Search */}
@@ -372,8 +382,8 @@ function VendorCard({
   return (
     <Pressable
       onPress={goToProfile}
-      className="bg-white rounded-2xl border-line active:opacity-95"
-      style={{ borderWidth: 0.5, padding: 12 }}
+      className="bg-white rounded-[20px] border-line active:opacity-95"
+      style={{ borderWidth: 0.5, padding: 13 }}
     >
       {/* Top row — avatar, name/category, favourite heart */}
       <View className="flex-row gap-3">
@@ -481,7 +491,7 @@ function VendorCard({
         )}
         <Pressable
           onPress={goToProfile}
-          className="flex-row items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 active:opacity-85"
+          className="flex-row items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 active:opacity-85"
         >
           <Text className="text-white text-[12.5px] font-sans-bold">View profile</Text>
           <Ionicons name="arrow-forward" size={13} color="#ffffff" />

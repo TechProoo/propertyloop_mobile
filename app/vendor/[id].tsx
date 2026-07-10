@@ -13,6 +13,7 @@ import messagesService, { type ConversationRole } from "@/api/services/messages"
 import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
+const PRIMARY_INK = "#134a2d";
 const ACCENT = "#b9842c";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
@@ -147,6 +148,10 @@ export default function PublicVendorProfileScreen() {
               <Text className="text-[12.5px] text-ink-3">{vendor.serviceArea}</Text>
             </View>
           )}
+          <View className="self-start mt-2 rounded-full px-2.5 py-1 flex-row items-center gap-1.5" style={{ backgroundColor: "#e3efe7" }}>
+            <View style={{ width: 6, height: 6, borderRadius: 6, backgroundColor: "#2f9e61" }} />
+            <Text className="text-[10.5px] font-sans-bold" style={{ color: PRIMARY_INK }}>Available for work</Text>
+          </View>
 
           {/* Stat strip */}
           <View className="mt-4 rounded-2xl overflow-hidden border-line flex-row" style={{ borderWidth: 0.5, backgroundColor: "#ffffff" }}>
@@ -171,20 +176,23 @@ export default function PublicVendorProfileScreen() {
 
           {/* Empty profile — vendor hasn't finished setting up */}
           {profileEmpty && (
-            <View className="bg-white rounded-2xl px-4 py-8 items-center mt-4 border-line" style={{ borderWidth: 0.5 }}>
-              <View className="w-12 h-12 rounded-full items-center justify-center mb-2" style={{ backgroundColor: "#f0f0f0" }}>
-                <Ionicons name="construct-outline" size={22} color={INK_3} />
+            <View className="rounded-3xl px-5 py-7 items-center mt-4" style={{ backgroundColor: "#f5ead4", borderWidth: 1, borderColor: "#e7d4a8" }}>
+              <View className="w-14 h-14 rounded-2xl items-center justify-center mb-3" style={{ backgroundColor: "#eccf91" }}>
+                <Ionicons name="construct-outline" size={24} color="#6b4a16" />
               </View>
-              <Text className="text-[13.5px] font-sans-bold text-ink">Still setting up</Text>
-              <Text className="text-[12px] text-ink-3 mt-1 text-center leading-5">
-                {vendor.name?.split(/\s+/)[0] ?? "This vendor"} hasn&apos;t added their services or details yet. Check back soon.
+              <Text className="text-[15px] font-sans-bold" style={{ color: "#6b4a16" }}>This profile is being prepared</Text>
+              <Text className="text-[12.5px] mt-1.5 text-center leading-5" style={{ color: "#7a5a25" }}>
+                {vendor.name?.split(/\s+/)[0] ?? "This vendor"} is finalising services and availability. Send an enquiry to discuss your needs now.
               </Text>
             </View>
           )}
 
           {/* Bio */}
           {!!vendor.bio && (
-            <Text className="text-[13.5px] text-ink-2 mt-4 leading-5">{vendor.bio}</Text>
+            <>
+              <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-5 mb-2">About this provider</Text>
+              <Text className="text-[13.5px] text-ink-2 leading-5">{vendor.bio}</Text>
+            </>
           )}
 
           {/* Services */}
@@ -193,12 +201,13 @@ export default function PublicVendorProfileScreen() {
               <Text className="text-[16px] font-sans-bold text-ink mt-5 mb-2">Services</Text>
               <View className="gap-2">
                 {services.map((s) => (
-                  <View key={s.id} className="bg-white rounded-2xl px-3.5 py-3 flex-row items-center gap-3 border-line" style={{ borderWidth: 0.5 }}>
+                  <View key={s.id} className="bg-white rounded-2xl px-3.5 py-3.5 flex-row items-center gap-3 border-line" style={{ borderWidth: 0.5 }}>
                     <View className="flex-1">
                       <Text className="text-[13.5px] font-sans-bold text-ink">{s.name}</Text>
                       {!!s.duration && <Text className="text-[11px] text-ink-3 mt-0.5">{s.duration}</Text>}
                     </View>
                     <Text className="font-serif text-ink" style={{ fontSize: 16, letterSpacing: -0.3 }}>{s.priceLabel}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={INK_3} />
                   </View>
                 ))}
               </View>
