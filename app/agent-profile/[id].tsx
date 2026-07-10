@@ -111,7 +111,7 @@ export default function PublicAgentProfileScreen() {
             )}
             <View className="flex-1">
               <View className="flex-row items-center gap-1.5">
-                <Text className="text-[18px] font-sans-bold text-ink">{agent.name}</Text>
+                <Text className="text-[18px] font-sans-bold text-ink" numberOfLines={2} style={{ lineHeight: 22 }}>{agent.name}</Text>
                 {agent.verified && <Ionicons name="shield-checkmark" size={15} color={PRIMARY} />}
               </View>
               {!!agent.agency && <Text className="text-[12.5px] mt-0.5" style={{ color: PRIMARY_INK }}>{agent.agency}</Text>}
@@ -185,7 +185,7 @@ export default function PublicAgentProfileScreen() {
                   <Text className="font-serif text-ink" style={{ fontSize: 16, letterSpacing: -0.3 }}>
                     {l.priceLabel ?? naira(Number(l.priceNaira))}
                   </Text>
-                  <Text className="text-[12px] font-sans-bold text-ink mt-0.5" numberOfLines={1}>{l.title}</Text>
+                  <Text className="text-[12px] font-sans-bold text-ink mt-0.5" numberOfLines={2} style={{ lineHeight: 16 }}>{l.title}</Text>
                   <Text className="text-[11px] text-ink-3 mt-0.5" numberOfLines={1}>{l.location}</Text>
                 </View>
               </Pressable>

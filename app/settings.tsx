@@ -11,6 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
+import usersService from "@/api/services/users";
+import { confirmAccountDeletion } from "@/lib/accountSecurity";
 
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
@@ -59,7 +61,7 @@ const GROUPS: { label: string; links: SettingsLink[] }[] = [
     label: "Support",
     links: [
       { id: "help", icon: "help-circle-outline", title: "Help centre", href: "/help" },
-      { id: "logbook", icon: "document-text-outline", title: "About the logbook", href: "/logbook-info" },
+      { id: "logbook", icon: "document-text-outline", title: "Using the Logbook", href: "/logbook-info" },
       { id: "escrow", icon: "lock-closed-outline", title: "How escrow works", href: "/escrow-info" },
     ],
   },
@@ -71,6 +73,13 @@ const GROUPS: { label: string; links: SettingsLink[] }[] = [
       { id: "out", icon: "log-out-outline", title: "Sign out", destructive: true },
     ],
   },
+  {
+    label: "Danger zone",
+    links: [
+      { id: "deactivate", icon: "pause-circle-outline", title: "Deactivate account", detail: "Sign back in anytime to reactivate", destructive: true },
+      { id: "delete", icon: "trash-outline", title: "Delete account", detail: "Permanently close your account", destructive: true },
+    ],
+  },
 ];
 
 function initialsOf(name?: string | null) {
@@ -80,6 +89,31 @@ function initialsOf(name?: string | null) {
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
+
+  const doDeactivate = async () => {
+    try {
+      await usersService.deactivateAccount();
+      await signOut();
+      router.replace("/welcome" as Href);
+      Alert.alert("Account deactivated", "Your account is hidden until you sign back in.");
+    } catch (e: any) {
+      const message = e?.response?.data?.message ?? "Please try again in a moment.";
+      Alert.alert("Couldn't deactivate", Array.isArray(message) ? message.join(", ") : message);
+    }
+  };
+
+  const doDelete = async () => {
+    try {
+      if (!(await confirmAccountDeletion())) return;
+      await usersService.deleteAccount();
+      await signOut();
+      router.replace("/welcome" as Href);
+      Alert.alert("Account deleted", "Your account has been closed. We're sorry to see you go.");
+    } catch (e: any) {
+      const message = e?.response?.data?.message ?? "Please try again in a moment.";
+      Alert.alert("Couldn't delete account", Array.isArray(message) ? message.join(", ") : message);
+    }
+  };
   const onSignOut = () =>
     Alert.alert("Sign out?", "You'll need your email and password to come back.", [
       { text: "Cancel", style: "cancel" },
@@ -95,6 +129,37 @@ export default function SettingsScreen() {
 
   const onLink = (link: SettingsLink) => {
     if (link.id === "out") return onSignOut();
+    if (link.id === "deactivate") {
+      return Alert.alert(
+        "Deactivate your account?",
+        "Your profile and activity will be hidden and you'll be signed out everywhere. Sign back in anytime to reactivate — nothing is deleted.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Deactivate", style: "destructive", onPress: doDeactivate },
+        ],
+      );
+    }
+    if (link.id === "delete") {
+      return Alert.alert(
+        "Delete your account?",
+        "This permanently closes your PropertyLoop account. Your bookings, offers, messages and saved items will no longer be accessible. This can't be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete account",
+            style: "destructive",
+            onPress: () => Alert.alert(
+              "Are you absolutely sure?",
+              `${user?.email ?? "Your account"} will be closed. This is your last chance to keep it.`,
+              [
+                { text: "Keep my account", style: "cancel" },
+                { text: "Yes, delete", style: "destructive", onPress: doDelete },
+              ],
+            ),
+          },
+        ],
+      );
+    }
     if (link.href) router.push(link.href as Href);
   };
 
@@ -117,7 +182,7 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 104 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile card */}
@@ -177,7 +242,7 @@ export default function SettingsScreen() {
                   <View className="flex-1">
                     <Text
                       className="text-[13.5px] font-sans-bold"
-                      style={{ color: l.destructive ? DESTRUCTIVE : "#1a2120" }}
+                      style={{ color: l.destructive ? tint.fg : "#1a2120" }}
                     >
                       {l.title}
                     </Text>

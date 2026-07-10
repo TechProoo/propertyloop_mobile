@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FlatList,
+  Linking,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
@@ -62,6 +63,10 @@ function initialsOf(name?: string | null) {
 function daysAgo(iso: string) {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
   return Math.max(0, d);
+}
+
+function formatNaira(amount: number) {
+  return `₦${Math.round(amount).toLocaleString("en-NG")}`;
 }
 
 export default function ListingDetailScreen() {
@@ -152,6 +157,8 @@ function ListingDetail({
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
   const period = listing.period ?? "";
+  const listedDays = daysAgo(listing.createdAt);
+  const fees = listing.type === "RENT" ? Math.round(listing.priceNaira * 0.1) : 0;
 
   // `images` already includes the cover as its first element; fall back to the
   // cover alone when the array is missing. Dedupe so a duplicated cover doesn't
@@ -234,6 +241,13 @@ function ListingDetail({
       title: listing.title,
       message: `${listing.title} — ${listing.priceLabel} · ${listing.location}`,
     }).catch(() => {});
+  };
+
+  const openMap = () => {
+    const query = encodeURIComponent(listing.address || listing.location);
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`).catch(() => {
+      Alert.alert("Couldn't open maps", "Please try again in a moment.");
+    });
   };
 
   const primaryCta =
@@ -424,19 +438,24 @@ function ListingDetail({
           {/* Price */}
           <Appear delay={110}>
           <View className="mt-4 bg-primary-soft rounded-2xl px-4 py-3.5">
-            <View className="flex-row items-baseline justify-between">
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="flex-1">
+                <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: PRIMARY_INK, opacity: 0.65 }}>
+                  {listing.type === "RENT" ? "Annual rent" : "Asking price"}
+                </Text>
               <Text
                 className="font-serif"
                 style={{ fontSize: 32, letterSpacing: -1, color: PRIMARY_INK }}
               >
                 {listing.priceLabel}
-                <Text style={{ fontSize: 15 }}>{period}</Text>
+                <Text style={{ fontSize: 14, color: PRIMARY_INK, opacity: 0.7 }}>{period}</Text>
               </Text>
+              </View>
               <Text
                 className="text-[11px] font-sans-semibold"
-                style={{ color: PRIMARY_INK, opacity: 0.7 }}
+                style={{ color: PRIMARY_INK, opacity: 0.7, marginTop: 2 }}
               >
-                Listed {daysAgo(listing.createdAt)} days ago
+                {listedDays === 0 ? "Listed today" : `Listed ${listedDays} days ago`}
               </Text>
             </View>
             {listing.type === "SALE" && (
@@ -469,6 +488,16 @@ function ListingDetail({
             )}
           </View>
           </Appear>
+
+          {listing.type === "RENT" && (
+            <View className="bg-white rounded-2xl border-line p-4 mt-3.5" style={{ borderWidth: 0.5 }}>
+              <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">Estimated move-in costs</Text>
+              <CostRow label="Rent" value={`${formatNaira(listing.priceNaira)} per year`} />
+              <CostRow label="Agency fee · 10%" value={formatNaira(fees)} />
+              <CostRow label="Legal fee · 10%" value={formatNaira(fees)} />
+              <CostRow label="Caution fee · 10%" value={formatNaira(fees)} last />
+            </View>
+          )}
 
           {/* Stats grid — each tile pops in on a short cascade */}
           <View className="flex-row gap-2 mt-3.5">
@@ -513,6 +542,20 @@ function ListingDetail({
               </>
             </Appear>
           )}
+
+          <View className="bg-white rounded-2xl border-line p-4 mt-6" style={{ borderWidth: 0.5 }}>
+            <View className="flex-row items-center justify-between">
+              <View>
+                <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">Listing details</Text>
+                <Text className="text-[12px] text-ink-2 mt-1">ID {listing.id.slice(-8).toUpperCase()} · {listing.viewsCount.toLocaleString("en-NG")} views</Text>
+                <Text className="text-[12px] text-ink-3 mt-0.5">Listed {listedDays === 0 ? "today" : `${listedDays} days ago`}</Text>
+              </View>
+              <Pressable onPress={openMap} className="rounded-full px-3 py-2 flex-row items-center gap-1.5" style={{ backgroundColor: "#e3efe7" }}>
+                <Ionicons name="map-outline" size={14} color={PRIMARY} />
+                <Text className="text-[12px] font-sans-bold text-primary">View on map</Text>
+              </Pressable>
+            </View>
+          </View>
 
           {/* Features */}
           {listing.features?.length > 0 && (
@@ -724,6 +767,26 @@ function HeroImage({
         contentFit="cover"
       />
     </Animated.View>
+  );
+}
+
+function CostRow({
+  label,
+  value,
+  last = false,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
+  return (
+    <View
+      className="flex-row items-center justify-between py-2.5"
+      style={{ borderBottomWidth: last ? 0 : 0.5, borderBottomColor: "#ece6df" }}
+    >
+      <Text className="text-[12.5px] text-ink-2">{label}</Text>
+      <Text className="text-[12.5px] font-sans-bold text-ink">{value}</Text>
+    </View>
   );
 }
 

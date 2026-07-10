@@ -36,6 +36,10 @@ function initialsOf(name?: string | null) {
   if (!name) return "PL";
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
+function displayName(name?: string | null) {
+  const first = name?.trim().split(/\s+/)[0] || "Vendor";
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
 function naira(n: number) {
   return `₦${Math.round(n).toLocaleString("en-NG")}`;
 }
@@ -104,11 +108,6 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
   // A vendor with no active service is hidden from the marketplace (backend
   // filters them out) and can't be booked — push them to add one.
   const needsServices = serviceCount === 0;
-  const greeting = (() => {
-    const h = new Date().getHours();
-    return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  })();
-
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={embedded ? [] : (["top"] as Edge[])}>
       <RevealScrollView
@@ -130,8 +129,8 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
               <PLAvatar initials={initialsOf(user?.name)} uri={user?.avatarUrl} size={40} tone="primary" />
             </Pressable>
             <View>
-              <Text className="text-[11px] font-sans-bold text-ink-3">{greeting}</Text>
-              <Text className="text-[16px] font-sans-bold text-ink">{user?.name ?? "Vendor"}</Text>
+              <Text className="text-[11px] font-sans-bold text-ink-3">Hi, {displayName(user?.name)}</Text>
+              <Text className="text-[16px] font-sans-bold text-ink">Your business at a glance</Text>
             </View>
           </View>
           <View className="flex-row items-center gap-2">
@@ -174,8 +173,7 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
                 </Text>
               </View>
               <Text className="text-[12.5px] mt-2 leading-5" style={{ color: "#7a5a25" }}>
-                You're hidden from the marketplace and buyers can't book you until
-                you list at least one service.
+                {"You're hidden from the marketplace and buyers can't book you until you list at least one service."}
               </Text>
               <Pressable
                 onPress={() => router.push("/vendor-first-service?mode=add" as Href)}
@@ -278,7 +276,15 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
             </Appear>
             {requests.length === 0 ? (
               <Appear delay={stagger(2, 200)}>
-                <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No new requests right now.</Text>
+                <VendorEmptyState
+                  icon="notifications-outline"
+                  title="No new requests right now"
+                  detail="Keep your availability on to be first in line when a client needs you."
+                  action={available ? "Manage services" : "Turn on availability"}
+                  onPress={available
+                    ? () => router.push("/vendor-menu" as Href)
+                    : toggleAvailable}
+                />
               </Appear>
             ) : (
               <View className="px-4 pt-2 gap-2.5">
@@ -301,7 +307,13 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
             </Appear>
             {active.length === 0 ? (
               <Appear delay={stagger(requests.length + 3, 200)}>
-                <Text className="px-5 pt-2 text-[12.5px] text-ink-3">No active jobs.</Text>
+                <VendorEmptyState
+                  icon="calendar-outline"
+                  title="Your schedule is clear"
+                  detail="New jobs you accept will appear here with all the details you need."
+                  action="View requests"
+                  onPress={() => router.push("/(vendor-tabs)/jobs" as Href)}
+                />
               </Appear>
             ) : (
               <View className="px-4 pt-2 gap-2">
@@ -316,6 +328,37 @@ export default function VendorDashboard({ embedded = false }: { embedded?: boole
         )}
       </RevealScrollView>
     </SafeAreaView>
+  );
+}
+
+function VendorEmptyState({
+  icon,
+  title,
+  detail,
+  action,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  detail: string;
+  action: string;
+  onPress: () => void;
+}) {
+  return (
+    <View className="mx-4 mt-2 rounded-2xl bg-white p-4 border-line" style={{ borderWidth: 0.5 }}>
+      <View className="flex-row items-start gap-3">
+        <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: "#e3efe7" }}>
+          <Ionicons name={icon} size={18} color={PRIMARY} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-[13.5px] font-sans-bold text-ink">{title}</Text>
+          <Text className="text-[12px] text-ink-3 leading-4 mt-0.5">{detail}</Text>
+        </View>
+      </View>
+      <Pressable onPress={onPress} className="mt-3 self-start rounded-full bg-primary px-3.5 py-2 active:opacity-85">
+        <Text className="text-[12px] font-sans-bold text-white">{action}</Text>
+      </Pressable>
+    </View>
   );
 }
 

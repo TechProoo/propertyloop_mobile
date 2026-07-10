@@ -114,7 +114,7 @@ export default function TopAgentsScreen() {
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.4}
-          renderItem={({ item }) => <AgentRow agent={item} />}
+          renderItem={({ item, index }) => <AgentRow agent={item} rank={index + 1} />}
           ListEmptyComponent={
             <View className="items-center px-6 py-16">
               <Ionicons name="people-outline" size={28} color={INK_3} />
@@ -134,7 +134,7 @@ export default function TopAgentsScreen() {
   );
 }
 
-function AgentRow({ agent }: { agent: PublicAgent }) {
+function AgentRow({ agent, rank }: { agent: PublicAgent; rank: number }) {
   // No rating shown until the agent has actually been rated.
   const hasRating = (agent.rating ?? 0) > 0;
   const meta = [
@@ -154,15 +154,17 @@ function AgentRow({ agent }: { agent: PublicAgent }) {
       className="bg-white rounded-2xl px-3.5 py-3 flex-row items-center gap-3 border-line"
       style={{ borderWidth: 0.5 }}
     >
-      <PLAvatar
-        initials={initialsOf(agent.name)}
-        uri={agent.avatarUrl ?? undefined}
-        size={46}
-        tone="primary"
-      />
+      <View>
+        <PLAvatar initials={initialsOf(agent.name)} uri={agent.avatarUrl ?? undefined} size={50} tone="primary" />
+        {rank <= 3 && (
+          <View className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full items-center justify-center" style={{ backgroundColor: ACCENT }}>
+            <Text className="text-[9px] font-sans-bold text-white">{rank}</Text>
+          </View>
+        )}
+      </View>
       <View className="flex-1">
         <View className="flex-row items-center gap-1.5">
-          <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={1}>
+          <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={2} style={{ lineHeight: 18 }}>
             {agent.name}
           </Text>
           {agent.verified && (

@@ -15,7 +15,7 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import listingsService from "@/api/services/listings";
-import viewingsService from "@/api/services/viewings";
+import viewingsService, { type Viewing } from "@/api/services/viewings";
 import type { Listing } from "@/api/types";
 import { useAuth } from "@/context/auth";
 
@@ -57,6 +57,7 @@ export default function BookViewingScreen() {
   const [note, setNote] = useState("");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [requestedViewing, setRequestedViewing] = useState<Viewing | null>(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function BookViewingScreen() {
 
     setSubmitting(true);
     try {
-      await viewingsService.create({
+      const viewing = await viewingsService.create({
         listingId,
         scheduledFor: when.toISOString(),
         // Send the buyer's profile name/phone explicitly — the booking is keyed
@@ -111,12 +112,15 @@ export default function BookViewingScreen() {
         notes:
           (mode === "video" ? "Video tour requested. " : "") + note.trim(),
       });
-      Alert.alert(
-        "Viewing requested",
-        "The agent will confirm shortly. You'll be notified.",
-        [{ text: "Done", onPress: () => router.back() }],
-      );
+      setRequestedViewing(viewing);
     } catch (e: any) {
+      if (e?.response?.status === 409) {
+        Alert.alert(
+          "That time is no longer available",
+          "Another viewing was booked for this time. Please choose a different slot and try again.",
+        );
+        return;
+      }
       const msg =
         e?.response?.data?.message ??
         "Couldn't request the viewing. Please try again.";
@@ -127,6 +131,10 @@ export default function BookViewingScreen() {
   };
 
   const needsPhone = !(user?.phone ?? "").trim();
+
+  if (requestedViewing) {
+    return <ViewingRequestedScreen viewing={requestedViewing} listing={listing} />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
@@ -164,7 +172,7 @@ export default function BookViewingScreen() {
               contentFit="cover"
             />
             <View className="flex-1">
-              <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={1}>
+              <Text className="text-[14px] font-sans-bold text-ink" numberOfLines={2} style={{ lineHeight: 18 }}>
                 {listing?.title ?? "Loading…"}
               </Text>
               <Text className="text-xs text-ink-3 mt-0.5" numberOfLines={1}>
@@ -175,12 +183,23 @@ export default function BookViewingScreen() {
             </View>
           </View>
 
+          {!!listing?.agent && (
+            <View className="flex-row items-center gap-2.5 mt-3 px-1">
+              <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: "#e3efe7" }}>
+                <Ionicons name="person" size={15} color={PRIMARY} />
+              </View>
+              <Text className="text-[12px] text-ink-2">
+                Your request will be sent to <Text className="font-sans-bold text-ink">{listing.agent.name}</Text>
+              </Text>
+            </View>
+          )}
+
           {/* Heading */}
           <Text
             className="font-serif text-ink"
             style={{ fontSize: 26, lineHeight: 28, marginTop: 22 }}
           >
-            When works <Text className="font-serif-italic">for you</Text>?
+            When works <Text className="font-serif-italic">best for you</Text>?
           </Text>
           <Text className="text-[13px] text-ink-2 mt-1 leading-5">
             Pick a day and time — the agent confirms from their side.
@@ -279,6 +298,23 @@ export default function BookViewingScreen() {
             />
           </View>
 
+          <View className="bg-white rounded-2xl border-line p-3.5 mt-5" style={{ borderWidth: 0.5 }}>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">Your request</Text>
+              <Ionicons name="checkmark-circle" size={16} color={PRIMARY} />
+            </View>
+            <Text className="text-[13.5px] font-sans-bold text-ink mt-2" numberOfLines={2}>
+              {listing?.title ?? "Property viewing"}
+            </Text>
+            <Text className="text-[12px] text-ink-2 mt-1">
+              {WEEKDAYS[selectedDate.getDay()]}, {selectedDate.getDate()} {MONTHS[selectedDate.getMonth()]} · {slot}
+            </Text>
+            <Text className="text-[12px] text-ink-3 mt-0.5">
+              {mode === "in-person" ? "In-person viewing" : "Video tour"}
+              {listing?.agent?.name ? ` · with ${listing.agent.name}` : ""}
+            </Text>
+          </View>
+
           {/* Phone (only if profile has none) */}
           {needsPhone && (
             <>
@@ -334,13 +370,14 @@ export default function BookViewingScreen() {
             style={{ paddingVertical: 17, opacity: submitting || isOwnListing ? 0.6 : 1 }}
             onPress={submit}
           >
-            <Text className="text-white font-sans-bold text-[15px]">
+            {submitting && <BouncyLoader color="#ffffff" />}
+            {!submitting && <Text className="text-white font-sans-bold text-[15px]">
               {isOwnListing
                 ? "This is your listing"
                 : submitting
                   ? "Requesting…"
                   : `Request viewing · ${WEEKDAYS[selectedDate.getDay()]} ${selectedDate.getDate()}, ${slot}`}
-            </Text>
+            </Text>}
           </Pressable>
           <Text className="text-center text-[11px] text-ink-3 mt-1.5">
             {isOwnListing
@@ -378,5 +415,56 @@ function ModeCard({
       <Text className="text-[13px] font-sans-bold text-ink">{label}</Text>
       <Text className="text-[11px] text-ink-3 mt-0.5 leading-4">{detail}</Text>
     </Pressable>
+  );
+}
+
+function ViewingRequestedScreen({
+  viewing,
+  listing,
+}: {
+  viewing: Viewing;
+  listing: Listing | null;
+}) {
+  const when = new Date(viewing.scheduledFor);
+  const whenLabel = `${WEEKDAYS[when.getDay()]}, ${when.getDate()} ${MONTHS[when.getMonth()]} · ${when.toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" })}`;
+  return (
+    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View className="flex-1 px-5 items-center justify-center">
+        <View className="w-20 h-20 rounded-full items-center justify-center" style={{ backgroundColor: "#e3efe7" }}>
+          <Ionicons name="checkmark" size={40} color={PRIMARY} />
+        </View>
+        <Text className="font-serif text-ink text-center mt-6" style={{ fontSize: 31, lineHeight: 34 }}>
+          Viewing <Text className="font-serif-italic">requested</Text>
+        </Text>
+        <Text className="text-[14px] text-ink-2 text-center leading-5 mt-3 px-3">
+          Your request has been sent successfully. The agent will confirm your appointment shortly.
+        </Text>
+        <View className="w-full bg-white rounded-2xl border-line p-4 mt-7" style={{ borderWidth: 0.5 }}>
+          <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase">Appointment details</Text>
+          <Text className="text-[14px] font-sans-bold text-ink mt-2" numberOfLines={2}>{listing?.title ?? "Property viewing"}</Text>
+          <Text className="text-[12.5px] text-ink-2 mt-1">{whenLabel}</Text>
+          <Text className="text-[12px] text-ink-3 mt-1">
+            {viewing.notes?.startsWith("Video tour") ? "Video tour" : "In-person viewing"}
+            {viewing.agent?.name ? ` · ${viewing.agent.name}` : ""}
+          </Text>
+          {!!listing?.location && (
+            <View className="flex-row items-center gap-1.5 mt-3">
+              <Ionicons name="location-outline" size={14} color={INK_2} />
+              <Text className="text-[12px] text-ink-2">Address shared after agent confirmation</Text>
+            </View>
+          )}
+        </View>
+        <Pressable
+          onPress={() => router.replace("/(tabs)/account")}
+          className="w-full mt-5 bg-primary rounded-full py-4 items-center active:opacity-85"
+        >
+          <Text className="text-[14px] font-sans-bold text-white">Back to my account</Text>
+        </Pressable>
+        <Pressable onPress={() => router.back()} className="mt-4 py-2" hitSlop={8}>
+          <Text className="text-[13px] font-sans-bold text-primary">View property</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }

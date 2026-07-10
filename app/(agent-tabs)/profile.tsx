@@ -15,11 +15,28 @@ import AgentDashboard from "@/components/agent/AgentDashboard";
 import { useAuth } from "@/context/auth";
 import agentsService from "@/api/services/agents";
 import usersService from "@/api/services/users";
+import { confirmAccountDeletion } from "@/lib/accountSecurity";
 
 const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 const DESTRUCTIVE = "#b3261e";
+
+const ROW_TINTS: Record<string, { bg: string; fg: string }> = {
+  browse: { bg: "#e3efe7", fg: PRIMARY },
+  vendors: { bg: "#dcf0ef", fg: "#0e7c7b" },
+  edit: { bg: "#e3efe7", fg: PRIMARY },
+  public: { bg: "#e4ecfb", fg: "#3b5bdb" },
+  notif: { bg: "#fbeacd", fg: "#b9842c" },
+  help: { bg: "#e4ecfb", fg: "#3b5bdb" },
+  escrow: { bg: "#e3efe7", fg: PRIMARY },
+  logbook: { bg: "#dcf0ef", fg: "#0e7c7b" },
+  terms: { bg: "#ebe6fb", fg: "#6741d9" },
+  privacy: { bg: "#e4ecfb", fg: "#3b5bdb" },
+  out: { bg: "#fde6e4", fg: DESTRUCTIVE },
+  deactivate: { bg: "#fbeacd", fg: "#b9842c" },
+  delete: { bg: "#fde6e4", fg: DESTRUCTIVE },
+};
 
 type ToggleTab = "profile" | "settings";
 const TOGGLE_OPTIONS = [
@@ -75,7 +92,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     rows: [
       { id: "help",    icon: "help-circle-outline",   title: "Help centre", href: "/help" },
       { id: "escrow",  icon: "lock-closed-outline",   title: "How escrow works", href: "/escrow-info" },
-      { id: "logbook", icon: "document-text-outline", title: "About the logbook", href: "/logbook-info" },
+      { id: "logbook", icon: "document-text-outline", title: "Using the Logbook", href: "/logbook-info" },
     ],
   },
   {
@@ -123,6 +140,7 @@ export default function AgentProfileTab() {
 
   const doDelete = async () => {
     try {
+      if (!(await confirmAccountDeletion())) return;
       await usersService.deleteAccount();
       await signOut();
       router.replace("/welcome" as Href);
@@ -206,7 +224,7 @@ export default function AgentProfileTab() {
         <AgentDashboard embedded />
       ) : (
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 104 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Profile card */}
@@ -276,18 +294,18 @@ export default function AgentProfileTab() {
                   >
                     <View
                       className="w-9 h-9 rounded-xl items-center justify-center"
-                      style={{ backgroundColor: r.destructive ? "#fde6e4" : "#f0f0f0" }}
+                      style={{ backgroundColor: ROW_TINTS[r.id]?.bg ?? "#f0f0f0" }}
                     >
                       <Ionicons
                         name={r.icon}
                         size={17}
-                        color={r.destructive ? DESTRUCTIVE : INK_2}
+                        color={ROW_TINTS[r.id]?.fg ?? INK_2}
                       />
                     </View>
                     <View className="flex-1">
                       <Text
                         className="text-[13.5px] font-sans-bold"
-                        style={{ color: r.destructive ? DESTRUCTIVE : "#1a2120" }}
+                        style={{ color: r.destructive ? (ROW_TINTS[r.id]?.fg ?? DESTRUCTIVE) : "#1a2120" }}
                       >
                         {r.title}
                       </Text>
@@ -312,4 +330,3 @@ export default function AgentProfileTab() {
     </View>
   );
 }
-

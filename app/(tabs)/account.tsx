@@ -1,13 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { Alert } from "@/lib/dialog";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
-import usersService from "@/api/services/users";
 import bookmarksService from "@/api/services/bookmarks";
 import viewingsService, { type Viewing } from "@/api/services/viewings";
 import offersService, {
@@ -81,8 +79,13 @@ function initialsOf(name?: string | null) {
   );
 }
 
+function displayName(name?: string | null) {
+  const first = name?.trim().split(/\s+/)[0] || "there";
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
+
 export default function AccountScreen() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [bookmarksCount, setBookmarksCount] = useState(0);
   const [viewings, setViewings] = useState<Viewing[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -117,67 +120,7 @@ export default function AccountScreen() {
     }, [load]),
   );
 
-  const firstName = (user?.name ?? "").trim().split(/\s+/)[0] || "there";
-
-  // ─── Account controls ───────────────────────────────────────
-  const doDeactivate = async () => {
-    try {
-      await usersService.deactivateAccount();
-      await signOut();
-      router.replace("/welcome" as Href);
-      Alert.alert(
-        "Account deactivated",
-        "Your account is hidden until you sign back in. Log in anytime to reactivate it.",
-      );
-    } catch (e: any) {
-      const msg = e?.response?.data?.message ?? "Please try again in a moment.";
-      Alert.alert("Couldn't deactivate", Array.isArray(msg) ? msg.join(", ") : msg);
-    }
-  };
-
-  const doDelete = async () => {
-    try {
-      await usersService.deleteAccount();
-      await signOut();
-      router.replace("/welcome" as Href);
-      Alert.alert("Account deleted", "Your account has been closed. We're sorry to see you go.");
-    } catch (e: any) {
-      const msg = e?.response?.data?.message ?? "Please try again in a moment.";
-      Alert.alert("Couldn't delete account", Array.isArray(msg) ? msg.join(", ") : msg);
-    }
-  };
-
-  const onDeactivate = () =>
-    Alert.alert(
-      "Deactivate your account?",
-      "Your profile and activity will be hidden and you'll be signed out everywhere. Simply sign back in anytime with your email and password to reactivate — nothing is deleted.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Deactivate", style: "destructive", onPress: doDeactivate },
-      ],
-    );
-
-  const onDelete = () =>
-    Alert.alert(
-      "Delete your account?",
-      "This permanently closes your PropertyLoop account and signs you out everywhere. Your bookings, offers, messages and saved items will no longer be accessible. This can't be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete account",
-          style: "destructive",
-          onPress: () =>
-            Alert.alert(
-              "Are you absolutely sure?",
-              `${user?.email ?? "Your account"} will be closed. This is your last chance to keep it.`,
-              [
-                { text: "Keep my account", style: "cancel" },
-                { text: "Yes, delete", style: "destructive", onPress: doDelete },
-              ],
-            ),
-        },
-      ],
-    );
+  const firstName = displayName(user?.name);
 
   const upcomingViewings = useMemo(
     () =>
@@ -298,11 +241,11 @@ export default function AccountScreen() {
     <View className="flex-1 bg-cream">
       <SafeAreaView className="flex-1" edges={["top"]}>
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: 104 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Hero */}
-          <View className="bg-primary-soft px-5 pt-3 pb-5">
+          <View className="bg-primary-soft px-5 pt-4 pb-5">
             <View className="flex-row items-center gap-3.5">
               <PLAvatar
                 initials={initialsOf(user?.name)}
@@ -315,7 +258,7 @@ export default function AccountScreen() {
                   className="text-[11px] font-sans-bold tracking-widest uppercase"
                   style={{ color: PRIMARY_INK }}
                 >
-                  Hi {firstName}
+                  Hi, {firstName}
                 </Text>
                 <Text
                   className="font-serif mt-0.5"
@@ -332,19 +275,24 @@ export default function AccountScreen() {
               </View>
               <Pressable
                 onPress={() => router.push("/settings" as Href)}
-                className="w-10 h-10 rounded-full bg-white items-center justify-center"
+                className="flex-row items-center gap-1.5 rounded-full bg-white px-3 py-2"
                 hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Open Settings"
               >
                 <Ionicons
                   name="settings-outline"
                   size={18}
                   color={PRIMARY_INK}
                 />
+                <Text className="text-[11px] font-sans-bold" style={{ color: PRIMARY_INK }}>
+                  Settings
+                </Text>
               </Pressable>
             </View>
 
             {/* Stat strip */}
-            <View className="mt-3.5 flex-row gap-2">
+            <View className="mt-4 flex-row gap-2">
               {stats.map((s) => (
                 <StatBox key={s.l} n={s.n} l={s.l} href={s.href} />
               ))}
@@ -358,10 +306,19 @@ export default function AccountScreen() {
               <BouncyLoader color={PRIMARY} />
             </View>
           ) : upNext.length === 0 ? (
+            <>
             <Text className="px-5 pt-2 text-[12.5px] text-ink-3 leading-5">
               Nothing needs your attention right now. Book a viewing or make an
               offer and it’ll show up here.
             </Text>
+            <EmptyActionCard
+              icon="compass-outline"
+              title="Ready when you are"
+              detail="Explore homes and your viewings or offers will appear here."
+              action="Browse properties"
+              onPress={() => router.push("/(tabs)/explore" as Href)}
+            />
+            </>
           ) : (
             <View className="px-4 pt-2.5 gap-2">
               {upNext.map((u) => (
@@ -379,9 +336,19 @@ export default function AccountScreen() {
               <BouncyLoader color={PRIMARY} />
             </View>
           ) : openJobs.length === 0 ? (
+            <>
             <Text className="px-5 pt-2 text-[12.5px] text-ink-3">
               No active service jobs. Hire a vendor from the Service Loop.
             </Text>
+            <EmptyActionCard
+              icon="construct-outline"
+              title="Find help for your home"
+              detail="Book a trusted professional for your next property task."
+              action="Find a service provider"
+              onPress={() => router.push("/services" as Href)}
+              tone="accent"
+            />
+            </>
           ) : (
             <View className="px-4 pt-2.5 gap-2">
               {openJobs.map((j) => (
@@ -390,26 +357,6 @@ export default function AccountScreen() {
             </View>
           )}
 
-          {/* Account controls */}
-          <SectionLabel className="px-5 pt-5">Account</SectionLabel>
-          <View className="px-4 pt-2.5 gap-2">
-            <DangerRow
-              icon="pause-circle-outline"
-              tint="#fbeacd"
-              fg="#b9842c"
-              title="Deactivate account"
-              detail="Hide your account — sign back in anytime to reactivate"
-              onPress={onDeactivate}
-            />
-            <DangerRow
-              icon="trash-outline"
-              tint="#fde6e4"
-              fg="#b3261e"
-              title="Delete account"
-              detail="Permanently close your account"
-              onPress={onDelete}
-            />
-          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -436,8 +383,9 @@ function StatBox({
         {n}
       </Text>
       <Text
-        className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5"
-        numberOfLines={1}
+        className="font-sans-bold text-ink-3 uppercase mt-1 text-center"
+        numberOfLines={2}
+        style={{ fontSize: 8.5, lineHeight: 10.5, letterSpacing: 0.7, minHeight: 21 }}
       >
         {l}
       </Text>
@@ -446,7 +394,7 @@ function StatBox({
   const boxClass = "flex-1 bg-white rounded-xl border-line";
   const boxStyle = {
     borderWidth: 0.5,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     paddingVertical: 10,
   } as const;
 
@@ -469,43 +417,6 @@ function StatBox({
   );
 }
 
-function DangerRow({
-  icon,
-  tint,
-  fg,
-  title,
-  detail,
-  onPress,
-}: {
-  icon: IonName;
-  tint: string;
-  fg: string;
-  title: string;
-  detail: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="bg-white rounded-2xl px-3.5 py-3.5 flex-row items-center gap-3 border-line active:opacity-90"
-      style={{ borderWidth: 0.5 }}
-    >
-      <View
-        className="w-9 h-9 rounded-xl items-center justify-center"
-        style={{ backgroundColor: tint }}
-      >
-        <Ionicons name={icon} size={17} color={fg} />
-      </View>
-      <View className="flex-1">
-        <Text className="text-[13.5px] font-sans-bold" style={{ color: fg }}>
-          {title}
-        </Text>
-        <Text className="text-[11.5px] text-ink-3 mt-0.5">{detail}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
 function SectionLabel({
   children,
   className,
@@ -519,6 +430,46 @@ function SectionLabel({
     >
       {children}
     </Text>
+  );
+}
+
+function EmptyActionCard({
+  icon,
+  title,
+  detail,
+  action,
+  onPress,
+  tone = "primary",
+}: {
+  icon: IonName;
+  title: string;
+  detail: string;
+  action: string;
+  onPress: () => void;
+  tone?: "primary" | "accent";
+}) {
+  const accent = tone === "primary" ? PRIMARY : "#6b4a16";
+  const tint = tone === "primary" ? "#e3efe7" : "#f5ead4";
+  return (
+    <View className="mx-4 mt-3 rounded-2xl bg-white p-4 border-line" style={{ borderWidth: 0.5 }}>
+      <View className="flex-row items-start gap-3">
+        <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: tint }}>
+          <Ionicons name={icon} size={19} color={accent} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-[13.5px] font-sans-bold text-ink">{title}</Text>
+          <Text className="text-[12px] text-ink-3 leading-4 mt-0.5">{detail}</Text>
+        </View>
+      </View>
+      <Pressable
+        onPress={onPress}
+        className="mt-3 self-start flex-row items-center gap-1.5 rounded-full px-3.5 py-2 active:opacity-85"
+        style={{ backgroundColor: tint }}
+      >
+        <Text className="text-[12px] font-sans-bold" style={{ color: accent }}>{action}</Text>
+        <Ionicons name="arrow-forward" size={13} color={accent} />
+      </Pressable>
+    </View>
   );
 }
 
