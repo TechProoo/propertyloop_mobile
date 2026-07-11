@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -51,6 +52,7 @@ export default function ServiceJobScreen() {
   const [reply, setReply] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [disputing, setDisputing] = useState(false);
   const [reason, setReason] = useState("");
@@ -113,30 +115,38 @@ export default function ServiceJobScreen() {
     [],
   );
 
+  // Load the job and, if a payment was started (escrowId set) but escrow never
+  // locked — e.g. the webhook never reached us — quietly re-verify the original
+  // reference so a genuinely-paid job stops looking unpaid. Shared by screen
+  // focus and manual pull-to-refresh.
+  const reconcile = useCallback(async () => {
+    const j = await load();
+    if (j?.escrowId && (j.escrowStatus ?? "NONE") === "NONE") {
+      const status = await pollVerify(j.escrowId, 2);
+      if (status && status !== "NONE") await load();
+    }
+  }, [load, pollVerify]);
+
   useFocusEffect(
     useCallback(() => {
       let on = true;
       (async () => {
-        const j = await load();
-        // Self-heal: payment was started (escrowId set) but never locked —
-        // e.g. the webhook didn't reach us. Quietly verify on return.
-        if (
-          on &&
-          j?.escrowId &&
-          (j.escrowStatus ?? "NONE") === "NONE"
-        ) {
-          // Recheck the original reference every time this screen regains
-          // focus. Paystack can settle after the first return poll, and a
-          // one-time check leaves a paid escrow permanently looking unpaid.
-          const status = await pollVerify(j.escrowId, 2);
-          if (on && status && status !== "NONE") load();
-        }
+        if (on) await reconcile();
       })();
       return () => {
         on = false;
       };
-    }, [load, pollVerify]),
+    }, [reconcile]),
   );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await reconcile();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [reconcile]);
 
   const confirm = () => {
     if (!id) return;
@@ -240,16 +250,18 @@ export default function ServiceJobScreen() {
   const escrowStatus = job.escrowStatus ?? "NONE";
   // Buyer must fund escrow once the vendor has accepted (and any time before
   // they confirm). Released/locked/disputed all mean the money is already in.
+  // While the vendor is still working, the buyer may fund (or retry funding)
+  // escrow. A stale escrowId from an abandoned checkout must NOT block this —
+  // the backend verifies that reference and either heals it (if it was really
+  // paid) or issues a fresh checkout, so retrying is always safe here.
   const needsPayment =
     escrowStatus === "NONE" &&
-    !job.escrowId &&
     ["ACCEPTED", "IN_PROGRESS"].includes(job.status);
-  // A completed job must never start a new checkout. If its prior payment has
-  // not been reflected yet, keep the buyer in a safe verification state rather
-  // than risking a duplicate Paystack charge.
+  // A completed job must never start a new checkout. If its escrow isn't
+  // reflected yet, hold the buyer in a safe verification state (self-heal on
+  // focus / pull-to-refresh reconciles it) rather than risk a duplicate charge.
   const paymentNeedsVerification =
-    escrowStatus === "NONE" &&
-    (!!job.escrowId || job.status === "COMPLETED");
+    escrowStatus === "NONE" && job.status === "COMPLETED";
   // What the buyer pays and what's held in escrow = the vendor's listed price
   // (no markup). Falls back to vendorFee only for legacy jobs missing the field.
   const escrowTotal = job.escrowAmount || job.vendorFee;
@@ -272,7 +284,13 @@ export default function ServiceJobScreen() {
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 190 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 190 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} colors={[PRIMARY]} />
+        }
+      >
         {/* Vendor header */}
         <View className="flex-row items-center gap-3 mt-1">
           <PLAvatar initials={initialsOf(job.vendor?.name)} size={44} tone="primary" />
