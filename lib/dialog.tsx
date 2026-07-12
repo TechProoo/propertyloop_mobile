@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert as RNAlert,
   Animated,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -44,6 +45,18 @@ export const Alert = {
     buttons?: AlertButton[],
     _options?: unknown,
   ) {
+    // iOS: the OS alert presents on the top-most view controller, so it shows
+    // correctly even above a `presentation: 'modal'` screen (create-listing,
+    // make-offer, book-service, …). Our branded <DialogHost/> is a React Native
+    // <Modal> mounted at the app root, which on iOS renders *behind* a native
+    // modal screen — so its dialogs (success AND error) would be invisible
+    // there, leaving the user with no confirmation and the screen stuck. Use
+    // the native alert on iOS; keep the branded host on Android where the
+    // z-ordering works.
+    if (Platform.OS === "ios") {
+      RNAlert.alert(title ?? "", message, buttons as never);
+      return;
+    }
     if (hostHandler) hostHandler({ title, message, buttons });
     // Host not mounted yet (very early in startup) — fall back to the OS dialog
     // so a message is never silently lost.
