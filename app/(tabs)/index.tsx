@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -179,7 +179,10 @@ export default function HomeScreen() {
         <Header />
         <Greeting />
         <ServiceLoopEntry />
-        <AdvertiseEntry />
+        {/* App Store 3.1.1: the iOS app stays silent about purchases made
+            outside the app — no advertising pricing or website payment links.
+            Brands can still find /advertise on the web; Android keeps the entry. */}
+        {Platform.OS !== "ios" && <AdvertiseEntry />}
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,6 +43,9 @@ const PLACEMENTS: {
 
 export default function AdvertiseInfoScreen() {
   const insets = useSafeAreaInsets();
+  // App Store 3.1.1 — on iOS this screen must stay silent about paying
+  // elsewhere: no pricing, no "book on the website" copy, no external link.
+  const showBooking = Platform.OS !== "ios";
   const [pricing, setPricing] = useState<AdPricing | null>(null);
 
   useEffect(() => {
@@ -121,26 +124,30 @@ export default function AdvertiseInfoScreen() {
           ))}
         </View>
 
-        <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-7 mb-2">
-          Simple campaign pricing
-        </Text>
-        <View className="bg-white rounded-2xl overflow-hidden border-line" style={{ borderWidth: 0.5 }}>
-          {PLACEMENTS.slice(0, 3).map((p, index) => {
-            const key = ["SPLASH", "HOME_BANNER", "SEARCH_INLINE"][index] as keyof AdPricing["weeklyRates"];
-            const rate = pricing?.weeklyRates[key];
-            return (
-              <View key={p.title} className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: index === 2 ? 0 : 0.5, borderBottomColor: "#ece6df" }}>
-                <View>
-                  <Text className="text-[13px] font-sans-bold text-ink">{p.title}</Text>
-                  <Text className="text-[11px] text-ink-3 mt-0.5">One-week placement</Text>
-                </View>
-                <Text className="text-[13px] font-sans-bold text-primary">
-                  {rate ? `From ₦${rate.toLocaleString("en-NG")}` : "See rate"}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
+        {showBooking && (
+          <>
+            <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-7 mb-2">
+              Simple campaign pricing
+            </Text>
+            <View className="bg-white rounded-2xl overflow-hidden border-line" style={{ borderWidth: 0.5 }}>
+              {PLACEMENTS.slice(0, 3).map((p, index) => {
+                const key = ["SPLASH", "HOME_BANNER", "SEARCH_INLINE"][index] as keyof AdPricing["weeklyRates"];
+                const rate = pricing?.weeklyRates[key];
+                return (
+                  <View key={p.title} className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: index === 2 ? 0 : 0.5, borderBottomColor: "#ece6df" }}>
+                    <View>
+                      <Text className="text-[13px] font-sans-bold text-ink">{p.title}</Text>
+                      <Text className="text-[11px] text-ink-3 mt-0.5">One-week placement</Text>
+                    </View>
+                    <Text className="text-[13px] font-sans-bold text-primary">
+                      {rate ? `From ₦${rate.toLocaleString("en-NG")}` : "See rate"}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
 
         <View className="mt-5 rounded-2xl p-4" style={{ backgroundColor: "#e3efe7" }}>
           <Text className="text-[13px] font-sans-bold" style={{ color: PRIMARY_INK }}>Built for high-intent home movers</Text>
@@ -149,16 +156,23 @@ export default function AdvertiseInfoScreen() {
           </Text>
         </View>
 
-        {/* How it works */}
+        {/* How it works — on iOS the steps stay generic (no pricing/payment talk) */}
         <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mt-7 mb-2">
           How it works
         </Text>
         <View className="bg-white rounded-2xl px-4 py-3.5 border-line gap-3" style={{ borderWidth: 0.5 }}>
-          {[
-            "Pick a placement and how long it runs — simple flat weekly pricing.",
-            "Upload your creative and pay securely online.",
-            "Our team reviews it, and it goes live to thousands of users.",
-          ].map((t, i) => (
+          {(showBooking
+            ? [
+                "Pick a placement and how long it runs — simple flat weekly pricing.",
+                "Upload your creative and pay securely online.",
+                "Our team reviews it, and it goes live to thousands of users.",
+              ]
+            : [
+                "Pick a placement and how long your campaign runs.",
+                "Upload your creative and submit your campaign.",
+                "Our team reviews it, and it goes live to thousands of users.",
+              ]
+          ).map((t, i) => (
             <View key={i} className="flex-row gap-2.5">
               <View
                 className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
@@ -172,43 +186,47 @@ export default function AdvertiseInfoScreen() {
         </View>
 
         {/* Website note */}
-        <View
-          className="mt-6 rounded-2xl px-4 py-3.5 flex-row gap-2.5 items-start"
-          style={{ backgroundColor: ACCENT_BG }}
-        >
-          <Ionicons name="globe-outline" size={17} color={ACCENT_FG} style={{ marginTop: 1 }} />
-          <Text className="flex-1 text-[12px] leading-5" style={{ color: ACCENT_FG }}>
-            Booking and payment for adverts are handled on our website. Visit{" "}
-            <Text className="font-sans-bold">propertyloop.ng/advertise</Text> to see full
-            details, pricing, and to book a campaign.
-          </Text>
-        </View>
+        {showBooking && (
+          <View
+            className="mt-6 rounded-2xl px-4 py-3.5 flex-row gap-2.5 items-start"
+            style={{ backgroundColor: ACCENT_BG }}
+          >
+            <Ionicons name="globe-outline" size={17} color={ACCENT_FG} style={{ marginTop: 1 }} />
+            <Text className="flex-1 text-[12px] leading-5" style={{ color: ACCENT_FG }}>
+              Booking and payment for adverts are handled on our website. Visit{" "}
+              <Text className="font-sans-bold">propertyloop.ng/advertise</Text> to see full
+              details, pricing, and to book a campaign.
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Sticky CTA */}
-      <View
-        className="absolute left-0 right-0 bottom-0 bg-cream border-line"
-        style={{
-          borderTopWidth: 0.5,
-          paddingHorizontal: 16,
-          paddingTop: 14,
-          paddingBottom: Math.max(insets.bottom, 20) + 10,
-        }}
-      >
-        <Pressable
-          onPress={openAdvertise}
-          className="bg-primary rounded-full items-center justify-center flex-row gap-2 active:opacity-80"
-          style={{ paddingVertical: 16 }}
+      {showBooking && (
+        <View
+          className="absolute left-0 right-0 bottom-0 bg-cream border-line"
+          style={{
+            borderTopWidth: 0.5,
+            paddingHorizontal: 16,
+            paddingTop: 14,
+            paddingBottom: Math.max(insets.bottom, 20) + 10,
+          }}
         >
-          <Text className="text-white font-sans-bold text-[15px]">
-            View advertising packages
+          <Pressable
+            onPress={openAdvertise}
+            className="bg-primary rounded-full items-center justify-center flex-row gap-2 active:opacity-80"
+            style={{ paddingVertical: 16 }}
+          >
+            <Text className="text-white font-sans-bold text-[15px]">
+              View advertising packages
+            </Text>
+            <Ionicons name="open-outline" size={16} color="#ffffff" />
+          </Pressable>
+          <Text className="text-center text-[11px] text-ink-3 mt-2">
+            Opens securely inside PropertyLoop
           </Text>
-          <Ionicons name="open-outline" size={16} color="#ffffff" />
-        </Pressable>
-        <Text className="text-center text-[11px] text-ink-3 mt-2">
-          Opens securely inside PropertyLoop
-        </Text>
-      </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
