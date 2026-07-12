@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "propertyloop-mobile",
+    "name": "PropertyLoop",
     "slug": "propertyloop-mobile",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -15,7 +15,12 @@
       "policy": "fingerprint"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "ng.propertyloop.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "ng.propertyloop.app",
@@ -61,7 +66,8 @@
         "expo-image-picker",
         {
           "photosPermission": "PropertyLoop needs access to your photos so you can upload listing images, a profile picture, verification documents, proof of completed work, and photo attachments in chat.",
-          "cameraPermission": "PropertyLoop needs access to your camera so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages."
+          "cameraPermission": "PropertyLoop needs access to your camera so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages.",
+          "microphonePermission": "PropertyLoop needs microphone access to record sound when you capture listing walkthrough videos."
         }
       ]
     ],
