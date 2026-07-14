@@ -106,11 +106,24 @@ export default function EditProfileScreen() {
     }
     setSaving(true);
     try {
+      // Resolve the avatar into what the API should store:
+      //  • a freshly-picked local file (not an http URL) → upload, send the URL
+      //  • cleared (null) when one existed before → send "" to remove it
+      //  • unchanged remote URL → omit, so we don't re-send the same value
+      const original = user?.avatarUrl ?? null;
+      let avatarUrl: string | undefined;
+      if (avatarUri && !/^https?:\/\//.test(avatarUri)) {
+        avatarUrl = await usersService.uploadAvatar(avatarUri);
+      } else if (avatarUri === null && original) {
+        avatarUrl = "";
+      }
+
       await usersService.updateProfile({
         name: name.trim(),
         phone: phone.trim() || undefined,
         location: location.trim() || undefined,
         bio: bio.trim() || undefined,
+        ...(avatarUrl !== undefined ? { avatarUrl } : {}),
       });
       await refreshUser();
       Alert.alert("Saved", "Your profile has been updated.", [

@@ -15,6 +15,26 @@ const usersService = {
   updateProfile(payload: UpdateProfilePayload): Promise<any> {
     return api.patch("/users/me", payload).then((r) => r.data);
   },
+  /**
+   * Presign + PUT a locally-picked image to storage; returns the hosted URL to
+   * pass as `avatarUrl` in updateProfile. Uses a direct-to-R2 PUT rather than
+   * multipart through the API, which drops mid-stream on mobile networks.
+   */
+  async uploadAvatar(uri: string): Promise<string> {
+    const contentType = "image/jpeg";
+    const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
+      "/upload/avatar/presign",
+      { filename: `avatar-${Date.now()}.jpg`, contentType },
+    );
+    const fileRes = await fetch(uri);
+    const blob = await fileRes.blob();
+    await fetch(data.uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": contentType },
+    });
+    return data.fileUrl;
+  },
   getSettings(): Promise<UserSettings> {
     return api.get<UserSettings>("/users/me/settings").then((r) => r.data);
   },
