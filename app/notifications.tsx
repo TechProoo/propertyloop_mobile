@@ -106,6 +106,14 @@ export default function NotificationsScreen() {
     try {
       const res = await notificationsService.list();
       setItems(res.items);
+      // Opening this screen counts as seeing them, so clear the bell badge
+      // server-side — previously it only cleared if you tapped a notification
+      // (or "Mark all read"), so the dot survived a plain read-through.
+      // Deliberately leave `items` alone: the unread highlight and the Unread
+      // tab still work while the screen is open, and settle to read next visit.
+      if (res.items.some((n) => !n.readAt)) {
+        notificationsService.markAllRead().catch(() => {});
+      }
     } catch {
       setError(true);
     } finally {
