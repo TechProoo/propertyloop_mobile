@@ -167,7 +167,7 @@ export default function NewMessageScreen() {
 
       {/* Top bar */}
       <Appear from="down">
-        <View className="flex-row items-center justify-between px-5 pt-1 pb-2">
+        <View className="flex-row items-center justify-between px-5 pt-3 pb-2">
           <PressableScale
             onPress={() => router.back()}
             activeScale={0.88}
