@@ -454,7 +454,7 @@ export default function CreateListingScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View className="flex-1">
         {/* Top bar */}
-        <View className="flex-row items-center justify-between px-5 pt-1 pb-2">
+        <View className="flex-row items-center justify-between px-5 pt-3 pb-2">
           <Pressable
             onPress={goBack}
             className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"

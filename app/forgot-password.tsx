@@ -99,7 +99,7 @@ export default function ForgotPasswordScreen() {
         className="flex-1"
       >
         {/* Top bar */}
-        <View className="flex-row items-center justify-between px-5 pt-1">
+        <View className="flex-row items-center justify-between px-5 pt-3">
           <Pressable
             onPress={() => (step === "reset" ? setStep("request") : router.back())}
             className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"

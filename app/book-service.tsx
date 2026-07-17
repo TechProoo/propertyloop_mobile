@@ -196,7 +196,7 @@ export default function BookServiceScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
         {/* Top bar */}
-        <View className="flex-row items-center gap-2.5 px-5 pt-1 pb-3">
+        <View className="flex-row items-center gap-2.5 px-5 pt-3 pb-3">
           <Pressable onPress={() => router.back()} className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center">
             <Ionicons name="chevron-back" size={18} color={INK_2} />
           </Pressable>
