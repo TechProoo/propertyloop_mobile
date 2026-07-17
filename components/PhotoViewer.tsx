@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -33,6 +33,13 @@ interface Props {
 export function PhotoViewer({ visible, images, initialIndex = 0, onClose }: Props) {
   const [index, setIndex] = useState(initialIndex);
   const listRef = useRef<FlatList<string>>(null);
+  // Read the insets from the hook rather than wrapping the chrome in a
+  // SafeAreaView: this content lives inside a react-native <Modal>, which is a
+  // separate native container where SafeAreaView's own measurement collapses to
+  // zero — that left the close button sitting up in the status bar. The hook
+  // reads the provider's context (expo-router mounts SafeAreaProvider at the
+  // root), so it still reports the real device insets in here.
+  const insets = useSafeAreaInsets();
 
   // Re-sync to the tapped photo each time the viewer is opened.
   useEffect(() => {
@@ -91,11 +98,16 @@ export function PhotoViewer({ visible, images, initialIndex = 0, onClose }: Prop
         />
 
         {/* Top chrome: close + counter */}
-        <SafeAreaView
-          edges={["top"]}
-          style={{ position: "absolute", top: 0, left: 0, right: 0 }}
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            paddingTop: Math.max(insets.top, 12) + 8,
+          }}
         >
-          <View className="flex-row items-center justify-between px-4 pt-2">
+          <View className="flex-row items-center justify-between px-4">
             <Pressable
               onPress={onClose}
               hitSlop={8}
@@ -115,7 +127,7 @@ export function PhotoViewer({ visible, images, initialIndex = 0, onClose }: Prop
               </View>
             )}
           </View>
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );
