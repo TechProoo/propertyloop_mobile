@@ -68,7 +68,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "5. Your rights",
     b: [
       "Under the NDPR you may request access to, correction of, or deletion of your personal data.",
-      "You can delete your account any time from Settings → Delete account. This closes your account and revokes access immediately.",
+      "You can delete your account any time from Settings → Delete account. This closes your account and revokes access immediately, and removes or anonymises the content you shared with others — your profile, photo, bio, listings, reviews and messages. Verification documents and transaction records are kept for the periods in section 4 above, as Nigerian law requires.",
       "For access or correction requests, email support.propertyloop@propertyloop.ng. We respond within 30 days.",
       "You can also withdraw consent for non-essential processing (e.g. marketing) from Settings → Notifications.",
     ],
@@ -131,7 +131,7 @@ export default function PrivacyScreen() {
           Privacy <Text className="font-serif-italic">policy</Text>
         </Text>
         <Text className="text-[11.5px] text-ink-3 mt-2 font-sans-semibold">
-          Last updated · 7 Jul 2026 · v2.6
+          Last updated · 23 Jul 2026 · v2.7
         </Text>
         <Text className="text-[13px] text-ink-2 mt-3 leading-5">
           The short version: we collect what we need to run the service, encrypt
