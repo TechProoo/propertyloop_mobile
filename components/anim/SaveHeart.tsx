@@ -18,6 +18,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { toggleSaved, useIsSaved } from "@/lib/favourites";
+import { useAuth } from "@/context/auth";
 
 const SAVED_COLOR = "#ff6b66";
 
@@ -37,6 +38,7 @@ export function SaveHeart({
   onToggle?: (nowSaved: boolean) => void;
   hitSlop?: number;
 }) {
+  const { requireAuth } = useAuth();
   const saved = useIsSaved(id);
   const scale = useSharedValue(1);
   const burst = useSharedValue(0); // 0 → 1 ring expansion on save
@@ -69,6 +71,7 @@ export function SaveHeart({
     <Pressable
       onPress={(e) => {
         e.stopPropagation?.();
+        if (!requireAuth("save this home")) return;
         const next = toggleSaved(id);
         onToggle?.(next);
       }}

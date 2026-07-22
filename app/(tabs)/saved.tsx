@@ -20,6 +20,7 @@ import bookmarksService, {
 } from "@/api/services/bookmarks";
 import { toggleSaved } from "@/lib/favourites";
 import { Appear, PressableScale, Reveal, RevealScrollView } from "@/components/anim";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const ACCENT = "#b9842c";
@@ -33,6 +34,7 @@ function listedWhen(iso: string) {
 
 
 export default function SavedScreen() {
+  const { status } = useAuth();
   const [items, setItems] = useState<PropertyBookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -50,10 +52,13 @@ export default function SavedScreen() {
   }, []);
 
   // Refetch whenever the tab regains focus so newly-saved homes appear.
+  // Skip entirely for a guest — shortlisting is account-based, so there's
+  // nothing to fetch and no point hitting the API just to 401.
   useFocusEffect(
     useCallback(() => {
-      load();
-    }, [load]),
+      if (status === "authed") load();
+      else setLoading(false);
+    }, [load, status]),
   );
 
   const unsave = (b: PropertyBookmark) => {
@@ -99,7 +104,15 @@ export default function SavedScreen() {
         </View>
         </Appear>
 
-        {loading ? (
+        {status !== "authed" ? (
+          <EmptyBlock
+            icon="heart-outline"
+            title="Sign in to save homes"
+            body="Create a free account to shortlist properties and pick up where you left off on any device."
+            actionLabel="Sign in"
+            onAction={() => router.push("/login" as Href)}
+          />
+        ) : loading ? (
           <View className="py-20 items-center">
             <BouncyLoader color={PRIMARY} />
           </View>

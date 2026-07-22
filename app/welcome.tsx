@@ -73,8 +73,26 @@ export default function WelcomeScreen() {
             </PressableScale>
           </Appear>
 
+          {/* Guest entry — browsing listings isn't account-based, so it must
+              stay reachable without registering (App Store guideline 5.1.1). */}
+          <Appear delay={700}>
+            <PressableScale
+              onPress={() => {
+                tapLight();
+                router.push("/(tabs)" as Href);
+              }}
+              className="mt-3 items-center py-2"
+              accessibilityRole="button"
+              accessibilityLabel="Browse listings without an account"
+            >
+              <Text className="text-slate-400 font-sans-semibold text-sm">
+                Browse without an account
+              </Text>
+            </PressableScale>
+          </Appear>
+
           <Appear delay={720} from="fade">
-            <Text className="text-slate-500 text-xs text-center mt-5">
+            <Text className="text-slate-500 text-xs text-center mt-1">
               By continuing you agree to our Terms · Privacy Policy
             </Text>
           </Appear>

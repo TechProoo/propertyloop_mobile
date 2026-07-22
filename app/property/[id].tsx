@@ -149,7 +149,7 @@ function ListingDetail({
   listing: Listing;
   listingId: string;
 }) {
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const { width: screenW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [startingChat, setStartingChat] = useState(false);
@@ -191,7 +191,9 @@ function ListingDetail({
   };
 
   const messageAgent = async () => {
-    if (!listing.agent || !user || startingChat) return;
+    if (!listing.agent || startingChat) return;
+    if (!requireAuth("message this agent")) return;
+    if (!user) return;
     setStartingChat(true);
     try {
       const conv = await messagesService.createOrFind({
@@ -686,6 +688,7 @@ function ListingDetail({
             <PressableScale
               onPress={() => {
                 tapLight();
+                if (!requireAuth("book a viewing")) return;
                 router.push({
                   pathname: "/book-viewing",
                   params: { listingId: listing.id },
@@ -703,6 +706,7 @@ function ListingDetail({
             <PressableScale
               onPress={() => {
                 tapMedium();
+                if (!requireAuth(primaryCta.label.toLowerCase())) return;
                 router.push({
                   pathname: primaryCta.pathname,
                   params: { listingId: listing.id },

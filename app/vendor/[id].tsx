@@ -25,7 +25,7 @@ function initialsOf(name?: string | null) {
 
 export default function PublicVendorProfileScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [vendor, setVendor] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,10 +38,8 @@ export default function PublicVendorProfileScreen() {
   // conversation store as agent messaging, so it lands in the Inbox.
   const enquire = async () => {
     if (!id || starting) return;
-    if (!user) {
-      Alert.alert("Sign in required", "Please sign in to message this vendor.");
-      return;
-    }
+    if (!requireAuth("message this vendor")) return;
+    if (!user) return;
     setStarting(true);
     try {
       const conv = await messagesService.createOrFind({
@@ -270,7 +268,13 @@ export default function PublicVendorProfileScreen() {
               )}
             </View>
             {services.length > 0 ? (
-              <Pressable onPress={() => router.push(`/book-service?vendorId=${id}` as Href)} className="bg-primary rounded-full px-6 py-3.5 active:opacity-80">
+              <Pressable
+                onPress={() => {
+                  if (!requireAuth("hire this vendor")) return;
+                  router.push(`/book-service?vendorId=${id}` as Href);
+                }}
+                className="bg-primary rounded-full px-6 py-3.5 active:opacity-80"
+              >
                 <Text className="text-white font-sans-bold text-[14px]">Hire {vendor.name?.split(/\s+/)[0] ?? "vendor"}</Text>
               </Pressable>
             ) : (

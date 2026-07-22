@@ -31,7 +31,7 @@ function naira(n?: number) {
 
 export default function PublicAgentProfileScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [agent, setAgent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -48,7 +48,9 @@ export default function PublicAgentProfileScreen() {
   }, [id]);
 
   const messageAgent = async () => {
-    if (!id || !user || starting) return;
+    if (!id || starting) return;
+    if (!requireAuth("message this agent")) return;
+    if (!user) return;
     setStarting(true);
     try {
       const conv = await messagesService.createOrFind({
