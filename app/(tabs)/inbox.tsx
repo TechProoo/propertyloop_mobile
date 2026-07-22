@@ -7,6 +7,7 @@ import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { Appear, PressableScale, stagger } from "@/components/anim/motion";
 import messagesService, { type Conversation } from "@/api/services/messages";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
@@ -42,6 +43,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {}) {
+  const { status, requireAuth } = useAuth();
   const [items, setItems] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -59,10 +61,12 @@ export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {
     }
   }, []);
 
+  // Messaging is account-based — a guest has no conversations to fetch.
   useFocusEffect(
     useCallback(() => {
-      load();
-    }, [load]),
+      if (status === "authed") load();
+      else setLoading(false);
+    }, [load, status]),
   );
 
   const filtered = query.trim()
@@ -109,7 +113,10 @@ export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {
               ) : null}
             </View>
             <PressableScale
-              onPress={() => router.push("/new-message" as Href)}
+              onPress={() => {
+                if (!requireAuth("start a new conversation")) return;
+                router.push("/new-message" as Href);
+              }}
               activeScale={0.9}
               style={{
                 width: 44,
@@ -167,7 +174,15 @@ export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {
         </Appear>
 
         {/* List */}
-        {loading ? (
+        {status !== "authed" ? (
+          <Empty
+            icon="chatbubbles-outline"
+            title="Sign in to message agents & vendors"
+            body="Create a free account to chat with agents and vendors about a listing or service."
+            actionLabel="Sign in"
+            onAction={() => router.push("/login" as Href)}
+          />
+        ) : loading ? (
           <View className="py-20 items-center">
             <BouncyLoader color={PRIMARY} />
           </View>

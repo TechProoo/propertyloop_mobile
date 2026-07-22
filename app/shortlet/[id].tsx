@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import listingsService from "@/api/services/listings";
 import type { Listing } from "@/api/types";
+import { useAuth } from "@/context/auth";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -108,6 +109,7 @@ export default function ShortletDetailScreen() {
 function ShortletDetail({ listing }: { listing: Listing }) {
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
+  const { requireAuth } = useAuth();
   const [guests, setGuests] = useState(2);
   const [saved, setSaved] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
@@ -437,12 +439,13 @@ function ShortletDetail({ listing }: { listing: Listing }) {
             </Text>
           </View>
           <Pressable
-            onPress={() =>
+            onPress={() => {
+              if (!requireAuth("book this stay")) return;
               router.push({
                 pathname: "/shortlet-request",
                 params: { shortletId: listing.id },
-              } as Href)
-            }
+              } as Href);
+            }}
             className="bg-primary rounded-full active:opacity-80"
             style={{ paddingHorizontal: 22, paddingVertical: 15 }}
           >

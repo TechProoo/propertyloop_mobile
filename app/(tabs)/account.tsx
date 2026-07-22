@@ -85,7 +85,7 @@ function displayName(name?: string | null) {
 }
 
 export default function AccountScreen() {
-  const { user } = useAuth();
+  const { user, status } = useAuth();
   const [bookmarksCount, setBookmarksCount] = useState(0);
   const [viewings, setViewings] = useState<Viewing[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -114,10 +114,13 @@ export default function AccountScreen() {
     }
   }, []);
 
+  // The account dashboard is entirely account-based (bookmarks, viewings,
+  // offers, purchases, jobs) — a guest has none of it, so skip the fetch.
   useFocusEffect(
     useCallback(() => {
-      load();
-    }, [load]),
+      if (status === "authed") load();
+      else setLoading(false);
+    }, [load, status]),
   );
 
   const firstName = displayName(user?.name);
@@ -236,6 +239,12 @@ export default function AccountScreen() {
       j.status !== "CANCELLED" &&
       j.status !== "DECLINED",
   );
+
+  // Browsing without an account has nowhere else to land on this tab — show
+  // a sign-in prompt instead of a dashboard with nothing in it.
+  if (status !== "authed") {
+    return <GuestAccountView />;
+  }
 
   return (
     <View className="flex-1 bg-cream">
@@ -364,6 +373,81 @@ export default function AccountScreen() {
 }
 
 // ─── Subcomponents ───────────────────────────────────────────
+
+/**
+ * What a guest sees on the Account tab instead of the personal dashboard —
+ * everything here (bookmarks, viewings, offers, jobs) is account-based, so
+ * there's nothing to show. Offers a way in, plus the handful of genuinely
+ * non-account screens (Terms, Privacy, Help) that should stay reachable
+ * without registering.
+ */
+function GuestAccountView() {
+  return (
+    <View className="flex-1 bg-cream">
+      <SafeAreaView className="flex-1" edges={["top"]}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 104 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="bg-primary-soft px-5 pt-6 pb-8 items-center">
+            <View
+              className="w-16 h-16 rounded-full items-center justify-center"
+              style={{ backgroundColor: "#ffffff" }}
+            >
+              <Ionicons name="person-outline" size={28} color={PRIMARY_INK} />
+            </View>
+            <Text className="text-[19px] font-sans-bold text-ink mt-3.5">
+              You're browsing as a guest
+            </Text>
+            <Text className="text-[13px] text-ink-3 mt-1 text-center leading-5 max-w-[280px]">
+              Create a free account to save homes, message agents and
+              vendors, and track viewings and offers.
+            </Text>
+            <Pressable
+              onPress={() => router.push("/intro" as Href)}
+              className="mt-5 self-stretch rounded-full py-3.5 items-center"
+              style={{ backgroundColor: PRIMARY }}
+            >
+              <Text className="text-white text-[14px] font-sans-bold">
+                Create a free account
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/login" as Href)}
+              className="mt-2.5 py-2"
+            >
+              <Text className="text-[13px] font-sans-bold" style={{ color: PRIMARY_INK }}>
+                I already have an account
+              </Text>
+            </Pressable>
+          </View>
+
+          <SectionLabel className="px-5 pt-5 pb-2">Legal &amp; help</SectionLabel>
+          <View className="mx-4 rounded-2xl bg-white border-line overflow-hidden" style={{ borderWidth: 0.5 }}>
+            {[
+              { label: "Terms of service", icon: "reader-outline" as const, href: "/terms" as Href },
+              { label: "Privacy policy", icon: "shield-checkmark-outline" as const, href: "/privacy" as Href },
+              { label: "Help & support", icon: "help-circle-outline" as const, href: "/help" as Href },
+            ].map((row, i, arr) => (
+              <Pressable
+                key={row.label}
+                onPress={() => router.push(row.href)}
+                className="flex-row items-center gap-3 px-4 py-3.5 active:opacity-70"
+                style={i < arr.length - 1 ? { borderBottomWidth: 0.5, borderColor: "#ece6df" } : undefined}
+              >
+                <Ionicons name={row.icon} size={18} color={INK_2} />
+                <Text className="flex-1 text-[13.5px] font-sans-semibold text-ink">
+                  {row.label}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={INK_2} />
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
 
 function StatBox({
   n,

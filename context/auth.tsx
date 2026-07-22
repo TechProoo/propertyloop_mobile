@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import authService, {
   type AuthUser,
   type LoginPayload,
@@ -17,6 +17,7 @@ import { tokenStore } from "@/api/tokenStore";
 import { syncSavedFromServer, clearSaved } from "@/lib/favourites";
 import { getChatSocket, disconnectChatSocket } from "@/api/socket";
 import { isFirstLaunchSinceInstall } from "@/lib/firstLaunch";
+import { Alert } from "@/lib/dialog";
 
 type Status = "loading" | "authed" | "guest";
 
@@ -28,6 +29,14 @@ interface AuthContextValue {
   signUp: (payload: SignupPayload) => Promise<AuthUser>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  /**
+   * Gate an account-based action for a guest browsing without signing in.
+   * Returns true (and does nothing) if already signed in; otherwise prompts
+   * to sign in / create an account and returns false so the caller aborts.
+   * `action` fills "Create a free account or sign in to {action}." — pass a
+   * verb phrase like "save this home" or "message this agent".
+   */
+  requireAuth: (action?: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -118,6 +127,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const requireAuth = useCallback(
+    (action?: string) => {
+      if (status === "authed" && user) return true;
+      Alert.alert(
+        "Sign in required",
+        action
+          ? `Create a free account or sign in to ${action}.`
+          : "Create a free account or sign in to continue.",
+        [
+          { text: "Not now", style: "cancel" },
+          { text: "Sign in", onPress: () => router.push("/login" as Href) },
+          {
+            text: "Create account",
+            onPress: () => router.push("/intro" as Href),
+          },
+        ],
+      );
+      return false;
+    },
+    [status, user],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -128,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signOut,
         refreshUser,
+        requireAuth,
       }}
     >
       {children}
