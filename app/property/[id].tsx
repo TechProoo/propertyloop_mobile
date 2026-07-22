@@ -41,6 +41,7 @@ import bookmarksService from "@/api/services/bookmarks";
 import { hydrateOne } from "@/lib/favourites";
 import { recordListingView } from "@/lib/recentlyViewed";
 import { useAuth } from "@/context/auth";
+import { reportContent } from "@/lib/moderation";
 import type { Listing } from "@/api/types";
 
 const PRIMARY = "#1f6f43";
@@ -327,6 +328,15 @@ function ListingDetail({
               <Ionicons name="chevron-back" size={20} color="#ffffff" />
             </Pressable>
             <View className="flex-row gap-2">
+              <Pressable
+                onPress={() => reportContent("LISTING", listing.id, listing.title)}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
+                accessibilityRole="button"
+                accessibilityLabel="Report this listing"
+              >
+                <Ionicons name="flag-outline" size={17} color="#ffffff" />
+              </Pressable>
               <Pressable
                 onPress={handleShare}
                 className="w-10 h-10 rounded-full items-center justify-center"

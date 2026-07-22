@@ -90,6 +90,11 @@ export default function SignupScreen() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Required, unticked by default — App Store guideline 1.2 expects an
+  // affirmative agreement to terms (which state the zero-tolerance policy for
+  // abusive/objectionable content) before an account is created, not just a
+  // passive link in the footer.
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { signUp, signOut } = useAuth();
 
   const validate = (): string | null => {
@@ -97,6 +102,9 @@ export default function SignupScreen() {
     if (!EMAIL_RULE.test(email.trim())) return "Please enter a valid email address.";
     if (!PASSWORD_RULE.test(password)) {
       return "Password must be 8+ characters with an uppercase letter, lowercase letter, and number.";
+    }
+    if (!agreedToTerms) {
+      return "Please agree to the Terms of Service to continue.";
     }
     if (role === "AGENT") {
       if (!agencyName.trim() || !licenseNumber.trim() || !businessAddress.trim()) {
@@ -336,33 +344,59 @@ export default function SignupScreen() {
 
             {error && <Text className="text-red-600 text-xs mt-3">{error}</Text>}
 
+            {/* Required agreement — must be ticked before an account can be
+                created. Terms includes the zero-tolerance policy for abusive
+                or objectionable content (App Store guideline 1.2). */}
+            <Pressable
+              onPress={() => setAgreedToTerms((v) => !v)}
+              className="flex-row items-start gap-2.5 mt-6"
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreedToTerms }}
+            >
+              <View
+                className="items-center justify-center mt-0.5"
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 5,
+                  borderWidth: 1.5,
+                  borderColor: agreedToTerms ? "#1f6f43" : "#cfc8ba",
+                  backgroundColor: agreedToTerms ? "#1f6f43" : "transparent",
+                }}
+              >
+                {agreedToTerms && (
+                  <Ionicons name="checkmark" size={14} color="#ffffff" />
+                )}
+              </View>
+              <Text className="flex-1 text-ink-3 text-[11.5px] leading-4">
+                I agree to the{" "}
+                <Text
+                  className="text-primary font-sans-semibold"
+                  onPress={() => router.push("/terms" as Href)}
+                >
+                  Terms of Service
+                </Text>
+                , including the zero-tolerance policy for abusive or
+                objectionable content, and the{" "}
+                <Text
+                  className="text-primary font-sans-semibold"
+                  onPress={() => router.push("/privacy" as Href)}
+                >
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
+            </Pressable>
+
             <Pressable
               onPress={handleSignup}
-              disabled={submitting}
-              className="bg-primary rounded-full py-4 items-center mt-6 active:opacity-80 disabled:opacity-60"
+              disabled={submitting || !agreedToTerms}
+              className="bg-primary rounded-full py-4 items-center mt-5 active:opacity-80 disabled:opacity-60"
             >
               <Text className="text-white font-sans-semibold text-base">
                 {submitting ? "Creating account…" : "Continue"}
               </Text>
             </Pressable>
-
-            <Text className="text-ink-3 text-[11px] text-center mt-6">
-              By continuing, you agree to our{" "}
-              <Text
-                className="text-primary font-sans-semibold"
-                onPress={() => router.push("/terms" as Href)}
-              >
-                Terms
-              </Text>{" "}
-              &amp;{" "}
-              <Text
-                className="text-primary font-sans-semibold"
-                onPress={() => router.push("/privacy" as Href)}
-              >
-                Privacy Policy
-              </Text>
-              .
-            </Text>
 
             <View className="flex-row justify-center mt-5">
               <Text className="text-ink-2 text-sm">

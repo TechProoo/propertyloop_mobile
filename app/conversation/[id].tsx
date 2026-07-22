@@ -24,6 +24,7 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import { PhotoViewer } from "@/components/PhotoViewer";
 import { Appear, PressableScale } from "@/components/anim/motion";
 import { useAuth } from "@/context/auth";
+import { blockUser, reportContent } from "@/lib/moderation";
 import messagesService, {
   type Conversation,
   type Message,
@@ -509,6 +510,28 @@ export default function ConversationScreen() {
   };
 
   const title = conv?.name ?? "Conversation";
+
+  // Report/block this conversation's other participant — the required
+  // App Store guideline 1.2 controls, surfaced from the thread itself.
+  const openMenu = () => {
+    if (!conv?.otherUserId) return;
+    const otherId = conv.otherUserId;
+    const name = conv.name || "this user";
+    Alert.alert(title, undefined, [
+      {
+        text: `Report ${name}`,
+        onPress: () => reportContent("USER", otherId, name),
+      },
+      {
+        text: `Block ${name}`,
+        style: "destructive",
+        onPress: () =>
+          blockUser(otherId, name, () => router.back()),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
   const canSend = draft.trim().length > 0 || attachments.length > 0;
   const otherOnline = conv?.otherUserId
     ? presence[conv.otherUserId]
@@ -627,6 +650,23 @@ export default function ConversationScreen() {
               </Text>
             ) : null}
           </View>
+          {conv?.otherUserId ? (
+            <PressableScale
+              onPress={openMenu}
+              activeScale={0.85}
+              hitSlop={8}
+              style={{
+                width: 36,
+                height: 36,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Report or block"
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color={INK_3} />
+            </PressableScale>
+          ) : null}
         </View>
 
         {/* Pinned listing */}

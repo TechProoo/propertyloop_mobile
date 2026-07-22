@@ -29,6 +29,7 @@ const TINTS: Record<string, { bg: string; fg: string }> = {
   escrow:  { bg: "#e3efe7", fg: "#1f6f43" }, // green
   terms:   { bg: "#ebe6fb", fg: "#6741d9" }, // violet
   privacy: { bg: "#e4ecfb", fg: "#3b5bdb" }, // blue
+  blocked: { bg: "#fbeacd", fg: "#b9842c" }, // amber
   out:     { bg: "#fde6e4", fg: DESTRUCTIVE }, // red (destructive)
   deactivate: { bg: "#fbeacd", fg: "#b9842c" }, // amber — reversible, less severe than delete
   delete:  { bg: "#fde6e4", fg: DESTRUCTIVE }, // red (destructive)
@@ -71,6 +72,12 @@ const GROUPS: { label: string; links: SettingsLink[] }[] = [
       { id: "terms", icon: "reader-outline", title: "Terms of service", href: "/terms" },
       { id: "privacy", icon: "eye-outline", title: "Privacy policy", href: "/privacy" },
       { id: "out", icon: "log-out-outline", title: "Sign out", destructive: true },
+    ],
+  },
+  {
+    label: "Privacy & safety",
+    links: [
+      { id: "blocked", icon: "person-remove-outline", title: "Blocked users", href: "/blocked-users" },
     ],
   },
   {

@@ -15,6 +15,7 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import agentsService from "@/api/services/agents";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
 import { useAuth } from "@/context/auth";
+import { blockUser, reportContent } from "@/lib/moderation";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -100,7 +101,28 @@ export default function PublicAgentProfileScreen() {
           <Ionicons name="chevron-back" size={18} color={INK_2} />
         </Pressable>
         <Text className="text-[15px] font-sans-bold text-ink">Agent profile</Text>
-        <View style={{ width: 36 }} />
+        <Pressable
+          onPress={() => {
+            if (!id) return;
+            Alert.alert(agent.name, undefined, [
+              {
+                text: `Report ${agent.name}`,
+                onPress: () => reportContent("AGENT", id, agent.name),
+              },
+              {
+                text: `Block ${agent.name}`,
+                style: "destructive",
+                onPress: () => blockUser(id, agent.name, () => router.back()),
+              },
+              { text: "Cancel", style: "cancel" },
+            ]);
+          }}
+          className="w-9 h-9 rounded-full bg-cream-2 items-center justify-center"
+          accessibilityRole="button"
+          accessibilityLabel="Report or block"
+        >
+          <Ionicons name="ellipsis-horizontal" size={16} color={INK_2} />
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>

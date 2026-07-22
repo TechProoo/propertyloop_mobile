@@ -129,6 +129,7 @@ export default function RootLayout() {
         <Stack.Screen name="new-message" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="terms" options={{ headerShown: false }} />
         <Stack.Screen name="privacy" options={{ headerShown: false }} />
+        <Stack.Screen name="blocked-users" options={{ headerShown: false }} />
         {/* Agent journey */}
         <Stack.Screen name="agent-verify" options={{ headerShown: false }} />
         <Stack.Screen name="(agent-tabs)" options={{ headerShown: false }} />
