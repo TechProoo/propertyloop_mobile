@@ -11,6 +11,7 @@ import { Alert } from "@/lib/dialog";
 import vendorsService from "@/api/services/vendors";
 import messagesService, { type ConversationRole } from "@/api/services/messages";
 import { useAuth } from "@/context/auth";
+import { blockUser, reportContent } from "@/lib/moderation";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -118,6 +119,29 @@ export default function PublicVendorProfileScreen() {
             <View className="flex-row items-center justify-between px-4 pt-2">
               <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
                 <Ionicons name="chevron-back" size={18} color="#ffffff" />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  if (!id) return;
+                  Alert.alert(vendor.name, undefined, [
+                    {
+                      text: `Report ${vendor.name}`,
+                      onPress: () => reportContent("VENDOR", id, vendor.name),
+                    },
+                    {
+                      text: `Block ${vendor.name}`,
+                      style: "destructive",
+                      onPress: () => blockUser(id, vendor.name, () => router.back()),
+                    },
+                    { text: "Cancel", style: "cancel" },
+                  ]);
+                }}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+                accessibilityRole="button"
+                accessibilityLabel="Report or block"
+              >
+                <Ionicons name="ellipsis-horizontal" size={18} color="#ffffff" />
               </Pressable>
             </View>
           </SafeAreaView>

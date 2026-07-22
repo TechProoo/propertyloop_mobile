@@ -43,9 +43,12 @@ const SECTIONS: { h: string; b: string[] }[] = [
     ],
   },
   {
-    h: "6. Acceptable use",
+    h: "6. Acceptable use & zero tolerance for abuse",
     b: [
       "Do not post false listings, impersonate another person, scrape data, attempt unauthorised access, or use the service for unlawful purposes.",
+      "PropertyLoop has zero tolerance for objectionable content or abusive behaviour of any kind — this includes harassment, hate speech, threats, sexual content, and content that is discriminatory, defamatory, or intended to harm or intimidate another user.",
+      "Every listing, message, profile and review is subject to our content filters and can be reported directly in the app. We review reports and act — including removing the offending content and suspending or permanently ejecting the responsible account — within 24 hours.",
+      "You can block another user at any time from a conversation or their profile. Blocking immediately hides that user's messages and listings from you, prevents them from contacting you again, and notifies our team so we can review their account.",
       "We may suspend or terminate accounts that breach these Terms, with or without prior notice depending on severity.",
     ],
   },
@@ -104,7 +107,7 @@ export default function TermsScreen() {
           Terms of <Text className="font-serif-italic">service</Text>
         </Text>
         <Text className="text-[11.5px] text-ink-3 mt-2 font-sans-semibold">
-          Last updated · 6 Jul 2026 · v3.4
+          Last updated · 22 Jul 2026 · v3.5
         </Text>
 
         <Text className="text-[13px] text-ink-2 mt-3 leading-5">
