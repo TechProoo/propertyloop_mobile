@@ -275,15 +275,21 @@ export default function HomeScreen() {
 // Header — location pill + bell + avatar
 // ─────────────────────────────────────────────────────────────────
 function Header() {
-  const { user } = useAuth();
+  const { user, status } = useAuth();
   const location = useSelectedLocation();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const label = labelForLocation(location);
 
   // Keep the bell's count fresh each time the home tab regains focus.
+  // Notifications are account-based — skip the call entirely for a guest
+  // rather than firing an authed request that can only 401.
   useFocusEffect(
     useCallback(() => {
+      if (status !== "authed") {
+        setUnread(0);
+        return;
+      }
       let on = true;
       notificationsService
         .unreadCount()
@@ -292,7 +298,7 @@ function Header() {
       return () => {
         on = false;
       };
-    }, []),
+    }, [status]),
   );
   return (
     <View className="px-5 pt-1 flex-row items-center justify-between">

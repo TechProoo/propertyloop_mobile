@@ -72,6 +72,7 @@ function formatNaira(amount: number) {
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { status } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -100,15 +101,18 @@ export default function ListingDetailScreen() {
       .catch(() => active && setError(true))
       .finally(() => active && setLoading(false));
     // Sync this listing's saved state with the server so the heart reflects
-    // the truth even if the global launch-sync was skipped or failed.
-    bookmarksService
-      .checkProperty(id)
-      .then((res) => active && hydrateOne(id, !!res?.bookmarked))
-      .catch(() => {});
+    // the truth even if the global launch-sync was skipped or failed. Guests
+    // have no saved state, so skip rather than fire a doomed authed request.
+    if (status === "authed") {
+      bookmarksService
+        .checkProperty(id)
+        .then((res) => active && hydrateOne(id, !!res?.bookmarked))
+        .catch(() => {});
+    }
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, status]);
 
   if (loading) {
     return (

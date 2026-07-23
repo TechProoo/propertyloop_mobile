@@ -17,6 +17,7 @@ import { PLAvatar } from "@/components/brand/PLAvatar";
 import { SERVICE_CATEGORIES_GRID } from "@/mocks/services";
 import vendorsService from "@/api/services/vendors";
 import bookmarksService from "@/api/services/bookmarks";
+import { useAuth } from "@/context/auth";
 import { tapLight } from "@/lib/haptics";
 
 const PRIMARY = "#1f6f43";
@@ -59,6 +60,7 @@ function initialsOf(name?: string | null) {
 }
 
 export default function ServicesScreen() {
+  const { requireAuth, status } = useAuth();
   const insets = useSafeAreaInsets();
   // Clear the edge-to-edge Android nav bar (falls back to 48dp before the
   // inset resolves) so the escrow strip isn't tucked under the nav buttons.
@@ -89,20 +91,24 @@ export default function ServicesScreen() {
     load()
       .then((items) => on && setVendors(items))
       .finally(() => on && setLoading(false));
-    // Seed saved favourites in one call (no-op for guests / on error).
-    bookmarksService
-      .listVendorIds()
-      .then((ids) => on && setSavedIds(new Set(ids)))
-      .catch(() => {});
+    // Seed saved favourites in one call. Skipped for guests — favourites are
+    // account-based, so there's nothing to seed and the request would only 401.
+    if (status === "authed") {
+      bookmarksService
+        .listVendorIds()
+        .then((ids) => on && setSavedIds(new Set(ids)))
+        .catch(() => {});
+    }
     return () => {
       on = false;
     };
-  }, [load]);
+  }, [load, status]);
 
   // Optimistic favourite toggle, reconciled by reverting if the request fails.
   const toggleSave = useCallback(
     (id: string) => {
       tapLight();
+      if (!requireAuth("save this vendor")) return;
       const willSave = !savedIds.has(id);
       setSavedIds((prev) => {
         const next = new Set(prev);
@@ -119,7 +125,7 @@ export default function ServicesScreen() {
         });
       });
     },
-    [savedIds],
+    [savedIds, requireAuth],
   );
 
   const onRefresh = useCallback(async () => {
