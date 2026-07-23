@@ -92,6 +92,18 @@ api.interceptors.response.use(
 
     if (status === 401 && original && !original._retry && !isAuthCall) {
       original._retry = true;
+
+      // Was there ever a session to lose? A guest browsing without signing in
+      // has no refresh token, and still touches authed endpoints incidentally
+      // (the notification bell on Home, unread message counts). Treating those
+      // 401s as an expired session would bounce them to /login the moment the
+      // home screen mounted, which is exactly what guest browsing must not do
+      // (App Store guideline 5.1.1). Let the caller's own catch handle it.
+      const hadSession = !!(await tokenStore.getRefresh());
+      if (!hadSession) {
+        return Promise.reject(error);
+      }
+
       const newToken = await refreshSession();
       if (newToken) {
         original.headers = {
@@ -100,7 +112,7 @@ api.interceptors.response.use(
         };
         return api(original);
       }
-      // Refresh failed — session is gone. Let the app log out.
+      // Refresh failed on a real session — it's gone. Let the app log out.
       onSessionExpired?.();
     }
     return Promise.reject(error);
