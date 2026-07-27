@@ -78,8 +78,8 @@ const SECTIONS: { h: string; b: string[] }[] = [
   {
     h: "6. App permissions",
     b: [
-      "Camera: so you can photograph properties for your listings, capture proof of completed jobs, and take photos to send in chat. Only used at the moment you choose to take a photo, and never for facial recognition or any other biometric processing.",
-      "Photos: so you can upload listing images, a profile picture, and chat attachments. Only the images you pick are accessed; we never read your whole library.",
+      "Camera: used for one thing only, taking a profile picture if you would rather snap one than pick an existing photo. It is never used for facial recognition or any other biometric processing, and you can always choose a photo from your library instead.",
+      "Photos: so you can choose a profile picture, upload property images for your listings, attach photos of completed work or a job dispute, and send photo attachments in chat. Only the images you pick are accessed; we never read your whole library.",
       "Both are optional and requested only when you use a feature that needs them. You can decline and still use the rest of the app, and change your choice any time in your device settings.",
     ],
   },
