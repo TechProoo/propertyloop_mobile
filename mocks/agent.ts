@@ -160,13 +160,6 @@ export const LISTING_ANALYTICS = {
   saveRate: "6.9%",
 };
 
-// ─── Onboarding step 2 — verification ──────────────────────────
-export const AGENT_VERIFY_DOCS = [
-  { id: "nin",     title: "NIN slip",              detail: "11-digit national ID number"   },
-  { id: "license", title: "NIESV licence",         detail: "Current practising certificate" },
-  { id: "selfie",  title: "Headshot",              detail: "Clear, front-facing photo"      },
-];
-
 // ─── Create-listing wizard scaffolding ─────────────────────────
 export const CREATE_LISTING_TYPES = [
   { id: "sale",     label: "For sale" },

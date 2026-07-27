@@ -131,7 +131,6 @@ export default function RootLayout() {
         <Stack.Screen name="privacy" options={{ headerShown: false }} />
         <Stack.Screen name="blocked-users" options={{ headerShown: false }} />
         {/* Agent journey */}
-        <Stack.Screen name="agent-verify" options={{ headerShown: false }} />
         <Stack.Screen name="(agent-tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="agent-offers" options={{ headerShown: false }} />
         <Stack.Screen name="create-listing" options={{ headerShown: false, presentation: 'modal' }} />

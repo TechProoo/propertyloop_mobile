@@ -32,7 +32,8 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "1. What we collect",
     b: [
       "Account info: name, email, phone, password hash, profile photo.",
-      "Verification: NIN, selfie, proof-of-address documents (when you choose to verify).",
+      "Agent business details: agency name, business address and company registration (RC) number. We verify agents from these business records only.",
+      "We do not collect face data. PropertyLoop does not perform facial recognition, face mapping, face matching or any other biometric analysis, and never asks you to photograph your face. Face ID, where you enable it, is handled entirely by your device to confirm a sensitive action, and your face data is never shared with, transmitted to or stored by PropertyLoop.",
       "Activity: listings viewed, searches saved, offers made, vendors booked, messages sent.",
       "Device: model, OS, app version, language, time zone, approximate location (city level) when you grant permission.",
       "Payment: tokenised card references via Paystack, and we never store full card numbers.",
@@ -43,7 +44,7 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "2. Why we use it",
     b: [
       "To run the service: show you relevant listings, route messages, process escrow payments.",
-      "To verify identity and prevent fraud, by comparing submitted ID against authoritative sources (e.g. NIMC for NIN).",
+      "To verify that an agent is a real, registered business, by checking the agency and RC registration details they provide against public company records.",
       "To improve the product, using anonymised usage metrics to understand which flows work.",
       "To comply with Nigerian law, including NDPR, AML obligations, and tax reporting where required.",
     ],
@@ -60,15 +61,16 @@ const SECTIONS: { h: string; b: string[] }[] = [
     h: "4. How long we keep it",
     b: [
       "Account data: while your account is active, plus 24 months after closure to handle disputes and legal claims.",
-      "Verification documents: 5 years from submission, in line with AML retention rules.",
+      "Agent business records (agency name, business address, RC number): while the account is active, plus 24 months after closure.",
       "Transaction records: 7 years, in line with tax record-keeping rules.",
+      "Face data: none is collected, so none is retained.",
     ],
   },
   {
     h: "5. Your rights",
     b: [
       "Under the NDPR you may request access to, correction of, or deletion of your personal data.",
-      "You can delete your account any time from Settings → Delete account. This closes your account and revokes access immediately, and removes or anonymises the content you shared with others — your profile, photo, bio, listings, reviews and messages. Verification documents and transaction records are kept for the periods in section 4 above, as Nigerian law requires.",
+      "You can delete your account any time from Settings → Delete account. This closes your account and revokes access immediately, and removes or anonymises the content you shared with others: your profile, photo, bio, listings, reviews and messages. Transaction records are kept for the period in section 4 above, as Nigerian law requires.",
       "For access or correction requests, email support.propertyloop@propertyloop.ng. We respond within 30 days.",
       "You can also withdraw consent for non-essential processing (e.g. marketing) from Settings → Notifications.",
     ],
@@ -76,8 +78,8 @@ const SECTIONS: { h: string; b: string[] }[] = [
   {
     h: "6. App permissions",
     b: [
-      "Camera: so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages. Only used at the moment you choose to take a photo.",
-      "Photos: so you can upload listing images, a profile picture, verification documents, and chat attachments. Only the images you pick are accessed; we never read your whole library.",
+      "Camera: so you can photograph properties for your listings, capture proof of completed jobs, and take photos to send in chat. Only used at the moment you choose to take a photo, and never for facial recognition or any other biometric processing.",
+      "Photos: so you can upload listing images, a profile picture, and chat attachments. Only the images you pick are accessed; we never read your whole library.",
       "Both are optional and requested only when you use a feature that needs them. You can decline and still use the rest of the app, and change your choice any time in your device settings.",
     ],
   },
@@ -131,7 +133,7 @@ export default function PrivacyScreen() {
           Privacy <Text className="font-serif-italic">policy</Text>
         </Text>
         <Text className="text-[11.5px] text-ink-3 mt-2 font-sans-semibold">
-          Last updated · 23 Jul 2026 · v2.7
+          Last updated · 27 Jul 2026 · v2.8
         </Text>
         <Text className="text-[13px] text-ink-2 mt-3 leading-5">
           The short version: we collect what we need to run the service, encrypt
