@@ -108,13 +108,6 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         href: "/edit-profile",
       },
       {
-        id: "kyc",
-        icon: "shield-checkmark-outline",
-        title: "Identity verification",
-        detail: "Verified · NIN on file",
-        href: "/verify-identity",
-      },
-      {
         id: "pay",
         icon: "card-outline",
         title: "Payment methods",

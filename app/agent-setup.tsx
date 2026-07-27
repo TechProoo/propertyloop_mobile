@@ -13,7 +13,6 @@ import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
-import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
 const SPECIALTIES = [
@@ -143,7 +142,6 @@ export default function AgentSetupScreen() {
             </Text>
             <View className="w-9" />
           </View>
-          <OnboardingProgress step={1} total={2} className="px-5 mt-3" />
 
           <ScrollView
             contentContainerClassName="px-5 pb-32"
@@ -187,7 +185,7 @@ export default function AgentSetupScreen() {
                   Profile photo
                 </Text>
                 <Text className="text-ink-3 text-xs mt-0.5">
-                  Use a clear, friendly headshot
+                  Optional. Buyers see this on your listings.
                 </Text>
               </View>
             </View>

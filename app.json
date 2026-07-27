@@ -65,8 +65,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "PropertyLoop needs access to your photos so you can upload listing images, a profile picture, verification documents, proof of completed work, and photo attachments in chat.",
-          "cameraPermission": "PropertyLoop needs access to your camera so you can take a verification selfie, photograph completed jobs, and capture photos for your listings and messages.",
+          "photosPermission": "PropertyLoop needs access to your photos so you can upload listing images, a profile picture, proof of completed work, and photo attachments in chat.",
+          "cameraPermission": "PropertyLoop needs access to your camera so you can photograph properties for your listings, capture proof of completed jobs, and take photos to send in chat.",
           "microphonePermission": "PropertyLoop needs microphone access to record sound when you capture listing walkthrough videos."
         }
       ]

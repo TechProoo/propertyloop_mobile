@@ -164,26 +164,27 @@ export default function SignupScreen() {
     try {
       await signUp(payload);
       // Signup creates the account unverified and the backend emails a
-      // verification link. Agents stay signed in to finish onboarding via
-      // verification → plan → payment (those wizards need auth; the email-
-      // verified gate is enforced at their next login). Buyers and vendors must
-      // verify their email before entering — we drop the just-created session
-      // and send them to "Check your inbox". After verifying and logging back
-      // in, vendors are routed into the setup wizard (see login.tsx /
-      // SessionRedirect in _layout.tsx).
-      if (role === "AGENT") {
-        router.replace("/agent-verify" as Href);
-      } else {
-        // Seed the Home feed location from the buyer's preferred areas. Stored
-        // device-locally, so it survives the sign-out below and is there when
-        // they log back in. Only seeds if they've never picked one themselves.
-        if (preferredLocations) await seedLocationIfUnset(preferredLocations);
-        await signOut();
-        router.replace({
-          pathname: "/verify-email-sent",
-          params: { email: payload.email },
-        });
-      }
+      // verification link. Everyone, agents included, must verify their email
+      // before entering: we drop the just-created session and send them to
+      // "Check your inbox". After verifying and logging back in, vendors are
+      // routed into the setup wizard (see login.tsx / SessionRedirect in
+      // _layout.tsx).
+      //
+      // Agents used to be kept signed in here to complete an ID/licence/
+      // headshot verification step. That step is gone: the agency and
+      // registration details collected on /agent-setup are what we verify
+      // against, so the app no longer asks for a national ID number, a
+      // licence document, or a photo of the agent's face.
+      //
+      // Seed the Home feed location from the buyer's preferred areas. Stored
+      // device-locally, so it survives the sign-out below and is there when
+      // they log back in. Only seeds if they've never picked one themselves.
+      if (preferredLocations) await seedLocationIfUnset(preferredLocations);
+      await signOut();
+      router.replace({
+        pathname: "/verify-email-sent",
+        params: { email: payload.email },
+      });
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? "Signup failed. Please try again.";
       setError(Array.isArray(msg) ? msg.join(", ") : msg);
