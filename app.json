@@ -31,9 +31,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "versionCode": 5,
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": []
     },
     "web": {
       "output": "static",
@@ -67,7 +65,7 @@
         {
           "photosPermission": "PropertyLoop needs access to your photos so you can choose a profile picture, upload property images for your listings, attach photos of completed work or a job dispute, and send photo attachments in chat.",
           "cameraPermission": "PropertyLoop uses your camera only so you can take a profile picture instead of choosing one from your photos. It is never used for facial recognition or any other biometric processing.",
-          "microphonePermission": "PropertyLoop needs microphone access to record sound when you capture listing walkthrough videos."
+          "microphonePermission": false
         }
       ]
     ],
