@@ -11,7 +11,7 @@
 import { useSyncExternalStore } from "react";
 
 export interface SearchFilters {
-  type?: "SALE" | "RENT"; // listing type — absent = any
+  type?: "SALE" | "RENT" | "SHORTLET"; // listing type — absent = any
   propertyType?: string; // e.g. "Duplex" — absent = any
   minPrice?: number;
   maxPrice?: number;
