@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth, roleHome } from '@/context/auth';
 import vendorsService from '@/api/services/vendors';
-import { BootAnimation } from '@/components/brand/BootAnimation';
+import { AppLaunchScreen } from '@/components/brand/AppLaunchScreen';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { DialogHost } from '@/lib/dialog';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
@@ -30,6 +30,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 SplashScreen.preventAutoHideAsync().catch(() => {
   /* already hidden — fine */
 });
+SplashScreen.setOptions({ duration: 260, fade: true });
 
 export const unstable_settings = {
   anchor: 'welcome',
@@ -181,7 +182,10 @@ function BootGate() {
   const [done, setDone] = useState(false);
   if (done) return null;
   return (
-    <BootAnimation authReady={status !== 'loading'} onDone={() => setDone(true)} />
+    <AppLaunchScreen
+      authReady={status !== 'loading'}
+      onDone={() => setDone(true)}
+    />
   );
 }
 
