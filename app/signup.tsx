@@ -34,6 +34,12 @@ const ROLE_LABEL: Record<Role, string> = {
 const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// A person's name is letters, spaces and the occasional hyphen/apostrophe/period
+// (e.g. "Mary-Jane O'Connor") — never digits or other symbols. Strip anything
+// else as the user types so numbers can't be entered at all. \p{L}/\p{M} keep
+// accented and non-Latin letters intact.
+const sanitizeName = (text: string) => text.replace(/[^\p{L}\p{M}\s'.-]/gu, "");
+
 // Onboarding intent → BuyerProfile.lookingFor label (see buyer-preferences.tsx).
 const INTENT_LABEL: Record<string, string> = {
   RENTING: "Rent a home",
@@ -247,7 +253,7 @@ export default function SignupScreen() {
               <Field
                 label="Full name"
                 value={name}
-                onChangeText={setName}
+                onChangeText={(t) => setName(sanitizeName(t))}
                 placeholder="Your full name"
                 autoCapitalize="words"
                 autoComplete="name"
