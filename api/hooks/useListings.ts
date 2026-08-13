@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import listingsService, {
   type ListListingsParams,
 } from "@/api/services/listings";
@@ -18,11 +18,30 @@ export function useListings(params: ListListingsParams) {
   const [error, setError] = useState(false);
 
   const key = JSON.stringify(params);
+  const activeKeyRef = useRef(key);
+  const requestSequenceRef = useRef(0);
+
+  useEffect(() => {
+    activeKeyRef.current = key;
+    requestSequenceRef.current += 1;
+  }, [key]);
 
   const fetchPage = useCallback(
     async (p: number, replace: boolean) => {
-      if (replace) setLoading(true);
-      else setLoadingMore(true);
+      const requestKey = key;
+      const requestId = ++requestSequenceRef.current;
+      const isCurrentRequest = () =>
+        activeKeyRef.current === requestKey &&
+        requestSequenceRef.current === requestId;
+
+      if (replace) {
+        setLoading(true);
+        // A new first-page query supersedes any pagination request that was
+        // still in flight for the previous filter set.
+        setLoadingMore(false);
+      } else {
+        setLoadingMore(true);
+      }
       setError(false);
       try {
         const res = await listingsService.list({
@@ -30,6 +49,8 @@ export function useListings(params: ListListingsParams) {
           page: p,
           limit: params.limit ?? 20,
         });
+        if (!isCurrentRequest()) return;
+
         setItems((prev) =>
           replace
             ? res.items
@@ -42,10 +63,12 @@ export function useListings(params: ListListingsParams) {
         setPages(res.pages);
         setTotal(res.total);
       } catch {
-        setError(true);
+        if (isCurrentRequest()) setError(true);
       } finally {
-        if (replace) setLoading(false);
-        else setLoadingMore(false);
+        if (isCurrentRequest()) {
+          if (replace) setLoading(false);
+          else setLoadingMore(false);
+        }
       }
     },
     // params is captured via `key`; limit read off the stable value

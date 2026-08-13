@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -12,38 +11,26 @@ import {
   type SearchFilters,
 } from "@/lib/searchFilters";
 
-const PRIMARY = "#1f6f43";
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-const TYPES = [
+const LISTING_TYPES = ["Any", "Sale", "Rent", "Shortlet"];
+const PROPERTY_TYPES = [
   "Any",
-  "Sale",
-  "Rent",
-  "Residential",
-  "Commercial",
-  "Land",
+  "Flat / Apartment",
   "Apartment",
+  "House",
   "Duplex",
-  "Detached",
-  "Semi-detached",
+  "Bungalow",
+  "Terrace",
   "Penthouse",
+  "Studio",
+  "Land",
+  "Commercial",
 ];
 const BEDS = ["Any", "1+", "2+", "3+", "4+", "5+"];
 const BATHS = ["Any", "1+", "2+", "3+", "4+"];
-const AMENITIES = [
-  "Pool",
-  "Gym",
-  "Generator",
-  "Security",
-  "Parking",
-  "Furnished",
-  "Pet-friendly",
-  "Garden",
-  "Sea view",
-];
-const TRUST = ["Verified agent", "Title-verified", "PropertyLoop logbook"];
 
 function fmtNaira(n: number) {
   if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(0)}M`;
@@ -53,43 +40,45 @@ function fmtNaira(n: number) {
 
 // Reverse-map the stored filters back to the chip labels so reopening the
 // modal shows what's actually applied (previously it always showed defaults).
-function chipFromStore(f: SearchFilters): string {
+function listingTypeFromStore(f: SearchFilters): string {
   if (f.type === "SALE") return "Sale";
   if (f.type === "RENT") return "Rent";
-  return f.propertyType ?? "Any";
+  if (f.type === "SHORTLET") return "Shortlet";
+  return "Any";
 }
 
 export default function FiltersScreen() {
   const insets = useSafeAreaInsets();
-  // `from=results` → opened on top of search-results, so applying just goes
-  // back; otherwise (Home/Explore) applying navigates to search-results.
+  // A `from` param (e.g. `results` from search-results, `explore` from the
+  // Explore tab) means the opener is already mounted underneath and subscribes
+  // to the shared filter store, so applying just goes back to it. With no
+  // `from` (Home), applying navigates on to search-results.
   const params = useLocalSearchParams<{ from?: string }>();
   const applied = getSearchFilters();
 
-  const [type, setType] = useState(chipFromStore(applied));
-  const [beds, setBeds] = useState(applied.minBeds ? `${applied.minBeds}+` : "Any");
-  const [baths, setBaths] = useState(applied.minBaths ? `${applied.minBaths}+` : "Any");
-  const [minPrice, setMinPrice] = useState(applied.minPrice ? String(applied.minPrice) : "");
-  const [maxPrice, setMaxPrice] = useState(applied.maxPrice ? String(applied.maxPrice) : "");
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [trust, setTrust] = useState<string[]>([]);
-
-  const toggle = (
-    setter: React.Dispatch<React.SetStateAction<string[]>>,
-    value: string,
-  ) =>
-    setter((arr) =>
-      arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value],
-    );
-
+  const [listingType, setListingType] = useState(listingTypeFromStore(applied));
+  const [propertyType, setPropertyType] = useState(
+    applied.propertyType ?? "Any",
+  );
+  const [beds, setBeds] = useState(
+    applied.minBeds ? `${applied.minBeds}+` : "Any",
+  );
+  const [baths, setBaths] = useState(
+    applied.minBaths ? `${applied.minBaths}+` : "Any",
+  );
+  const [minPrice, setMinPrice] = useState(
+    applied.minPrice ? String(applied.minPrice) : "",
+  );
+  const [maxPrice, setMaxPrice] = useState(
+    applied.maxPrice ? String(applied.maxPrice) : "",
+  );
   const reset = () => {
-    setType("Any");
+    setListingType("Any");
+    setPropertyType("Any");
     setBeds("Any");
     setBaths("Any");
     setMinPrice("");
     setMaxPrice("");
-    setAmenities([]);
-    setTrust([]);
   };
 
   const apply = () => {
@@ -98,19 +87,17 @@ export default function FiltersScreen() {
     // replacing/pushing to an already-mounted search-results didn't refresh
     // its useLocalSearchParams, so a second "Show homes" kept stale results.
     const next: SearchFilters = {};
-    if (type !== "Any") {
-      if (type === "Sale") next.type = "SALE";
-      else if (type === "Rent") next.type = "RENT";
-      // Residential, Commercial, Land, Apartment, etc. → propertyType
-      else next.propertyType = type;
-    }
+    if (listingType === "Sale") next.type = "SALE";
+    else if (listingType === "Rent") next.type = "RENT";
+    else if (listingType === "Shortlet") next.type = "SHORTLET";
+    if (propertyType !== "Any") next.propertyType = propertyType;
     if (beds !== "Any") next.minBeds = parseInt(beds, 10);
     if (baths !== "Any") next.minBaths = parseInt(baths, 10);
     if (minPrice) next.minPrice = Number(minPrice);
     if (maxPrice) next.maxPrice = Number(maxPrice);
     setSearchFilters(next);
 
-    if (params.from === "results") router.back();
+    if (params.from) router.back();
     else router.replace("/search-results" as Href);
   };
 
@@ -143,6 +130,8 @@ export default function FiltersScreen() {
 
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 160 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
         {/* Price */}
@@ -166,9 +155,21 @@ export default function FiltersScreen() {
           {maxPrice ? fmtNaira(Number(maxPrice)) : "any"}
         </Text>
 
-        {/* Type */}
+        {/* Listing type */}
+        <SectionLabel className="mt-6">Listing type</SectionLabel>
+        <ChipRow
+          values={LISTING_TYPES}
+          selected={listingType}
+          onSelect={setListingType}
+        />
+
+        {/* Property type */}
         <SectionLabel className="mt-6">Property type</SectionLabel>
-        <ChipRow values={TYPES} selected={type} onSelect={setType} />
+        <ChipRow
+          values={PROPERTY_TYPES}
+          selected={propertyType}
+          onSelect={setPropertyType}
+        />
 
         {/* Beds */}
         <SectionLabel className="mt-6">Bedrooms</SectionLabel>
@@ -177,47 +178,6 @@ export default function FiltersScreen() {
         {/* Baths */}
         <SectionLabel className="mt-6">Bathrooms</SectionLabel>
         <ChipRow values={BATHS} selected={baths} onSelect={setBaths} />
-
-        {/* Amenities */}
-        <SectionLabel className="mt-6">Amenities</SectionLabel>
-        <MultiChips
-          values={AMENITIES}
-          selected={amenities}
-          onToggle={(v) => toggle(setAmenities, v)}
-        />
-
-        {/* Trust */}
-        <SectionLabel className="mt-6">Trust signals</SectionLabel>
-        <View className="mt-2 gap-2">
-          {TRUST.map((t) => {
-            const on = trust.includes(t);
-            return (
-              <Pressable
-                key={t}
-                onPress={() => toggle(setTrust, t)}
-                className="flex-row items-center gap-3 bg-white rounded-2xl px-3.5 py-3 border-line active:opacity-90"
-                style={{ borderWidth: 1 }}
-              >
-                <View
-                  className="w-5 h-5 rounded items-center justify-center"
-                  style={{
-                    backgroundColor: on ? PRIMARY : "transparent",
-                    borderWidth: on ? 0 : 1.5,
-                    borderColor: "#d3cdc1",
-                  }}
-                >
-                  {on && (
-                    <Ionicons name="checkmark" size={13} color="#ffffff" />
-                  )}
-                </View>
-                <Text className="flex-1 text-[13.5px] font-sans-bold text-ink">
-                  {t}
-                </Text>
-                <Ionicons name="shield-checkmark" size={14} color={PRIMARY} />
-              </Pressable>
-            );
-          })}
-        </View>
       </ScrollView>
 
       {/* Sticky CTA */}
@@ -300,6 +260,7 @@ function ChipRow({
   return (
     <ScrollView
       horizontal
+      keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: 8, paddingTop: 8 }}
     >
@@ -326,42 +287,5 @@ function ChipRow({
         );
       })}
     </ScrollView>
-  );
-}
-
-function MultiChips({
-  values,
-  selected,
-  onToggle,
-}: {
-  values: string[];
-  selected: string[];
-  onToggle: (v: string) => void;
-}) {
-  return (
-    <View className="flex-row flex-wrap gap-2 mt-2">
-      {values.map((v) => {
-        const on = selected.includes(v);
-        return (
-          <Pressable
-            key={v}
-            onPress={() => onToggle(v)}
-            className="px-3.5 py-2 rounded-full"
-            style={{
-              backgroundColor: on ? "#e3efe7" : "#ffffff",
-              borderWidth: 1,
-              borderColor: on ? PRIMARY : "#e1dcd3",
-            }}
-          >
-            <Text
-              className="text-[12.5px] font-sans-bold"
-              style={{ color: on ? "#134a2d" : INK_2 }}
-            >
-              {v}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
   );
 }
