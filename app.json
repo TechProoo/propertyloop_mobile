@@ -33,6 +33,10 @@
       "versionCode": 6,
       "permissions": []
     },
+    "androidStatusBar": {
+      "backgroundColor": "#071c12",
+      "barStyle": "light-content"
+    },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
@@ -42,13 +46,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-mark.png",
-          "imageWidth": 200,
+          "image": "./assets/images/adaptive-foreground.png",
+          "imageWidth": 175,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#071c12",
           "dark": {
-            "image": "./assets/images/splash-mark.png",
-            "backgroundColor": "#ffffff"
+            "image": "./assets/images/adaptive-foreground.png",
+            "backgroundColor": "#071c12"
           }
         }
       ],
