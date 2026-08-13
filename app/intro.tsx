@@ -105,8 +105,14 @@ export default function IntroScreen() {
             style={{ width: 120, height: 48 }}
             contentFit="contain"
           />
-          <Pressable onPress={handleSkip} hitSlop={12}>
-            <Text className="text-ink-2 text-sm font-sans-medium">Skip</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Skip introduction"
+            onPress={handleSkip}
+            hitSlop={8}
+            className="min-w-16 min-h-12 px-4 rounded-full items-center justify-center active:bg-stone-200"
+          >
+            <Text className="text-ink text-base font-sans-semibold">Skip</Text>
           </Pressable>
         </View>
 
