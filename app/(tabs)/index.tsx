@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -179,10 +179,11 @@ export default function HomeScreen() {
         <Header />
         <Greeting />
         <ServiceLoopEntry />
-        {/* App Store 3.1.1: the iOS app stays silent about purchases made
-            outside the app — no advertising pricing or website payment links.
-            Brands can still find /advertise on the web; Android keeps the entry. */}
-        {Platform.OS !== "ios" && <AdvertiseEntry />}
+        {/* "Advertise with us" entry — shown on every platform. Its destination
+            (/advertise-info) stays App Store 3.1.1-safe on iOS by hiding all
+            pricing, the website booking note, and the external payment link,
+            leaving a purely informational page. */}
+        <AdvertiseEntry />
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
 
