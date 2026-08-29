@@ -127,50 +127,83 @@ export default function PublicAgentProfileScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
         {/* Hero */}
-        <View className="bg-primary-soft px-5 pt-4 pb-5">
-          <View className="flex-row items-center gap-3">
+        <View
+          className="bg-primary-soft px-5 pt-5 pb-6 items-center"
+          style={{ borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }}
+        >
+          {/* White ring lifts the avatar off the green and hides the seam on
+              logo-style headshots, which are rarely cropped to a circle. */}
+          <View className="rounded-full p-1" style={{ backgroundColor: "#ffffff" }}>
             {agent.avatarUrl ? (
-              <Image source={agent.avatarUrl} style={{ width: 72, height: 72, borderRadius: 36 }} contentFit="cover" />
+              <Image
+                source={agent.avatarUrl}
+                style={{ width: 84, height: 84, borderRadius: 42 }}
+                contentFit="cover"
+              />
             ) : (
-              <PLAvatar initials={initialsOf(agent.name)} size={72} tone="primary" />
+              <PLAvatar initials={initialsOf(agent.name)} size={84} tone="primary" />
             )}
-            <View className="flex-1">
-              <View className="flex-row items-center gap-1.5">
-                <Text className="text-[18px] font-sans-bold text-ink" numberOfLines={2} style={{ lineHeight: 22 }}>{agent.name}</Text>
-                {agent.verified && <Ionicons name="shield-checkmark" size={15} color={PRIMARY} />}
-              </View>
-              {!!agent.agency && <Text className="text-[12.5px] mt-0.5" style={{ color: PRIMARY_INK }}>{agent.agency}</Text>}
-              <View className="self-start mt-1.5 rounded-full px-2 py-1 flex-row items-center gap-1" style={{ backgroundColor: "rgba(255,255,255,0.72)" }}>
-                <Ionicons name={agent.verified ? "shield-checkmark" : "person-outline"} size={11} color={PRIMARY} />
-                <Text className="text-[10px] font-sans-bold" style={{ color: PRIMARY_INK }}>
-                  {agent.verified ? "Verified agent" : "PropertyLoop agent"}
-                </Text>
-              </View>
-              {/* Rating line hidden until the agent has reviews — no "★ 0 · 0 reviews". */}
-              {reviews.length > 0 && (
-                <View className="flex-row items-center gap-2 mt-1">
-                  <Ionicons name="star" size={12} color={ACCENT} />
-                  <Text className="text-[12px] font-sans-bold text-ink">{agent.rating}</Text>
-                  <Text className="text-[12px] text-ink-3">· {reviews.length} reviews</Text>
-                </View>
-              )}
-            </View>
           </View>
 
-          {/* Stat strip — only surface metrics the agent has actually earned;
-              a "0" stat reads as a negative rather than "just getting started". */}
+          <Text
+            className="font-serif text-ink text-center mt-3"
+            style={{ fontSize: 23, lineHeight: 28, letterSpacing: -0.4 }}
+            numberOfLines={2}
+          >
+            {agent.name}
+          </Text>
+
+          {!!agent.agency && (
+            <Text
+              className="text-[12.5px] text-center mt-1 leading-4"
+              style={{ color: PRIMARY_INK }}
+              numberOfLines={2}
+            >
+              {agent.agency}
+            </Text>
+          )}
+
+          {/* One verification signal, not two — a shield sat beside the name as
+              well as inside this pill. */}
+          <View
+            className="mt-2.5 rounded-full px-2.5 py-1 flex-row items-center gap-1"
+            style={{ backgroundColor: "rgba(255,255,255,0.8)" }}
+          >
+            <Ionicons
+              name={agent.verified ? "shield-checkmark" : "person-outline"}
+              size={11}
+              color={PRIMARY}
+            />
+            <Text className="text-[10.5px] font-sans-bold" style={{ color: PRIMARY_INK }}>
+              {agent.verified ? "Verified agent" : "PropertyLoop agent"}
+            </Text>
+          </View>
+
+          {/* Rating line hidden until the agent has reviews — no "★ 0 · 0 reviews". */}
+          {reviews.length > 0 && (
+            <View className="flex-row items-center gap-1.5 mt-2">
+              <Ionicons name="star" size={12} color={ACCENT} />
+              <Text className="text-[12.5px] font-sans-bold text-ink">{agent.rating}</Text>
+              <Text className="text-[12.5px] text-ink-3">· {reviews.length} reviews</Text>
+            </View>
+          )}
+
+          {/* Only surface metrics the agent has actually earned; a "0" stat
+              reads as a negative rather than "just getting started". Centred
+              and fixed-width: these were flex-1, so an agent with one earned
+              stat got a full-bleed card with a small number in its corner. */}
           {((agent.yearsExperience ?? 0) > 0 ||
             (agent.soldRentedCount ?? 0) > 0 ||
             (agent.listingsCount ?? 0) > 0) && (
-            <View className="flex-row gap-2 mt-4">
-              {(agent.yearsExperience ?? 0) > 0 && (
-                <Stat n={`${agent.yearsExperience}y`} l="Experience" />
-              )}
-              {(agent.soldRentedCount ?? 0) > 0 && (
-                <Stat n={`${agent.soldRentedCount}`} l="Closed" tone="primary" />
-              )}
+            <View className="flex-row justify-center gap-2 mt-5">
               {(agent.listingsCount ?? 0) > 0 && (
                 <Stat n={`${agent.listingsCount}`} l="Listings" />
+              )}
+              {(agent.soldRentedCount ?? 0) > 0 && (
+                <Stat n={`${agent.soldRentedCount}`} l="Closed" />
+              )}
+              {(agent.yearsExperience ?? 0) > 0 && (
+                <Stat n={`${agent.yearsExperience}y`} l="Experience" />
               )}
             </View>
           )}
@@ -212,16 +245,16 @@ export default function PublicAgentProfileScreen() {
         </View>
 
         {listings.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
             {listings.map((l) => (
               <Pressable
                 key={l.id}
                 onPress={() => router.push(`/property/${l.id}` as Href)}
                 className="bg-white rounded-2xl overflow-hidden border-line active:opacity-90"
-                style={{ width: 200, borderWidth: 0.5 }}
+                style={{ width: 210, borderWidth: 0.5 }}
               >
-                <Image source={l.coverImage} style={{ width: "100%", height: 124 }} contentFit="cover" />
-                <View className="px-3 py-2.5">
+                <Image source={l.coverImage} style={{ width: "100%", height: 136 }} contentFit="cover" />
+                <View className="px-3.5 py-3">
                   <Text className="font-serif text-ink" style={{ fontSize: 16, letterSpacing: -0.3 }}>
                     {l.priceLabel ?? naira(Number(l.priceNaira))}
                   </Text>
@@ -262,7 +295,19 @@ export default function PublicAgentProfileScreen() {
       </ScrollView>
 
       {/* Sticky CTA */}
-      <View className="absolute left-0 right-0 bottom-0 bg-cream border-line" style={{ borderTopWidth: 0.5, paddingHorizontal: 16, paddingTop: 14, paddingBottom: Math.max(insets.bottom, 20) + 10 }}>
+      <View
+        className="absolute left-0 right-0 bottom-0 bg-cream"
+        style={{
+          paddingHorizontal: 20,
+          paddingTop: 14,
+          paddingBottom: Math.max(insets.bottom, 20) + 10,
+          shadowColor: "#1a2120",
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -4 },
+          elevation: 12,
+        }}
+      >
         <Pressable
           onPress={messageAgent}
           disabled={starting}
@@ -276,11 +321,18 @@ export default function PublicAgentProfileScreen() {
   );
 }
 
-function Stat({ n, l, tone }: { n: string; l: string; tone?: "primary" }) {
+function Stat({ n, l }: { n: string; l: string }) {
   return (
-    <View className="flex-1 rounded-xl border-line px-2 py-2.5" style={{ borderWidth: 0.5, backgroundColor: tone === "primary" ? "#ffffff" : "rgba(255,255,255,0.6)" }}>
-      <Text className="font-serif text-ink" style={{ fontSize: 18, letterSpacing: -0.3 }}>{n}</Text>
-      <Text className="text-[10px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5">{l}</Text>
+    <View
+      className="rounded-2xl items-center px-3.5 py-2.5"
+      style={{ minWidth: 94, backgroundColor: "rgba(255,255,255,0.85)" }}
+    >
+      <Text className="font-serif text-ink" style={{ fontSize: 19, letterSpacing: -0.3 }}>
+        {n}
+      </Text>
+      <Text className="text-[9.5px] font-sans-bold text-ink-3 tracking-widest uppercase mt-0.5">
+        {l}
+      </Text>
     </View>
   );
 }
