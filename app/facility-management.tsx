@@ -301,7 +301,9 @@ export default function FacilityManagementScreen() {
                 className="bg-white rounded-2xl overflow-hidden border-line"
                 style={{ borderWidth: 0.5 }}
               >
-                <View style={{ height: 120 }}>
+                {/* Tinted ground so a slow or failed fetch reads as a panel
+                    rather than a hole in the card. */}
+                <View style={{ height: 120, backgroundColor: "#e3efe7" }}>
                   <Image
                     source={`${CDN}/${d.image}`}
                     style={{ width: "100%", height: "100%" }}
@@ -396,11 +398,8 @@ export default function FacilityManagementScreen() {
           </View>
         </View>
 
-        {/* Gallery */}
-        <SectionLabel>From the field</SectionLabel>
-        <Text className="text-[12.5px] text-ink-2 mt-1 mb-3 leading-5">
-          Plant rooms, chiller yards and risers photographed on live sites.
-        </Text>
+        {/* Gallery — owns its own heading so the whole section disappears
+            together if the photography can't be reached. */}
         <FacilityGallery />
 
         {/* Track record */}
@@ -414,7 +413,7 @@ export default function FacilityManagementScreen() {
             <View
               key={p.file}
               className="rounded-2xl overflow-hidden"
-              style={{ width: 160, height: 120 }}
+              style={{ width: 160, height: 120, backgroundColor: "#e3efe7" }}
             >
               <Image
                 source={`${CDN}/${p.file}`}
