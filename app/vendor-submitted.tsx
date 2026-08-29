@@ -7,7 +7,7 @@ const PRIMARY = "#1f6f43";
 const INK_2 = "#4d524f";
 const INK_3 = "#7f857f";
 
-const WHILE_YOU_WAIT = [
+const NEXT_STEPS = [
   { id: "menu", icon: "list-outline"      as const, title: "Add more services",     detail: "A fuller menu wins more jobs", href: "/vendor-menu" },
   { id: "avail",icon: "calendar-outline"  as const, title: "Set your availability", detail: "Tell us when you work",        href: "/vendor-availability" },
 ];
@@ -45,21 +45,26 @@ export default function VendorSubmittedScreen() {
             </View>
           </View>
 
+          {/* No review gate exists: the directory lists every vendor with
+              availableForHire set (the default), services or not, and nothing
+              reads VendorProfile.verified as a condition. This screen used to
+              claim an ID/skill-proof review and a 24h approval — neither is
+              real, and it left vendors waiting instead of working. */}
           <Text
             className="text-[11px] font-sans-bold text-primary tracking-widest uppercase mt-6"
           >
-            Under review
+            Setup complete
           </Text>
           <Text
             className="font-serif text-ink mt-2"
             style={{ fontSize: 30, letterSpacing: -0.6, lineHeight: 33 }}
           >
-            You're <Text className="font-serif-italic">almost live</Text>
+            You're <Text className="font-serif-italic">live</Text>
           </Text>
           <Text className="text-[13.5px] text-ink-2 mt-2 leading-5">
-            We're verifying your ID and skill proof. Most vendors are approved within{" "}
-            <Text className="font-sans-bold text-ink">24 hours</Text> — we'll notify you the
-            moment you can take bookings.
+            You're in the vendor directory now and buyers can message you
+            straight away. Add a service menu and your availability to start
+            taking bookings.
           </Text>
 
           <View
@@ -67,10 +72,10 @@ export default function VendorSubmittedScreen() {
             style={{ borderWidth: 0.5, backgroundColor: "#ffffff" }}
           >
             <Text className="text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase mb-3">
-              While you wait
+              Next steps
             </Text>
             <View className="gap-3">
-              {WHILE_YOU_WAIT.map((w) => (
+              {NEXT_STEPS.map((w) => (
                 <Pressable
                   key={w.id}
                   onPress={() => router.push(w.href as Href)}
