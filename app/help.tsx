@@ -36,6 +36,12 @@ const TOPICS: {
     label: "Offers",
     href: "/offers",
   },
+  {
+    id: "facility",
+    icon: "business-outline",
+    label: "Facilities",
+    href: "/facility-management",
+  },
 ];
 
 export default function HelpScreen() {

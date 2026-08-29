@@ -339,6 +339,37 @@ export default function ServicesScreen() {
           </View>
         )}
 
+        {/* Facility management — whole-building upkeep, run by our partner
+            Ultramodern rather than booked per-job like the artisans above. */}
+        <Pressable
+          onPress={() => router.push("/facility-management" as Href)}
+          className="mx-4 mt-3.5 rounded-2xl px-3.5 py-3.5 flex-row items-center gap-3 active:opacity-90"
+          style={{
+            backgroundColor: "#e3efe7",
+            borderWidth: 0.5,
+            borderColor: "#cfe5d8",
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Facility management — HVAC, plumbing, fire and electrical for whole buildings"
+        >
+          <View
+            className="w-9 h-9 rounded-[10px] items-center justify-center"
+            style={{ backgroundColor: PRIMARY }}
+          >
+            <Ionicons name="business" size={18} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[13px] font-sans-bold text-ink">
+              Managing a whole building?
+            </Text>
+            <Text className="text-[11px] text-ink-2 mt-0.5 leading-4">
+              HVAC, plumbing, fire and electrical under one facility management
+              contract.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={15} color={PRIMARY} />
+        </Pressable>
+
         {/* Escrow trust strip */}
         <Pressable
           onPress={() => router.push("/escrow-info" as Href)}

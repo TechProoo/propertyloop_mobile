@@ -64,6 +64,7 @@ const GROUPS: { label: string; links: SettingsLink[] }[] = [
       { id: "help", icon: "help-circle-outline", title: "Help centre", href: "/help" },
       { id: "logbook", icon: "document-text-outline", title: "Using the Logbook", href: "/logbook-info" },
       { id: "escrow", icon: "lock-closed-outline", title: "How escrow works", href: "/escrow-info" },
+      { id: "facility", icon: "business-outline", title: "Facility management", href: "/facility-management" },
     ],
   },
   {

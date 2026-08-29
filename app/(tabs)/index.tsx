@@ -180,6 +180,7 @@ export default function HomeScreen() {
         <Header />
         <Greeting />
         <ServiceLoopEntry />
+        <FacilityEntry />
         {/* "Advertise with us" entry — shown on every platform. Its destination
             (/advertise-info) stays App Store 3.1.1-safe on iOS by hiding all
             pricing, the website booking note, and the external payment link,
@@ -675,6 +676,49 @@ function ServiceLoopEntry() {
           </Text>
           <Ionicons name="arrow-forward" size={15} color="#ffffff" />
         </View>
+      </PressableScale>
+    </Appear>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Facility management — whole-building upkeep through our partner
+// Ultramodern. Informational: the work is surveyed then quoted, so
+// there's nothing to book in-app; the screen hands off by phone.
+// ─────────────────────────────────────────────────────────────────
+function FacilityEntry() {
+  return (
+    <Appear delay={75} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
+      <PressableScale
+        onPress={() => {
+          tapLight();
+          router.push("/facility-management" as Href);
+        }}
+        activeScale={0.98}
+        className="rounded-2xl px-4 py-3.5 flex-row items-center gap-3"
+        style={{
+          backgroundColor: "#ffffff",
+          borderWidth: 1,
+          borderColor: "#e1dcd3",
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Facility management — HVAC, plumbing, fire and electrical for whole buildings"
+      >
+        <View
+          className="w-10 h-10 rounded-xl items-center justify-center"
+          style={{ backgroundColor: "#e3efe7" }}
+        >
+          <Ionicons name="business" size={19} color={PRIMARY} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-[14px] font-sans-bold text-ink tracking-tight">
+            Managing a whole building?
+          </Text>
+          <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">
+            HVAC, plumbing, fire &amp; electrical under one facility contract.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color="#7f857f" />
       </PressableScale>
     </Appear>
   );
