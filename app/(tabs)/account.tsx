@@ -164,7 +164,7 @@ export default function AccountScreen() {
     { n: String(activeOffers.length), l: "Offers", href: "/offers" },
     {
       n: String(activePurchases.length),
-      l: "Log Book",
+      l: "Logbook",
       href: "/purchase-progress",
     },
   ];
@@ -254,7 +254,10 @@ export default function AccountScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Hero */}
-          <View className="bg-primary-soft px-5 pt-4 pb-5">
+          <View
+            className="bg-primary-soft px-5 pt-4 pb-5"
+            style={{ borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }}
+          >
             <View className="flex-row items-center gap-3.5">
               <PLAvatar
                 initials={initialsOf(user?.name)}
@@ -308,62 +311,77 @@ export default function AccountScreen() {
             </View>
           </View>
 
-          {/* Up next */}
-          <SectionLabel className="px-5 pt-3.5">Up next</SectionLabel>
           {loading ? (
-            <View className="py-8 items-center">
+            <View className="py-10 items-center">
               <BouncyLoader color={PRIMARY} />
             </View>
-          ) : upNext.length === 0 ? (
+          ) : upNext.length === 0 && openJobs.length === 0 ? (
+            /* A new buyer has nothing in either section. Two headed sections,
+               each with a paragraph AND a card repeating that same paragraph,
+               made the page read as broken rather than new — so it collapses
+               to one card offering the two ways in. */
             <>
-            <Text className="px-5 pt-2 text-[12.5px] text-ink-3 leading-5">
-              Nothing needs your attention right now. Book a viewing or make an
-              offer and it’ll show up here.
-            </Text>
-            <EmptyActionCard
-              icon="compass-outline"
-              title="Ready when you are"
-              detail="Explore homes and your viewings or offers will appear here."
-              action="Browse properties"
-              onPress={() => router.push("/(tabs)/explore" as Href)}
-            />
+              <SectionLabel className="px-5 pt-5">Get started</SectionLabel>
+              <View
+                className="mx-4 mt-2.5 rounded-2xl bg-white border-line overflow-hidden"
+                style={{ borderWidth: 0.5 }}
+              >
+                <StartRow
+                  icon="compass-outline"
+                  tint="#e3efe7"
+                  fg={PRIMARY}
+                  title="Browse properties"
+                  detail="Homes to buy, rent or shortlet"
+                  onPress={() => router.push("/(tabs)/explore" as Href)}
+                  divider
+                />
+                <StartRow
+                  icon="construct-outline"
+                  tint="#f5ead4"
+                  fg={ACCENT_INK}
+                  title="Find a service provider"
+                  detail="Vetted pros, paid through escrow"
+                  onPress={() => router.push("/services" as Href)}
+                />
+              </View>
             </>
           ) : (
-            <View className="px-4 pt-2.5 gap-2">
-              {upNext.map((u) => (
-                <UpNextRow key={u.id} item={u} />
-              ))}
-            </View>
-          )}
+            <>
+              <SectionLabel className="px-5 pt-5">Up next</SectionLabel>
+              {upNext.length > 0 ? (
+                <View className="px-4 pt-2.5 gap-2">
+                  {upNext.map((u) => (
+                    <UpNextRow key={u.id} item={u} />
+                  ))}
+                </View>
+              ) : (
+                <EmptyActionCard
+                  icon="compass-outline"
+                  title="Ready when you are"
+                  detail="Viewings and offers will show up here."
+                  onPress={() => router.push("/(tabs)/explore" as Href)}
+                />
+              )}
 
-          {/* Service Loop · open jobs */}
-          <SectionLabel className="px-5 pt-4">
-            Service Loop · open jobs
-          </SectionLabel>
-          {loading ? (
-            <View className="py-8 items-center">
-              <BouncyLoader color={PRIMARY} />
-            </View>
-          ) : openJobs.length === 0 ? (
-            <>
-            <Text className="px-5 pt-2 text-[12.5px] text-ink-3">
-              No active service jobs. Hire a vendor from the Service Loop.
-            </Text>
-            <EmptyActionCard
-              icon="construct-outline"
-              title="Find help for your home"
-              detail="Book a trusted professional for your next property task."
-              action="Find a service provider"
-              onPress={() => router.push("/services" as Href)}
-              tone="accent"
-            />
+              <SectionLabel className="px-5 pt-5">
+                Service Loop · open jobs
+              </SectionLabel>
+              {openJobs.length > 0 ? (
+                <View className="px-4 pt-2.5 gap-2">
+                  {openJobs.map((j) => (
+                    <ServiceJobRow key={j.id} job={j} />
+                  ))}
+                </View>
+              ) : (
+                <EmptyActionCard
+                  icon="construct-outline"
+                  title="Find help for your home"
+                  detail="Book a trusted professional for your next task."
+                  onPress={() => router.push("/services" as Href)}
+                  tone="accent"
+                />
+              )}
             </>
-          ) : (
-            <View className="px-4 pt-2.5 gap-2">
-              {openJobs.map((j) => (
-                <ServiceJobRow key={j.id} job={j} />
-              ))}
-            </View>
           )}
 
         </ScrollView>
@@ -458,34 +476,41 @@ function StatBox({
   l: string;
   href: string | null;
 }) {
+  // A zero is muted rather than dimmed. Fading the whole tile to 55% made
+  // three of four tiles read as broken on a new account; greying just the
+  // number keeps the row intact while still ranking what the user has.
+  const empty = n === "0";
   const body = (
     <View className="items-center justify-center">
       <Text
-        className="font-serif text-ink"
-        style={{ fontSize: 20, letterSpacing: -0.4 }}
+        className="font-serif"
+        style={{
+          fontSize: 21,
+          letterSpacing: -0.4,
+          color: empty ? "#a7ada7" : "#1a2120",
+        }}
       >
         {n}
       </Text>
       <Text
-        className="font-sans-bold text-ink-3 uppercase mt-1 text-center"
-        numberOfLines={2}
-        style={{ fontSize: 8.5, lineHeight: 10.5, letterSpacing: 0.7, minHeight: 21 }}
+        className="font-sans-bold text-ink-3 uppercase mt-1"
+        numberOfLines={1}
+        style={{ fontSize: 9, letterSpacing: 0.8 }}
       >
         {l}
       </Text>
     </View>
   );
-  const boxClass = "flex-1 bg-white rounded-xl border-line";
+  const boxClass = "flex-1 bg-white rounded-2xl border-line";
   const boxStyle = {
     borderWidth: 0.5,
     paddingHorizontal: 4,
-    paddingVertical: 10,
+    paddingVertical: 12,
   } as const;
 
-  // No destination (e.g. no upcoming viewings) → dimmed, non-interactive.
   if (!href) {
     return (
-      <View className={boxClass} style={{ ...boxStyle, opacity: 0.55 }}>
+      <View className={boxClass} style={boxStyle}>
         {body}
       </View>
     );
@@ -510,7 +535,7 @@ function SectionLabel({
 }) {
   return (
     <Text
-      className={`text-[13px] font-sans-bold text-ink-2 tracking-wider uppercase ${className ?? ""}`}
+      className={`text-[11px] font-sans-bold text-ink-3 tracking-widest uppercase ${className ?? ""}`}
     >
       {children}
     </Text>
@@ -521,39 +546,75 @@ function EmptyActionCard({
   icon,
   title,
   detail,
-  action,
   onPress,
   tone = "primary",
 }: {
   icon: IonName;
   title: string;
   detail: string;
-  action: string;
   onPress: () => void;
   tone?: "primary" | "accent";
 }) {
-  const accent = tone === "primary" ? PRIMARY : "#6b4a16";
+  const accent = tone === "primary" ? PRIMARY : ACCENT_INK;
   const tint = tone === "primary" ? "#e3efe7" : "#f5ead4";
   return (
-    <View className="mx-4 mt-3 rounded-2xl bg-white p-4 border-line" style={{ borderWidth: 0.5 }}>
-      <View className="flex-row items-start gap-3">
-        <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: tint }}>
-          <Ionicons name={icon} size={19} color={accent} />
-        </View>
-        <View className="flex-1">
-          <Text className="text-[13.5px] font-sans-bold text-ink">{title}</Text>
-          <Text className="text-[12px] text-ink-3 leading-4 mt-0.5">{detail}</Text>
-        </View>
-      </View>
-      <Pressable
-        onPress={onPress}
-        className="mt-3 self-start flex-row items-center gap-1.5 rounded-full px-3.5 py-2 active:opacity-85"
+    <Pressable
+      onPress={onPress}
+      className="mx-4 mt-2.5 rounded-2xl bg-white p-3.5 border-line flex-row items-center gap-3 active:opacity-80"
+      style={{ borderWidth: 0.5 }}
+    >
+      <View
+        className="w-10 h-10 rounded-xl items-center justify-center"
         style={{ backgroundColor: tint }}
       >
-        <Text className="text-[12px] font-sans-bold" style={{ color: accent }}>{action}</Text>
-        <Ionicons name="arrow-forward" size={13} color={accent} />
-      </Pressable>
-    </View>
+        <Ionicons name={icon} size={19} color={accent} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-[13.5px] font-sans-bold text-ink">{title}</Text>
+        <Text className="text-[12px] text-ink-3 leading-4 mt-0.5">{detail}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color="#7f857f" />
+    </Pressable>
+  );
+}
+
+/** One way in on the combined empty state. Same anatomy as EmptyActionCard,
+ *  but grouped inside a single card rather than standing alone. */
+function StartRow({
+  icon,
+  tint,
+  fg,
+  title,
+  detail,
+  onPress,
+  divider,
+}: {
+  icon: IonName;
+  tint: string;
+  fg: string;
+  title: string;
+  detail: string;
+  onPress: () => void;
+  divider?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center gap-3 px-3.5 py-3.5 active:opacity-70"
+      style={divider ? { borderBottomWidth: 0.5, borderColor: "#ece6df" } : undefined}
+    >
+      <View
+        className="w-10 h-10 rounded-xl items-center justify-center"
+        style={{ backgroundColor: tint }}
+      >
+        <Ionicons name={icon} size={19} color={fg} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-[13.5px] font-sans-bold text-ink">{title}</Text>
+        <Text className="text-[12px] text-ink-3 leading-4 mt-0.5">{detail}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color="#7f857f" />
+    </Pressable>
   );
 }
 
