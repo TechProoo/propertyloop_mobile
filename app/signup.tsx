@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  AppState,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,6 +19,7 @@ import {
 } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/context/auth";
+import { capturePartialSignup } from "@/api/services/partialSignups";
 import { type SignupPayload } from "@/api/services/auth";
 import { seedLocationIfUnset } from "@/lib/location";
 
@@ -128,6 +130,44 @@ export default function SignupScreen() {
     }
     return null;
   };
+
+  // ─── Abandoned-signup capture ─────────────────────────────────────────────
+  //
+  // Nothing reaches the server until the button below is pressed, so anyone
+  // who leaves this screen takes their email with them. Send it as soon as
+  // it's usable instead, on field blur. There is no unload event on a phone —
+  // the OS can background or kill the app with no warning — so blur, plus the
+  // AppState backstop below, is as close to "before they exit" as exists.
+  //
+  // Never the password: only the fields listed here are sent, and the backend
+  // DTO rejects anything outside that list.
+  const lastCaptured = useRef("");
+
+  const captureProgress = () => {
+    const trimmed = email.trim().toLowerCase();
+    if (!EMAIL_RULE.test(trimmed)) return;
+    const payload = {
+      email: trimmed,
+      name: name.trim() || undefined,
+      phone: phone.trim() || undefined,
+      role,
+      step: "signup",
+    };
+    // Blur fires on every field change; only send when something changed.
+    const signature = JSON.stringify(payload);
+    if (signature === lastCaptured.current) return;
+    lastCaptured.current = signature;
+    capturePartialSignup(payload);
+  };
+
+  // Backstop for an edit made after the last blur — leaving the app still
+  // runs this synchronously before the process is suspended.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active") captureProgress();
+    });
+    return () => sub.remove();
+  });
 
   const handleSignup = async () => {
     const v = validate();
@@ -258,6 +298,7 @@ export default function SignupScreen() {
                 autoCapitalize="words"
                 autoComplete="name"
                 textContentType="name"
+                onBlur={captureProgress}
               />
               <Field
                 label="Email"
@@ -268,6 +309,7 @@ export default function SignupScreen() {
                 autoComplete="email"
                 keyboardType="email-address"
                 textContentType="emailAddress"
+                onBlur={captureProgress}
               />
               <Field
                 label="Password"
@@ -286,6 +328,7 @@ export default function SignupScreen() {
                 keyboardType="phone-pad"
                 autoComplete="tel"
                 textContentType="telephoneNumber"
+                onBlur={captureProgress}
               />
             </View>
 
