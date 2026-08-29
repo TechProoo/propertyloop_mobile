@@ -32,10 +32,20 @@ import { tapLight, tapMedium } from "@/lib/haptics";
 import { queueCreatedPost } from "@/components/feed/feedSync";
 
 /** Same five composer modes as the web ComposerModal. */
-const TYPES = ["Photos", "Insight", "Project", "Listing", "Poll"] as const;
+const TYPES = [
+  "Photos",
+  "Video",
+  "Insight",
+  "Project",
+  "Listing",
+  "Poll",
+] as const;
 type ComposerType = (typeof TYPES)[number];
 
 const MAX_IMAGES = 4;
+// Matches the presign route's advisory cap; checked here so an over-sized
+// clip is rejected before the upload starts rather than after.
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
 export default function FeedComposeScreen() {
   const params = useLocalSearchParams<{ type?: string }>();
@@ -55,6 +65,9 @@ export default function FeedComposeScreen() {
   const [posting, setPosting] = useState(false);
 
   const [images, setImages] = useState<string[]>([]);
+  const [video, setVideo] = useState<{ uri: string; type?: string } | null>(
+    null,
+  );
   const [uploading, setUploading] = useState(false);
 
   const [insightMetric, setInsightMetric] = useState("");
@@ -117,6 +130,25 @@ export default function FeedComposeScreen() {
     setUploading(false);
   };
 
+  const pickVideo = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Photo library", "Allow library access in Settings.");
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["videos"],
+      quality: 1,
+    });
+    if (res.canceled || !res.assets[0]) return;
+    const asset = res.assets[0];
+    if ((asset.fileSize ?? 0) > MAX_VIDEO_BYTES) {
+      Alert.alert("Video too large", "Please pick a clip 50MB or smaller.");
+      return;
+    }
+    setVideo({ uri: asset.uri, type: asset.mimeType });
+  };
+
   const submit = async () => {
     if (!body.trim()) {
       Alert.alert("Write something first");
@@ -127,6 +159,28 @@ export default function FeedComposeScreen() {
     if (type === "Photos") {
       payload.type = "UPDATE";
       payload.images = images;
+    } else if (type === "Video") {
+      payload.type = "UPDATE";
+      if (!video) {
+        Alert.alert("Pick a video first");
+        return;
+      }
+      // Uploaded on submit rather than on pick: abandoning the composer then
+      // leaves nothing orphaned in the bucket.
+      setPosting(true);
+      try {
+        const url = await feedService.uploadVideo(video.uri, {
+          type: video.type,
+        });
+        payload.videos = [url];
+      } catch (err: any) {
+        setPosting(false);
+        Alert.alert(
+          "Video upload failed",
+          err?.message ?? "Please try again.",
+        );
+        return;
+      }
     } else if (type === "Insight") {
       payload.type = "INSIGHT";
       if (insightMetric.trim()) {
@@ -329,6 +383,49 @@ export default function FeedComposeScreen() {
                 </View>
                 <Text className="text-ink-3 text-xs mt-2">
                   Up to {MAX_IMAGES} photos.
+                </Text>
+              </View>
+            )}
+
+            {type === "Video" && (
+              <View className="mt-4">
+                {video ? (
+                  <View
+                    className="rounded-2xl overflow-hidden items-center justify-center"
+                    style={{ height: 180, backgroundColor: "#16321f" }}
+                  >
+                    <Ionicons name="videocam" size={32} color="#ffffff" />
+                    <Text className="text-white text-[13px] mt-2">
+                      Video ready
+                    </Text>
+                    <Pressable
+                      onPress={() => setVideo(null)}
+                      hitSlop={8}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center"
+                      style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+                    >
+                      <Ionicons name="close" size={16} color="#ffffff" />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={pickVideo}
+                    className="rounded-2xl items-center justify-center"
+                    style={{
+                      height: 180,
+                      borderWidth: 1,
+                      borderStyle: "dashed",
+                      borderColor: LINE,
+                    }}
+                  >
+                    <Ionicons name="videocam-outline" size={28} color={INK_3} />
+                    <Text className="text-ink-2 text-[13.5px] font-sans-bold mt-2">
+                      Choose a video
+                    </Text>
+                  </Pressable>
+                )}
+                <Text className="text-ink-3 text-xs mt-2">
+                  One clip, 50MB max. It uploads when you post.
                 </Text>
               </View>
             )}

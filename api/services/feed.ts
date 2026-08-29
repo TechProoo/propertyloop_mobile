@@ -48,6 +48,8 @@ export interface FeedPost {
   type: FeedPostType;
   body: string;
   images: string[];
+  /** At most one clip. Mutually exclusive with `images`. */
+  videos: string[];
   createdAt: string;
   author: FeedAuthor;
   listing: FeedListingCard | null;
@@ -121,6 +123,7 @@ export interface CreateFeedPostPayload {
   type?: FeedPostType;
   body: string;
   images?: string[];
+  videos?: string[];
   listingId?: string;
   insightMetric?: string;
   insightPeriod?: string;
@@ -270,6 +273,35 @@ const feedService = {
 
     const body = (await res.json()) as { url: string };
     return body.url;
+  },
+
+  /**
+   * Upload one post video. Presigned direct-to-R2 rather than multipart: a
+   * 50MB clip proxied through the API would hit the edge timeout, which is why
+   * listing videos, chat attachments and avatars all take this path too.
+   */
+  async uploadVideo(
+    uri: string,
+    opts?: { name?: string; type?: string },
+  ): Promise<string> {
+    const contentType = opts?.type ?? "video/mp4";
+    const filename = opts?.name ?? `feed-video-${Date.now()}.mp4`;
+
+    const blob = await (await fetch(uri)).blob();
+
+    const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
+      "/upload/feed-video/presign",
+      { filename, contentType, size: blob.size },
+    );
+
+    const put = await fetch(data.uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": contentType },
+    });
+    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+
+    return data.fileUrl;
   },
 };
 
