@@ -1,5 +1,12 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -180,6 +187,7 @@ export default function HomeScreen() {
         <Header />
         <Greeting />
         <ServiceLoopEntry />
+        <SellEntry />
         <FacilityEntry />
         {/* "Advertise with us" entry — shown on every platform. Its destination
             (/advertise-info) stays App Store 3.1.1-safe on iOS by hiding all
@@ -771,6 +779,88 @@ function AdvertiseEntry() {
         >
           <Text className="text-white font-sans-bold text-[13px]">View advertising packages</Text>
           <Ionicons name="arrow-forward" size={14} color="#ffffff" />
+        </View>
+      </PressableScale>
+    </Appear>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Sell entry — buyers with a property to list
+// ─────────────────────────────────────────────────────────────────
+//
+// Buyers can't self-list, so listing a property starts as a conversation.
+// Mirrors the web dashboard's CTA (frontend Dashboard.tsx) — same number,
+// same opening message, so whoever picks it up sees a consistent enquiry.
+//
+// There is no stored "has a property to sell" flag (BuyerProfile.lookingFor
+// only covers buy / rent / shortlet / browsing), so this shows to every buyer
+// and the copy lets the right people self-select.
+//
+// wa.me rather than the whatsapp:// scheme deliberately: the scheme would
+// need LSApplicationQueriesSchemes in Info.plist to be checkable on iOS, and
+// falls flat when WhatsApp isn't installed. wa.me opens the app when it's
+// there and the web client when it isn't.
+const SELL_WHATSAPP = "2347053053040";
+const SELL_MESSAGE =
+  "Hi, I'm a registered buyer on PropertyLoop and I'd like to list a property. Can we discuss?";
+
+function SellEntry() {
+  const { user } = useAuth();
+  if (user?.role !== "BUYER") return null;
+
+  const open = () => {
+    tapLight();
+    Linking.openURL(
+      `https://wa.me/${SELL_WHATSAPP}?text=${encodeURIComponent(SELL_MESSAGE)}`,
+    ).catch(() => {});
+  };
+
+  return (
+    <Appear delay={90} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
+      <PressableScale
+        onPress={open}
+        activeScale={0.98}
+        className="rounded-[22px] px-4 py-4 overflow-hidden"
+        style={{
+          backgroundColor: "#e8f8ee",
+          borderWidth: 1,
+          borderColor: "#bfe6cd",
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Have a property to sell? Chat with us on WhatsApp to get it listed"
+      >
+        <View className="flex-row items-start gap-3">
+          <View
+            className="w-12 h-12 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: "#25D366" }}
+          >
+            <Ionicons name="logo-whatsapp" size={24} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className="text-[10px] font-sans-bold tracking-widest uppercase"
+              style={{ color: "#1a7a45" }}
+            >
+              Selling or renting out?
+            </Text>
+            <Text className="text-[17px] font-sans-bold text-ink tracking-tight mt-0.5">
+              Have a property to sell?
+            </Text>
+            <Text className="text-[12.5px] text-ink-2 mt-1 leading-4">
+              Chat with us on WhatsApp — we'll walk you through getting it
+              listed.
+            </Text>
+          </View>
+        </View>
+        <View
+          className="mt-3 flex-row items-center justify-center gap-1.5 rounded-full px-4 py-3"
+          style={{ backgroundColor: "#25D366" }}
+        >
+          <Ionicons name="logo-whatsapp" size={15} color="#ffffff" />
+          <Text className="text-white font-sans-bold text-[13px]">
+            Chat on WhatsApp
+          </Text>
         </View>
       </PressableScale>
     </Appear>
