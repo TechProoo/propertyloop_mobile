@@ -33,7 +33,6 @@ import { useSelectedLocation, labelForLocation } from "@/lib/location";
 import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { LocationSheet } from "@/components/LocationSheet";
 import { AdSlot, SplashAd } from "@/components/AdSlot";
-import { PromoReel } from "@/components/PromoReel";
 
 // The minimal shape the horizontal rail cards render — satisfied by both a full
 // Listing and a stored RecentListing.
@@ -193,9 +192,6 @@ export default function HomeScreen() {
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
         <QuickActions />
-
-        {/* Brand film — streamed from the website, renders nothing if it fails */}
-        <PromoReel />
 
         {/* Paid brand banner — renders nothing when no campaign is live */}
         <AdSlot
