@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +25,8 @@ export function VideoTile({ uri }: { uri: string }) {
   const [started, setStarted] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Read inside the status listener, which closes over its first render.
+  const startedRef = useRef(false);
 
   const player = useVideoPlayer(uri, (p) => {
     p.loop = false;
@@ -34,7 +36,21 @@ export function VideoTile({ uri }: { uri: string }) {
 
   useEffect(() => {
     const statusSub = player.addListener("statusChange", ({ status, error }) => {
-      if (status === "error" || error) setFailed(true);
+      if (status === "error" || error) {
+        setFailed(true);
+        return;
+      }
+      // Stand-in for a poster frame. expo-video shows nothing until it has a
+      // decoded frame, so an unplayed clip is a black rectangle; a frame-
+      // accurate seek just past zero produces one without starting playback.
+      // Guarded on startedRef so it can't yank a playing video back to the top.
+      if (status === "readyToPlay" && !startedRef.current) {
+        try {
+          player.currentTime = 0.1;
+        } catch {
+          /* seek unsupported for this source — falls back to a black tile */
+        }
+      }
     });
     const playSub = player.addListener("playingChange", ({ isPlaying }) =>
       setPlaying(isPlaying),
@@ -53,7 +69,10 @@ export function VideoTile({ uri }: { uri: string }) {
 
   const toggle = () => {
     tapLight();
-    if (!started) setStarted(true);
+    if (!started) {
+      startedRef.current = true;
+      setStarted(true);
+    }
     if (playing) player.pause();
     else player.play();
   };
