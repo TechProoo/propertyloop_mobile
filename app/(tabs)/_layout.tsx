@@ -5,6 +5,7 @@ import { HapticTab } from "@/components/haptic-tab";
 import { TabBarIcon, MorphingTabIndicator } from "@/components/anim";
 import { useTabBarStyle } from "@/hooks/use-tab-bar";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { GuestLeadPrompt } from "@/components/GuestLeadPrompt";
 
 const PRIMARY = "#1f6f43"; // brand green — active tab (was blue in the reference)
 const INK_3 = "#7f857f";
@@ -89,6 +90,10 @@ export default function TabLayout() {
         bottom={tabBarHeight - 3}
         color={PRIMARY}
       />
+
+      {/* Asks a guest for their details 15s in. No-ops for signed-in buyers,
+          who share these tabs. */}
+      <GuestLeadPrompt />
     </View>
   );
 }
