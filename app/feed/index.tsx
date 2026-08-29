@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,7 +8,13 @@ import {
   Text,
   View,
 } from "react-native";
-import { Stack, router, useFocusEffect, type Href } from "expo-router";
+import {
+  Stack,
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  type Href,
+} from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import feedService, {
@@ -68,8 +74,12 @@ const PAGE_SIZE = 10;
 
 export default function FeedScreen() {
   const { user } = useAuth();
+  const params = useLocalSearchParams<{ hashtag?: string }>();
   const [filter, setFilter] = useState("for-you");
-  const [hashtag, setHashtag] = useState<string | null>(null);
+  // Seeded from the route so a hashtag tapped on a profile opens filtered.
+  const [hashtag, setHashtag] = useState<string | null>(
+    params.hashtag ?? null,
+  );
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [meta, setMeta] = useState<FeedMeta | null>(null);
   const [page, setPage] = useState(1);
@@ -84,14 +94,21 @@ export default function FeedScreen() {
 
   const feed = useFeedInteractions(setPosts);
 
+  // Every fetch takes a ticket; only the newest one is allowed to write. Without
+  // this, switching filters faster than the network could let an earlier
+  // response land last and paint the wrong list.
+  const reqId = useRef(0);
+
   const load = useCallback(
     async (opts: { page: number; filter: string; hashtag: string | null }) => {
+      const ticket = ++reqId.current;
       const res = await feedService.list({
         filter: opts.hashtag ? undefined : opts.filter,
         hashtag: opts.hashtag ?? undefined,
         page: opts.page,
         limit: PAGE_SIZE,
       });
+      if (ticket !== reqId.current) return;
       setPages(res.pages);
       setPage(res.page);
       setPosts((prev) =>
@@ -369,7 +386,8 @@ export default function FeedScreen() {
               />
               {/* People to follow, slotted mid-feed the way web slots it into
                   the right sidebar. */}
-              {index === 2 && !!meta?.suggestions.length && (
+              {index === Math.min(2, posts.length - 1) &&
+                !!meta?.suggestions.length && (
                 <Suggestions
                   meta={meta}
                   onFollow={(id) => void feed.handleFollow(id)}
@@ -446,7 +464,7 @@ function Suggestions({
             <Avatar author={s} size={40} onPress={() => onProfile(s.id)} />
             <Pressable
               onPress={() => onProfile(s.id)}
-              className="flex-1 min-w-0 active:opacity-70"
+              className="flex-1 active:opacity-70"
             >
               <Text
                 numberOfLines={1}

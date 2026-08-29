@@ -139,7 +139,7 @@ export default function FeedCommentsScreen() {
                   size={38}
                   onPress={() => openProfile(item.comment.author.id)}
                 />
-                <View className="flex-1 min-w-0">
+                <View className="flex-1">
                   <View
                     className="px-3.5 py-2.5"
                     style={{
