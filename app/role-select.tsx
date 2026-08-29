@@ -24,7 +24,7 @@ type RoleCard = {
   title: string;
   desc: string;
   chips: string[];
-  /** Optional footnote shown below the chips (e.g. KYC requirement). */
+  /** Optional footnote shown below the chips. Unused — no role gates signup. */
   footnote?: string;
   /** What the bottom CTA reads when this role is selected. */
   ctaLabel: string;
@@ -65,7 +65,6 @@ const CARDS: RoleCard[] = [
     title: "I provide building services",
     desc: "Plumbers, cleaners, inspectors, movers — find verified work near you.",
     chips: ["Job board", "Quotes", "Reviews"],
-    footnote: "Trade verification required",
     ctaLabel: "Continue as service provider",
   },
 ];
