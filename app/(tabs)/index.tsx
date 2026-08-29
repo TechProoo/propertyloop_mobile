@@ -187,6 +187,7 @@ export default function HomeScreen() {
         <Header />
         <Greeting />
         <ServiceLoopEntry />
+        <CommunityEntry />
         <SellEntry />
         <FacilityEntry />
         {/* "Advertise with us" entry — shown on every platform. Its destination
@@ -778,6 +779,69 @@ function AdvertiseEntry() {
           style={{ backgroundColor: "#6b4a16" }}
         >
           <Text className="text-white font-sans-bold text-[13px]">View advertising packages</Text>
+          <Ionicons name="arrow-forward" size={14} color="#ffffff" />
+        </View>
+      </PressableScale>
+    </Appear>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Community feed entry
+// ─────────────────────────────────────────────────────────────────
+//
+// The feed lives on a stack route rather than a sixth tab — the bar is
+// already at five and every one of those is load-bearing. Shown to guests
+// too: GET /feed is optional-auth, so browsing works signed out and the
+// actions prompt for an account when tapped.
+function CommunityEntry() {
+  return (
+    <Appear delay={90} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
+      <PressableScale
+        onPress={() => {
+          tapLight();
+          router.push("/feed" as Href);
+        }}
+        activeScale={0.98}
+        className="rounded-[22px] px-4 py-4 overflow-hidden"
+        style={{
+          backgroundColor: "#eef2f7",
+          borderWidth: 1,
+          borderColor: "#d3dde9",
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Community feed — updates, insights and projects from agents and vendors"
+      >
+        <View className="flex-row items-start gap-3">
+          <View
+            className="w-12 h-12 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: "#245a82" }}
+          >
+            <Ionicons name="chatbubbles" size={22} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className="text-[10px] font-sans-bold tracking-widest uppercase"
+              style={{ color: "#245a82" }}
+            >
+              Community
+            </Text>
+            <Text className="text-[17px] font-sans-bold text-ink tracking-tight mt-0.5">
+              What the market is saying
+            </Text>
+            <Text className="text-[12.5px] text-ink-2 mt-1 leading-4">
+              Market insights, completed projects and tips from agents and
+              vendors.
+            </Text>
+          </View>
+        </View>
+        <View
+          className="mt-3 flex-row items-center justify-center gap-1.5 rounded-full px-4 py-3"
+          style={{ backgroundColor: "#245a82" }}
+        >
+          <Text className="text-white font-sans-bold text-[13px]">
+            Open the feed
+          </Text>
           <Ionicons name="arrow-forward" size={14} color="#ffffff" />
         </View>
       </PressableScale>

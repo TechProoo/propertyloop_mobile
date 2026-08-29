@@ -106,6 +106,18 @@ export default function RootLayout() {
         <Stack.Screen name="payment-callback" options={{ headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{ headerShown: false, presentation: 'modal' }} />
         {/* Inbox thread */}
+        {/* Community feed — one shared stack for buyers, agents and vendors;
+            the list is readable by guests (GET /feed is optional-auth). */}
+        <Stack.Screen name="feed/index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="feed/compose"
+          options={{ headerShown: false, presentation: "modal" }}
+        />
+        <Stack.Screen
+          name="feed/comments/[postId]"
+          options={{ headerShown: false, presentation: "modal" }}
+        />
+        <Stack.Screen name="feed/user/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
         {/* Returning user landing (R4) */}
         <Stack.Screen name="welcome-back" options={{ headerShown: false }} />

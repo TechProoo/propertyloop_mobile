@@ -72,6 +72,7 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     rows: [
       { id: "browse",  icon: "home-outline",         title: "Browse properties",  detail: "Search & save listings", href: "/(tabs)" },
       { id: "vendors", icon: "construct-outline",    title: "Hire vendors",       detail: "Find service professionals", href: "/services" },
+      { id: "feed",    icon: "chatbubbles-outline",  title: "Community feed",     detail: "Share updates, insights & projects", href: "/feed" },
     ],
   },
   {
