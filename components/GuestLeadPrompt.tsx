@@ -105,8 +105,8 @@ export function GuestLeadPrompt() {
             Want the good ones first?
           </Text>
           <Text className="text-ink-2 text-sm mt-2 leading-5">
-            Leave your details and we'll send new homes matching what you're
-            browsing. No account needed.
+            Leave your details and we&apos;ll send new homes matching what
+            you&apos;re browsing. No account needed.
           </Text>
 
           <View className="mt-5 gap-3">
