@@ -17,7 +17,9 @@ export interface CreateServicePayload {
   name: string;
   description: string;
   priceNaira: number;
-  priceMode?: "FIXED" | "FROM" | "HOURLY";
+  // Matches the VendorServicePriceMode enum exactly — the API rejects anything
+  // else, so don't widen this without a schema change.
+  priceMode?: "FIXED" | "FROM";
   duration?: string;
   displayOrder?: number;
 }

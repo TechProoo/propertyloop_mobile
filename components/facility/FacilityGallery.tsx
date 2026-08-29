@@ -117,6 +117,7 @@ const URLS = FRAMES.map((f) => `${CDN}/${f.file}`);
 export function FacilityGallery() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [viewerAt, setViewerAt] = useState<number | null>(null);
   const stripRef = useRef<ScrollView>(null);
   const zoom = useSharedValue(1);
@@ -155,8 +156,23 @@ export function FacilityGallery() {
     return () => clearTimeout(t);
   }, [index, paused, viewerAt, go]);
 
+  // The frames live on the website, so a stale deploy or a dead connection
+  // means no pictures. Drop the whole section rather than show empty slots —
+  // same call the home-screen promo reel makes. The screen's copy stands alone.
+  if (failed) return null;
+
   return (
     <View>
+      <Text
+        className="text-[11px] font-sans-bold text-primary tracking-widest uppercase mt-8"
+        style={{ letterSpacing: 1.2 }}
+      >
+        From the field
+      </Text>
+      <Text className="text-[12.5px] text-ink-2 mt-1 mb-3 leading-5">
+        Plant rooms, chiller yards and risers photographed on live sites.
+      </Text>
+
       {/* Stage */}
       <View
         className="rounded-3xl overflow-hidden bg-ink"
@@ -181,6 +197,7 @@ export function FacilityGallery() {
               // would replace the dissolve with a flash of empty stage.
               transition={700}
               cachePolicy="memory-disk"
+              onError={() => setFailed(true)}
             />
           </Animated.View>
 
