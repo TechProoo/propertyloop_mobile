@@ -8,7 +8,12 @@ export interface SignupPayload {
   phone?: string;
   role: "BUYER" | "AGENT" | "VENDOR";
   buyer?: { preferredLocations?: string; lookingFor?: string; budgetRange?: string };
-  agent?: { agencyName: string; licenseNumber: string; businessAddress: string };
+  agent?: {
+    agencyName: string;
+    /** NIESV/CAC number — optional; blank is stored as NULL. */
+    licenseNumber?: string;
+    businessAddress: string;
+  };
   vendor?: { serviceCategory: string; yearsExperience: string; serviceArea: string };
 }
 

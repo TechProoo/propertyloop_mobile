@@ -56,14 +56,6 @@ export default function SignupScreen() {
     areas?: string;
     intent?: string;
     budget?: string;
-    // Forwarded from /agent-setup
-    agencyName?: string;
-    licenseNumber?: string;
-    businessAddress?: string;
-    yearsExperience?: string;
-    languages?: string;
-    specialties?: string;
-    bio?: string;
   }>();
   const role: Role =
     params.role === "AGENT" || params.role === "VENDOR" ? params.role : "BUYER";
@@ -85,12 +77,10 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
 
-  // Agent-specific — pre-filled from /agent-setup if the user came through it
-  const [agencyName, setAgencyName] = useState(params.agencyName ?? "");
-  const [licenseNumber, setLicenseNumber] = useState(params.licenseNumber ?? "");
-  const [businessAddress, setBusinessAddress] = useState(
-    params.businessAddress ?? "",
-  );
+  // Agent-specific — collected here now, alongside the vendor fields below.
+  const [agencyName, setAgencyName] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
 
   // Vendor-specific
   const [serviceCategory, setServiceCategory] = useState("");
@@ -116,8 +106,10 @@ export default function SignupScreen() {
       return "Please agree to the Terms of Service to continue.";
     }
     if (role === "AGENT") {
-      if (!agencyName.trim() || !licenseNumber.trim() || !businessAddress.trim()) {
-        return "Agency name, license number, and business address are required.";
+      // Registration number stays optional — agents can register without a
+      // NIESV/CAC number, and the signup DTO stores a blank one as NULL.
+      if (!agencyName.trim() || !businessAddress.trim()) {
+        return "Agency name and business address are required.";
       }
     }
     if (role === "VENDOR") {
@@ -207,7 +199,7 @@ export default function SignupScreen() {
         ? {
             agent: {
               agencyName: agencyName.trim(),
-              licenseNumber: licenseNumber.trim(),
+              licenseNumber: licenseNumber.trim() || undefined,
               businessAddress: businessAddress.trim(),
             },
           }
@@ -236,10 +228,9 @@ export default function SignupScreen() {
       // _layout.tsx).
       //
       // Agents used to be kept signed in here to complete an ID/licence/
-      // headshot verification step. That step is gone: the agency and
-      // registration details collected on /agent-setup are what we verify
-      // against, so the app no longer asks for a national ID number, a
-      // licence document, or a photo of the agent's face.
+      // headshot verification step. That step is gone, so the app no longer
+      // asks for a national ID number, a licence document, or a photo of the
+      // agent's face.
       //
       // Seed the Home feed location from the buyer's preferred areas. Stored
       // device-locally, so it survives the sign-out below and is there when
@@ -364,7 +355,7 @@ export default function SignupScreen() {
                     autoCapitalize="words"
                   />
                   <Field
-                    label="Reg. number (NIESV or CAC)"
+                    label="Reg. number (NIESV or CAC) — optional"
                     value={licenseNumber}
                     onChangeText={setLicenseNumber}
                     placeholder="e.g. F1234 (NIESV) or BN1234567 (CAC)"
