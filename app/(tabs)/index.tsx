@@ -63,6 +63,8 @@ function titleCase(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s;
 }
 
+type IonName = keyof typeof Ionicons.glyphMap;
+
 const PRIMARY = "#1f6f43"; // brand green — accent (was blue in the reference)
 const ACCENT = "#b9842c"; // gold — rating stars only
 const INK = "#1a2120";
@@ -186,17 +188,11 @@ export default function HomeScreen() {
       >
         <Header />
         <Greeting />
-        <ServiceLoopEntry />
-        <CommunityEntry />
-        <SellEntry />
-        <FacilityEntry />
-        {/* "Advertise with us" entry — shown on every platform. Its destination
-            (/advertise-info) stays App Store 3.1.1-safe on iOS by hiding all
-            pricing, the website booking note, and the external payment link,
-            leaving a purely informational page. */}
-        <AdvertiseEntry />
+        {/* Search leads: this is a property app, and the entry cards used to
+            push it off the first screen entirely. */}
         <SearchRow query={query} onChange={setQuery} />
         <ModeChips active={mode} onSelect={setMode} />
+        <QuickActions />
 
         {/* Brand film — streamed from the website, renders nothing if it fails */}
         <PromoReel />
@@ -639,228 +635,18 @@ function HomeCard({ listing }: { listing: Listing }) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Service Loop — descriptive copy + an explicit "Explore Service" CTA.
-// ─────────────────────────────────────────────────────────────────
-function ServiceLoopEntry() {
-  return (
-    <Appear delay={60} style={{ paddingHorizontal: 20, paddingTop: 16 }}>
-      <PressableScale
-        onPress={() => {
-          tapLight();
-          router.push("/services" as Href);
-        }}
-        activeScale={0.98}
-        className="rounded-2xl px-4 py-3.5"
-        style={{
-          backgroundColor: "#e3efe7", // primary.soft
-          borderWidth: 1,
-          borderColor: "rgba(31,111,67,0.16)",
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Service Loop — hire verified artisans, paid safely via escrow"
-      >
-        <View className="flex-row items-center gap-3">
-          <View
-            className="w-10 h-10 rounded-xl items-center justify-center"
-            style={{ backgroundColor: PRIMARY }}
-          >
-            <Ionicons name="construct" size={19} color="#ffffff" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-[14px] font-sans-bold text-ink tracking-tight">
-              Need an artisan or service provider?
-            </Text>
-            <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">
-              Hire verified electricians, plumbers &amp; more — payment via
-              escrow.
-            </Text>
-          </View>
-        </View>
-        <View
-          className="flex-row items-center justify-center gap-1.5 mt-3 rounded-full py-2.5"
-          style={{ backgroundColor: PRIMARY }}
-        >
-          <Text className="text-white font-sans-bold text-[13px]">
-            Explore Service
-          </Text>
-          <Ionicons name="arrow-forward" size={15} color="#ffffff" />
-        </View>
-      </PressableScale>
-    </Appear>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Facility management — whole-building upkeep through our partner
-// Ultramodern. Informational: the work is surveyed then quoted, so
-// there's nothing to book in-app; the screen hands off by phone.
-// ─────────────────────────────────────────────────────────────────
-function FacilityEntry() {
-  return (
-    <Appear delay={75} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
-      <PressableScale
-        onPress={() => {
-          tapLight();
-          router.push("/facility-management" as Href);
-        }}
-        activeScale={0.98}
-        className="rounded-2xl px-4 py-3.5 flex-row items-center gap-3"
-        style={{
-          backgroundColor: "#ffffff",
-          borderWidth: 1,
-          borderColor: "#e1dcd3",
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Facility management — HVAC, plumbing, fire and electrical for whole buildings"
-      >
-        <View
-          className="w-10 h-10 rounded-xl items-center justify-center"
-          style={{ backgroundColor: "#e3efe7" }}
-        >
-          <Ionicons name="business" size={19} color={PRIMARY} />
-        </View>
-        <View className="flex-1">
-          <Text className="text-[14px] font-sans-bold text-ink tracking-tight">
-            Managing a whole building?
-          </Text>
-          <Text className="text-[11.5px] text-ink-2 mt-0.5 leading-4">
-            HVAC, plumbing, fire &amp; electrical under one facility contract.
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={16} color="#7f857f" />
-      </PressableScale>
-    </Appear>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Advertise entry — brands can sponsor placements. Info-only in-app
-// (booking + payment happen on the website); taps open the info screen.
-// ─────────────────────────────────────────────────────────────────
-function AdvertiseEntry() {
-  return (
-    <Appear delay={90} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
-      <PressableScale
-        onPress={() => {
-          tapLight();
-          router.push("/advertise-info" as Href);
-        }}
-        activeScale={0.98}
-        className="rounded-[22px] px-4 py-4 overflow-hidden"
-        style={{
-          backgroundColor: "#f5ead4",
-          borderWidth: 1,
-          borderColor: "#e7d4a8",
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Advertise with PropertyLoop — put your brand in front of home movers"
-      >
-        <View className="flex-row items-start gap-3">
-          <View
-            className="w-12 h-12 rounded-2xl items-center justify-center"
-            style={{ backgroundColor: "#6b4a16" }}
-          >
-            <Ionicons name="megaphone" size={22} color="#f5ead4" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-[10px] font-sans-bold tracking-widest uppercase" style={{ color: "#7a5a25" }}>
-              For brands & developers
-            </Text>
-            <Text className="text-[17px] font-sans-bold text-ink tracking-tight mt-0.5">
-              Advertise with us
-            </Text>
-            <Text className="text-[12.5px] text-ink-2 mt-1 leading-4">
-              Put your brand in front of people ready to move, buy and build.
-            </Text>
-          </View>
-        </View>
-        <View
-          className="mt-3 flex-row items-center justify-center gap-1.5 rounded-full px-4 py-3"
-          style={{ backgroundColor: "#6b4a16" }}
-        >
-          <Text className="text-white font-sans-bold text-[13px]">View advertising packages</Text>
-          <Ionicons name="arrow-forward" size={14} color="#ffffff" />
-        </View>
-      </PressableScale>
-    </Appear>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Community feed entry
+// Quick actions — the five non-property entry points
 // ─────────────────────────────────────────────────────────────────
 //
-// The feed lives on a stack route rather than a sixth tab — the bar is
-// already at five and every one of those is load-bearing. Shown to guests
-// too: GET /feed is optional-auth, so browsing works signed out and the
-// actions prompt for an account when tapped.
-function CommunityEntry() {
-  return (
-    <Appear delay={90} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
-      <PressableScale
-        onPress={() => {
-          tapLight();
-          router.push("/feed" as Href);
-        }}
-        activeScale={0.98}
-        className="rounded-[22px] px-4 py-4 overflow-hidden"
-        style={{
-          backgroundColor: "#eef2f7",
-          borderWidth: 1,
-          borderColor: "#d3dde9",
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Community feed — updates, insights and projects from agents and vendors"
-      >
-        <View className="flex-row items-start gap-3">
-          <View
-            className="w-12 h-12 rounded-2xl items-center justify-center"
-            style={{ backgroundColor: "#245a82" }}
-          >
-            <Ionicons name="chatbubbles" size={22} color="#ffffff" />
-          </View>
-          <View className="flex-1">
-            <Text
-              className="text-[10px] font-sans-bold tracking-widest uppercase"
-              style={{ color: "#245a82" }}
-            >
-              Community
-            </Text>
-            <Text className="text-[17px] font-sans-bold text-ink tracking-tight mt-0.5">
-              What the market is saying
-            </Text>
-            <Text className="text-[12.5px] text-ink-2 mt-1 leading-4">
-              Market insights, completed projects and tips from agents and
-              vendors.
-            </Text>
-          </View>
-        </View>
-        <View
-          className="mt-3 flex-row items-center justify-center gap-1.5 rounded-full px-4 py-3"
-          style={{ backgroundColor: "#245a82" }}
-        >
-          <Text className="text-white font-sans-bold text-[13px]">
-            Open the feed
-          </Text>
-          <Ionicons name="arrow-forward" size={14} color="#ffffff" />
-        </View>
-      </PressableScale>
-    </Appear>
-  );
-}
+// These were five stacked full-width cards, each with its own filled CTA
+// button, sitting between the greeting and the search field — roughly 700px
+// of promo before a buyer could search for a home. They are one horizontal
+// rail now: same five destinations, ~110px of height, and search moved above
+// them where it belongs.
+//
+// The button inside each old card was redundant anyway — the whole card was
+// already pressable.
 
-// ─────────────────────────────────────────────────────────────────
-// Sell entry — buyers with a property to list
-// ─────────────────────────────────────────────────────────────────
-//
-// Buyers can't self-list, so listing a property starts as a conversation.
-// Mirrors the web dashboard's CTA (frontend Dashboard.tsx) — same number,
-// same opening message, so whoever picks it up sees a consistent enquiry.
-//
-// There is no stored "has a property to sell" flag (BuyerProfile.lookingFor
-// only covers buy / rent / shortlet / browsing), so this shows to every buyer
-// and the copy lets the right people self-select.
-//
 // wa.me rather than the whatsapp:// scheme deliberately: the scheme would
 // need LSApplicationQueriesSchemes in Info.plist to be checkable on iOS, and
 // falls flat when WhatsApp isn't installed. wa.me opens the app when it's
@@ -869,65 +655,130 @@ const SELL_WHATSAPP = "2347053053040";
 const SELL_MESSAGE =
   "Hi, I'm a registered buyer on PropertyLoop and I'd like to list a property. Can we discuss?";
 
-function SellEntry() {
-  const { user } = useAuth();
-  if (user?.role !== "BUYER") return null;
+interface QuickAction {
+  id: string;
+  icon: IonName;
+  tint: string;
+  title: string;
+  caption: string;
+  a11y: string;
+  /** Buyers only — agents and vendors share these tabs. */
+  buyerOnly?: boolean;
+  onPress: () => void;
+}
 
-  const open = () => {
-    tapLight();
-    Linking.openURL(
-      `https://wa.me/${SELL_WHATSAPP}?text=${encodeURIComponent(SELL_MESSAGE)}`,
-    ).catch(() => {});
-  };
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: "services",
+    icon: "construct",
+    tint: PRIMARY,
+    title: "Services",
+    caption: "Hire artisans",
+    a11y: "Service Loop — hire verified artisans, paid safely via escrow",
+    onPress: () => router.push("/services" as Href),
+  },
+  {
+    id: "sell",
+    icon: "logo-whatsapp",
+    tint: "#25D366",
+    title: "Sell",
+    caption: "List with us",
+    a11y: "Have a property to sell? Chat with us on WhatsApp to get it listed",
+    buyerOnly: true,
+    onPress: () => {
+      Linking.openURL(
+        `https://wa.me/${SELL_WHATSAPP}?text=${encodeURIComponent(SELL_MESSAGE)}`,
+      ).catch(() => {});
+    },
+  },
+  {
+    id: "community",
+    icon: "chatbubbles",
+    tint: "#245a82",
+    title: "Community",
+    caption: "Market feed",
+    a11y: "Community feed — updates, insights and projects from agents and vendors",
+    onPress: () => router.push("/feed" as Href),
+  },
+  {
+    id: "facility",
+    icon: "business",
+    tint: "#1f6f43",
+    title: "Facilities",
+    caption: "Whole buildings",
+    a11y: "Facility management — HVAC, plumbing, fire and electrical for whole buildings",
+    onPress: () => router.push("/facility-management" as Href),
+  },
+  {
+    id: "advertise",
+    // Info-only in-app: /advertise-info hides pricing and the external payment
+    // link, keeping it App Store 3.1.1-safe on iOS.
+    icon: "megaphone",
+    tint: "#6b4a16",
+    title: "Advertise",
+    caption: "For brands",
+    a11y: "Advertise with PropertyLoop — put your brand in front of home movers",
+    onPress: () => router.push("/advertise-info" as Href),
+  },
+];
+
+function QuickActions() {
+  const { user } = useAuth();
+  const actions = QUICK_ACTIONS.filter(
+    (a) => !a.buyerOnly || user?.role === "BUYER",
+  );
 
   return (
-    <Appear delay={90} style={{ paddingHorizontal: 20, paddingTop: 10 }}>
-      <PressableScale
-        onPress={open}
-        activeScale={0.98}
-        className="rounded-[22px] px-4 py-4 overflow-hidden"
-        style={{
-          backgroundColor: "#e8f8ee",
-          borderWidth: 1,
-          borderColor: "#bfe6cd",
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Have a property to sell? Chat with us on WhatsApp to get it listed"
+    <Appear delay={60} style={{ paddingTop: 18 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
       >
-        <View className="flex-row items-start gap-3">
-          <View
-            className="w-12 h-12 rounded-2xl items-center justify-center"
-            style={{ backgroundColor: "#25D366" }}
-          >
-            <Ionicons name="logo-whatsapp" size={24} color="#ffffff" />
-          </View>
-          <View className="flex-1">
-            <Text
-              className="text-[10px] font-sans-bold tracking-widest uppercase"
-              style={{ color: "#1a7a45" }}
-            >
-              Selling or renting out?
-            </Text>
-            <Text className="text-[17px] font-sans-bold text-ink tracking-tight mt-0.5">
-              Have a property to sell?
-            </Text>
-            <Text className="text-[12.5px] text-ink-2 mt-1 leading-4">
-              Chat with us on WhatsApp — we'll walk you through getting it
-              listed.
-            </Text>
-          </View>
-        </View>
-        <View
-          className="mt-3 flex-row items-center justify-center gap-1.5 rounded-full px-4 py-3"
-          style={{ backgroundColor: "#25D366" }}
-        >
-          <Ionicons name="logo-whatsapp" size={15} color="#ffffff" />
-          <Text className="text-white font-sans-bold text-[13px]">
-            Chat on WhatsApp
-          </Text>
-        </View>
-      </PressableScale>
+        {actions.map((a) => (
+          <QuickTile key={a.id} action={a} />
+        ))}
+      </ScrollView>
     </Appear>
+  );
+}
+
+function QuickTile({ action }: { action: QuickAction }) {
+  return (
+    <PressableScale
+      onPress={() => {
+        tapLight();
+        action.onPress();
+      }}
+      activeScale={0.96}
+      className="rounded-2xl px-3 py-3"
+      style={{
+        width: 118,
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#e1dcd3",
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={action.a11y}
+    >
+      <View
+        className="w-9 h-9 rounded-xl items-center justify-center"
+        // 14% tint of the action's colour — enough to read as a chip without
+        // five saturated blocks competing down the rail.
+        style={{ backgroundColor: `${action.tint}24` }}
+      >
+        <Ionicons name={action.icon} size={18} color={action.tint} />
+      </View>
+      <Text
+        className="text-[13px] font-sans-bold text-ink tracking-tight mt-2.5"
+        numberOfLines={1}
+      >
+        {action.title}
+      </Text>
+      <Text className="text-[11px] text-ink-3 mt-0.5" numberOfLines={1}>
+        {action.caption}
+      </Text>
+    </PressableScale>
   );
 }
 
