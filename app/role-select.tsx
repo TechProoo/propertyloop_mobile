@@ -53,7 +53,6 @@ const CARDS: RoleCard[] = [
     title: "I'm a real estate professional",
     desc: "List properties, manage viewings, handle offers, and earn commissions.",
     chips: ["Listings dashboard", "Lead inbox", "Earnings"],
-    footnote: "Verified KYC required",
     ctaLabel: "Continue as a professional",
   },
   {
@@ -85,9 +84,11 @@ export default function RoleSelectScreen() {
   const handleContinue = () => {
     if (selected === "BUYER") {
       router.push("/buyer-preferences" as Href);
-    } else if (selected === "AGENT") {
-      router.push("/agent-setup" as Href);
     } else {
+      // Agents go straight to signup, same as vendors: the two fields the
+      // account actually needs (agency name, business address) are on that
+      // screen already. The old /agent-setup detour asked for five required
+      // fields before an account existed, and discarded most of the answers.
       router.push({ pathname: "/signup", params: { role: selected } } as Href);
     }
   };
