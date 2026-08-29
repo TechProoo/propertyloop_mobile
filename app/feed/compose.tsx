@@ -42,11 +42,15 @@ export default function FeedComposeScreen() {
   const { user } = useAuth();
   const isAgent = user?.role === "AGENT";
 
-  const [type, setType] = useState<ComposerType>(
-    (TYPES as readonly string[]).includes(params.type ?? "")
-      ? (params.type as ComposerType)
-      : "Photos",
-  );
+  const [type, setType] = useState<ComposerType>(() => {
+    const wanted = params.type as ComposerType | undefined;
+    // Only agents can attach a listing, and the Listing chip is hidden for
+    // everyone else — so never start there, or the mode would be unreachable
+    // and the post would 400 on submit.
+    if (!wanted || !(TYPES as readonly string[]).includes(wanted)) return "Photos";
+    if (wanted === "Listing" && !isAgent) return "Photos";
+    return wanted;
+  });
   const [body, setBody] = useState("");
   const [posting, setPosting] = useState(false);
 
@@ -468,7 +472,7 @@ export default function FeedComposeScreen() {
                             style={{ width: 56, height: 56, borderRadius: 10 }}
                             contentFit="cover"
                           />
-                          <View className="flex-1 min-w-0">
+                          <View className="flex-1">
                             <Text
                               numberOfLines={1}
                               className="text-ink text-[14px] font-sans-bold"

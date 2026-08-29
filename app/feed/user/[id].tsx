@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -71,13 +71,19 @@ export default function FeedUserScreen() {
       ),
   });
 
+  // As on the main list: only the newest fetch may write, so a refresh racing
+  // a page-2 load can't interleave.
+  const reqId = useRef(0);
+
   const load = useCallback(
     async (nextPage: number) => {
       if (!id) return;
+      const ticket = ++reqId.current;
       const res = await feedService.userPosts(id, {
         page: nextPage,
         limit: PAGE_SIZE,
       });
+      if (ticket !== reqId.current) return;
       setPages(res.pages);
       setPage(res.page);
       setPosts((prev) => (nextPage === 1 ? res.items : [...prev, ...res.items]));
@@ -216,7 +222,7 @@ export default function FeedUserScreen() {
               <View className="bg-white rounded-[20px] p-5 mt-3 mb-4">
                 <View className="flex-row items-start gap-3">
                   <Avatar author={profile} size={64} />
-                  <View className="flex-1 min-w-0">
+                  <View className="flex-1">
                     <View className="flex-row items-center gap-1.5">
                       <Text
                         numberOfLines={1}
@@ -372,7 +378,9 @@ export default function FeedUserScreen() {
               onVote={(optionId) => void feed.handleVote(item, optionId)}
               onProfile={() => feed.openProfile(item.author.id)}
               onListing={() => item.listing && feed.openListing(item.listing.id)}
-              onHashtag={() => router.push("/feed" as Href)}
+              onHashtag={(tag) =>
+                router.push(`/feed?hashtag=${encodeURIComponent(tag)}` as Href)
+              }
               onMore={() => feed.openMore(item)}
               onImage={(i) => setLightbox({ images: item.images, index: i })}
             />

@@ -1,4 +1,10 @@
-import { Pressable, Text, View, useWindowDimensions } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import type { FeedPost } from "@/api/services/feed";
@@ -58,7 +64,7 @@ export function PostCard({
       {/* Head */}
       <View className="flex-row items-center gap-3">
         <Avatar author={post.author} size={48} onPress={onProfile} />
-        <View className="flex-1 min-w-0">
+        <View className="flex-1">
           <Pressable
             onPress={onProfile}
             className="flex-row items-center gap-1.5 active:opacity-70"
@@ -177,7 +183,7 @@ export function PostCard({
             }}
             contentFit="cover"
           />
-          <View className="flex-1 min-w-0 p-3.5">
+          <View className="flex-1 p-3.5">
             <Text className="text-ink font-serif text-[21px]">
               {post.listing.priceLabel}
               {post.listing.period ? (
@@ -434,8 +440,11 @@ function ImageCollage({
           />
           {images.length > 3 && (
             <View
-              className="absolute inset-0 items-center justify-center"
-              style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+              className="items-center justify-center"
+              style={[
+                StyleSheet.absoluteFillObject,
+                { backgroundColor: "rgba(0,0,0,0.5)" },
+              ]}
             >
               <Text className="text-white font-sans-bold text-lg">
                 +{images.length - 3}

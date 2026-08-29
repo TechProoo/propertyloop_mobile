@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -79,7 +78,7 @@ export function HashBody({
             {part}
           </Text>
         ) : (
-          <Fragment key={i}>{part}</Fragment>
+          part
         ),
       )}
     </Text>
