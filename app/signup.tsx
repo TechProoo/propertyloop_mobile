@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/context/auth";
 import { capturePartialSignup } from "@/api/services/partialSignups";
+import { clearGuestLead, getGuestPrefill } from "@/lib/guestLead";
 import { type SignupPayload } from "@/api/services/auth";
 import { seedLocationIfUnset } from "@/lib/location";
 
@@ -131,6 +132,21 @@ export default function SignupScreen() {
     return null;
   };
 
+  // Prefill from the guest prompt, if they left their details while browsing
+  // within the last two days. Only fills blanks — anything already typed, or
+  // carried in from an earlier screen, wins.
+  useEffect(() => {
+    let cancelled = false;
+    getGuestPrefill().then((lead) => {
+      if (!lead || cancelled) return;
+      setName((cur) => cur || lead.name);
+      setEmail((cur) => cur || lead.email);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // ─── Abandoned-signup capture ─────────────────────────────────────────────
   //
   // Nothing reaches the server until the button below is pressed, so anyone
@@ -209,6 +225,9 @@ export default function SignupScreen() {
 
     try {
       await signUp(payload);
+      // The guest details have done their job — drop them so a later signup
+      // on this device starts clean.
+      void clearGuestLead();
       // Signup creates the account unverified and the backend emails a
       // verification link. Everyone, agents included, must verify their email
       // before entering: we drop the just-created session and send them to
