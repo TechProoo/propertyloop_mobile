@@ -85,7 +85,7 @@ export default function WelcomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Browse listings without an account"
             >
-              <Text className="text-slate-400 font-sans-semibold text-sm">
+              <Text className="text-white font-sans-semibold text-base underline">
                 Browse without an account
               </Text>
             </PressableScale>
