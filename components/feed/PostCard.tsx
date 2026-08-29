@@ -23,6 +23,7 @@ import {
   VerifiedTick,
   authorSubtitle,
 } from "./FeedPrimitives";
+import { VideoTile } from "./VideoTile";
 
 /**
  * One feed post. Ports the web PostCard (components/feed/FeedUI.tsx) element
@@ -123,8 +124,14 @@ export function PostCard({
         </View>
       )}
 
-      {post.images.length > 0 && (
-        <ImageCollage images={post.images} onPress={onImage} />
+      {/* A post carries either a collage or one clip, never both — the server
+          drops images when a video is present. */}
+      {post.videos.length > 0 ? (
+        <VideoTile uri={post.videos[0]} />
+      ) : (
+        post.images.length > 0 && (
+          <ImageCollage images={post.images} onPress={onImage} />
+        )
       )}
 
       {post.insight && (
