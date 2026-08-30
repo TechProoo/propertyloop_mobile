@@ -19,6 +19,7 @@ import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import * as DocumentPicker from "expo-document-picker";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { PhotoViewer } from "@/components/PhotoViewer";
@@ -341,6 +342,7 @@ export default function ConversationScreen() {
       }
       const remaining = MAX_ATT - attachments.length;
       const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
         mediaTypes: ["images"],
         allowsMultipleSelection: true,
         selectionLimit: remaining,

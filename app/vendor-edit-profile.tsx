@@ -13,6 +13,7 @@ import { Image } from "expo-image";
 import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
@@ -80,7 +81,8 @@ export default function VendorEditProfileScreen() {
   const pickFromLibrary = async () => {
     const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!lib.granted) { Alert.alert("Photo library", "Allow library access in Settings."); return; }
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.85 });
+    const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets, mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.85 });
     if (!r.canceled && r.assets[0]) setPhotoUri(r.assets[0].uri);
   };
   const takeWithCamera = async () => {
@@ -93,7 +95,8 @@ export default function VendorEditProfileScreen() {
   const pickBanner = async () => {
     const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!lib.granted) { Alert.alert("Photo library", "Allow library access in Settings."); return; }
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
+    const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets, mediaTypes: ["images"], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
     if (!r.canceled && r.assets[0]) setBannerUri(r.assets[0].uri);
   };
 
@@ -101,6 +104,7 @@ export default function VendorEditProfileScreen() {
     const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!lib.granted) { Alert.alert("Photo library", "Allow library access in Settings."); return; }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: MAX_PORTFOLIO - portfolio.length,

@@ -11,6 +11,7 @@ import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import * as DocumentPicker from "expo-document-picker";
 import {
   RichEditor,
@@ -243,6 +244,7 @@ export default function CreateListingScreen() {
       return;
     }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: 8 - photos.length,
@@ -260,6 +262,7 @@ export default function CreateListingScreen() {
       return;
     }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["videos"],
       allowsMultipleSelection: true,
       selectionLimit: MAX_VIDEOS - videos.length,
