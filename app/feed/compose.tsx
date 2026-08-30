@@ -12,6 +12,7 @@ import {
 import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert } from "@/lib/dialog";
@@ -106,6 +107,7 @@ export default function FeedComposeScreen() {
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: remaining,
@@ -137,6 +139,7 @@ export default function FeedComposeScreen() {
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["videos"],
       quality: 1,
     });

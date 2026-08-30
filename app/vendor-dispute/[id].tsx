@@ -12,6 +12,7 @@ import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import vendorJobsService, {
@@ -88,6 +89,7 @@ export default function VendorDisputeScreen() {
       return;
     }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: 6 - photos.length,

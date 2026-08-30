@@ -11,6 +11,7 @@ import {
 import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -73,6 +74,7 @@ export default function BookServiceScreen() {
       return;
     }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: MAX_PHOTOS - photos.length,

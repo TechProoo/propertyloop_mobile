@@ -12,6 +12,7 @@ import { Alert } from "@/lib/dialog";
 import { Image } from "expo-image";
 import { Stack, router, type Href } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import { SafeAreaView } from "react-native-safe-area-context";
 import OnboardingCta from "@/components/onboarding/OnboardingCta";
 
@@ -59,6 +60,7 @@ export default function AgentSetupScreen() {
       return;
     }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],

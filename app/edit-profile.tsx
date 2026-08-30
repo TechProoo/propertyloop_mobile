@@ -13,6 +13,7 @@ import { Stack, router } from "expo-router";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { useAuth } from "@/context/auth";
@@ -76,6 +77,7 @@ export default function EditProfileScreen() {
       return;
     }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],

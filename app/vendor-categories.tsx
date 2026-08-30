@@ -11,6 +11,7 @@ import { Image } from "expo-image";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { compatibleImageAssets } from "@/lib/imagePickerOptions";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { VENDOR_CATEGORIES } from "@/mocks/vendor";
 import vendorsService from "@/api/services/vendors";
@@ -86,6 +87,7 @@ export default function VendorCategoriesScreen() {
       return;
     }
     const r = await ImagePicker.launchImageLibraryAsync({
+      ...compatibleImageAssets,
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       selectionLimit: 8 - samples.length,
