@@ -1,4 +1,5 @@
 import api from "../client";
+import { putFileToUrl, fileSize } from "../../lib/upload";
 import { tokenStore } from "../tokenStore";
 import type { Paginated } from "../types";
 
@@ -287,19 +288,14 @@ const feedService = {
     const contentType = opts?.type ?? "video/mp4";
     const filename = opts?.name ?? `feed-video-${Date.now()}.mp4`;
 
-    const blob = await (await fetch(uri)).blob();
+    const size = await fileSize(uri);
 
     const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
       "/upload/feed-video/presign",
-      { filename, contentType, size: blob.size },
+      { filename, contentType, size },
     );
 
-    const put = await fetch(data.uploadUrl, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": contentType },
-    });
-    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+    await putFileToUrl(data.uploadUrl, uri, contentType);
 
     return data.fileUrl;
   },

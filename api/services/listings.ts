@@ -1,4 +1,5 @@
 import api from "../client";
+import { putFileToUrl, fileSize } from "../../lib/upload";
 import type {
   DocumentType,
   Listing,
@@ -119,22 +120,16 @@ const listingsService = {
     const contentType = opts?.type ?? "image/jpeg";
     const filename = opts?.name ?? `photo-${Date.now()}.jpg`;
 
-    // Read the local file (file:// or content://) into a blob.
-    const blob = await (await fetch(uri)).blob();
+    const size = await fileSize(uri);
 
     // 1) Ask the API for a short-lived presigned PUT URL.
     const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
       "/listings/upload/photo/presign",
-      { filename, contentType, size: blob.size, folder: "listings" },
+      { filename, contentType, size, folder: "listings" },
     );
 
     // 2) Upload the bytes straight to storage.
-    const put = await fetch(data.uploadUrl, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": contentType },
-    });
-    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+    await putFileToUrl(data.uploadUrl, uri, contentType);
 
     return data.fileUrl;
   },
@@ -149,19 +144,14 @@ const listingsService = {
     const contentType = opts?.type ?? "video/mp4";
     const filename = opts?.name ?? `video-${Date.now()}.mp4`;
 
-    const blob = await (await fetch(uri)).blob();
+    const size = await fileSize(uri);
 
     const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
       "/listings/upload/video/presign",
-      { filename, contentType, size: blob.size },
+      { filename, contentType, size },
     );
 
-    const put = await fetch(data.uploadUrl, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": contentType },
-    });
-    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+    await putFileToUrl(data.uploadUrl, uri, contentType);
 
     return data.fileUrl;
   },
@@ -174,19 +164,14 @@ const listingsService = {
     const contentType = opts?.type || "application/octet-stream";
     const filename = opts?.name ?? `document-${Date.now()}`;
 
-    const blob = await (await fetch(uri)).blob();
+    const size = await fileSize(uri);
 
     const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
       "/listings/upload/photo/presign",
-      { filename, contentType, size: blob.size, folder: "listing-docs" },
+      { filename, contentType, size, folder: "listing-docs" },
     );
 
-    const put = await fetch(data.uploadUrl, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": contentType },
-    });
-    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+    await putFileToUrl(data.uploadUrl, uri, contentType);
 
     return data.fileUrl;
   },

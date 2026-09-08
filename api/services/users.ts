@@ -1,4 +1,5 @@
 import api from "../client";
+import { putFileToUrl, fileSize } from "../../lib/upload";
 
 export interface UpdateProfilePayload {
   name?: string;
@@ -26,13 +27,8 @@ const usersService = {
       "/upload/avatar/presign",
       { filename: `avatar-${Date.now()}.jpg`, contentType },
     );
-    const fileRes = await fetch(uri);
-    const blob = await fileRes.blob();
-    await fetch(data.uploadUrl, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": contentType },
-    });
+    await putFileToUrl(data.uploadUrl, uri, contentType);
+
     return data.fileUrl;
   },
   getSettings(): Promise<UserSettings> {

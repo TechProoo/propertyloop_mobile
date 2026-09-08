@@ -1,4 +1,5 @@
 import api from "../client";
+import { putFileToUrl, fileSize } from "../../lib/upload";
 
 export interface Conversation {
   id: string;
@@ -98,8 +99,6 @@ const messagesService = {
     const contentType = opts?.type ?? "image/jpeg";
     const filename = opts?.name ?? `attachment-${Date.now()}.jpg`;
 
-    // Read the local file (file:// or content://) into a blob.
-    const blob = await (await fetch(uri)).blob();
 
     // 1) Ask the API for a short-lived presigned PUT URL.
     const { data } = await api.post<{ uploadUrl: string; fileUrl: string }>(
@@ -108,12 +107,7 @@ const messagesService = {
     );
 
     // 2) Upload the bytes straight to storage (same Content-Type as signed).
-    const put = await fetch(data.uploadUrl, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": contentType },
-    });
-    if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+    await putFileToUrl(data.uploadUrl, uri, contentType);
 
     return { url: data.fileUrl, mimeType: contentType };
   },

@@ -1,4 +1,5 @@
 import api from "../client";
+import { putFileToUrl, fileSize } from "../../lib/upload";
 
 export interface VendorStats {
   profile: {
@@ -87,13 +88,8 @@ const vendorsService = {
       "/vendors/me/portfolio/presign",
       { filename: `upload-${Date.now()}.jpg`, contentType, kind },
     );
-    const fileRes = await fetch(uri);
-    const blob = await fileRes.blob();
-    await fetch(data.uploadUrl, {
-      method: "PUT",
-      body: blob,
-      headers: { "Content-Type": contentType },
-    });
+    await putFileToUrl(data.uploadUrl, uri, contentType);
+
     return data.fileUrl;
   },
 };
