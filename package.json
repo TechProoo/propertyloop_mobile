@@ -9,8 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "ota": "eas update --branch production --platform all",
-    "ota:preview": "eas update --branch preview --platform all"
+    "ota": "eas update --branch preview --platform android"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
