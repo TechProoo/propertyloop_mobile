@@ -8,7 +8,17 @@
 // <SplashAd /> — full-screen interstitial for the SPLASH placement, shown at
 // most once per app session (module-level latch survives remounts).
 import { useEffect, useRef, useState } from "react";
-import { Linking, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  FlatList,
+  Linking,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewToken,
+} from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +28,42 @@ import adsService, { type AdPlacement, type PublicAd } from "@/api/services/ads"
 const INK = "#1a2120";
 const INK_3 = "#7f857f";
 const MINT = "#6ee7b7"; // the "live campaign" dot on the Sponsored chip
+
+/**
+ * Every live campaign for a placement, for slots that show more than one.
+ * useAd below keeps its single-pick behaviour for the slots that show one.
+ */
+function useAds(placement: AdPlacement) {
+  const [ads, setAds] = useState<PublicAd[]>([]);
+  const counted = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    let on = true;
+    adsService
+      .serve(placement)
+      .then((list) => on && setAds(list))
+      .catch(() => {});
+    return () => {
+      on = false;
+    };
+  }, [placement]);
+
+  // One impression per ad per mount, fired when the card is actually on
+  // screen — a rail can hold more ads than the viewer ever scrolls to, so
+  // counting on render would bill advertisers for views that never happened.
+  const markSeen = (id: string) => {
+    if (counted.current.has(id)) return;
+    counted.current.add(id);
+    adsService.impression(id);
+  };
+
+  const open = (ad: PublicAd) => {
+    adsService.click(ad.id);
+    Linking.openURL(ad.ctaUrl).catch(() => {});
+  };
+
+  return { ads, markSeen, open };
+}
 
 function useAd(placement: AdPlacement, enabled = true) {
   const [ad, setAd] = useState<PublicAd | null>(null);
@@ -140,6 +186,15 @@ export function AdSlot({
       accessibilityRole="button"
       accessibilityLabel={`Sponsored by ${ad.brandName}: ${ad.headline}`}
     >
+      <BannerCreative ad={ad} />
+    </Pressable>
+  );
+}
+
+/** The banner artwork, wash and copy — shared by AdSlot and AdRail. */
+function BannerCreative({ ad }: { ad: PublicAd }) {
+  return (
+    <>
       <Image
         source={ad.imageUrl}
         style={{ width: "100%", height: "100%" }}
@@ -181,7 +236,84 @@ export function AdSlot({
           </View>
         </View>
       </View>
-    </Pressable>
+    </>
+  );
+}
+
+/**
+ * A horizontally scrolling row of every live campaign in one placement.
+ *
+ * The single-ad AdSlot picks one at random and discards the rest, so with
+ * several advertisers sharing a slot each one only surfaces a fraction of the
+ * time they paid for. A rail shows all of them and lets the viewer scroll.
+ *
+ * Renders nothing at all when no campaign is live — header included — so the
+ * home screen carries no empty section by default.
+ *
+ * Cards are a little narrower than the screen so the next one peeks, which is
+ * what tells people the row scrolls at all.
+ */
+export function AdRail({
+  placement,
+  title = "Sponsored",
+}: {
+  placement: AdPlacement;
+  title?: string;
+}) {
+  const { ads, markSeen, open } = useAds(placement);
+
+  // Held in refs: React Native throws if either identity changes between
+  // renders on a mounted FlatList.
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 55,
+    minimumViewTime: 400,
+  }).current;
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      for (const v of viewableItems) {
+        const ad = v.item as PublicAd;
+        if (ad?.id) markSeen(ad.id);
+      }
+    },
+  ).current;
+
+  if (ads.length === 0) return null;
+
+  const CARD_W = Math.min(Dimensions.get("window").width - 68, 360);
+
+  return (
+    <View>
+      <View className="px-5 pt-6">
+        <Text className="text-[16px] font-sans-bold text-ink tracking-tight">
+          {title}
+        </Text>
+      </View>
+
+      <FlatList
+        data={ads}
+        keyExtractor={(a) => a.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}
+        // Snapping makes a two-ad rail feel deliberate rather than loose.
+        snapToInterval={CARD_W + 12}
+        decelerationRate="fast"
+        snapToAlignment="start"
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => open(item)}
+            className="rounded-3xl overflow-hidden active:opacity-95"
+            style={{ width: CARD_W, height: 134 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Sponsored by ${item.brandName}: ${item.headline}`}
+          >
+            <BannerCreative ad={item} />
+          </Pressable>
+        )}
+      />
+    </View>
   );
 }
 

@@ -32,7 +32,7 @@ import { useAuth } from "@/context/auth";
 import { useSelectedLocation, labelForLocation } from "@/lib/location";
 import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { LocationSheet } from "@/components/LocationSheet";
-import { AdSlot, SplashAd } from "@/components/AdSlot";
+import { AdRail, AdSlot, SplashAd } from "@/components/AdSlot";
 
 // The minimal shape the horizontal rail cards render — satisfied by both a full
 // Listing and a stored RecentListing.
@@ -193,11 +193,10 @@ export default function HomeScreen() {
         <ModeChips active={mode} onSelect={setMode} />
         <QuickActions />
 
-        {/* Paid brand banner — renders nothing when no campaign is live */}
-        <AdSlot
-          placement="HOME_BANNER"
-          style={{ marginHorizontal: 20, marginTop: 16 }}
-        />
+        {/* Paid brand rail — every live HOME_BANNER campaign, scrollable.
+            Was a single banner that picked one at random and dropped the
+            rest; renders nothing (header included) when none are live. */}
+        <AdRail placement="HOME_BANNER" />
 
         {/* Jump back in — recently viewed (returning users only) */}
         {recentlyViewed.length > 0 && (
