@@ -18,21 +18,25 @@ const PLACEMENTS: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   detail: string;
+  /**
+   * Rate to quote for this placement. Omitted where the placement is shown
+   * but not sold through the app, which is why the pricing table is driven
+   * off this field rather than off list position — an index-coupled mapping
+   * silently misprices every row the moment a placement is added or removed.
+   */
+  rateKey?: keyof AdPricing["weeklyRates"];
 }[] = [
-  {
-    icon: "phone-portrait-outline",
-    title: "App open",
-    detail: "A full-screen spot the moment the app opens — maximum visibility.",
-  },
   {
     icon: "megaphone-outline",
     title: "Home banner",
     detail: "A wide banner at the top of the home screen, seen by every user.",
+    rateKey: "HOME_BANNER",
   },
   {
     icon: "search-outline",
     title: "Search results",
     detail: "A native card inside property search results.",
+    rateKey: "SEARCH_INLINE",
   },
   {
     icon: "albums-outline",
@@ -40,6 +44,8 @@ const PLACEMENTS: {
     detail: "A sponsored card between listings as people browse.",
   },
 ];
+
+const PRICED = PLACEMENTS.filter((p) => p.rateKey);
 
 export default function AdvertiseInfoScreen() {
   const insets = useSafeAreaInsets();
@@ -130,11 +136,10 @@ export default function AdvertiseInfoScreen() {
               Simple campaign pricing
             </Text>
             <View className="bg-white rounded-2xl overflow-hidden border-line" style={{ borderWidth: 0.5 }}>
-              {PLACEMENTS.slice(0, 3).map((p, index) => {
-                const key = ["SPLASH", "HOME_BANNER", "SEARCH_INLINE"][index] as keyof AdPricing["weeklyRates"];
-                const rate = pricing?.weeklyRates[key];
+              {PRICED.map((p, index) => {
+                const rate = pricing?.weeklyRates[p.rateKey!];
                 return (
-                  <View key={p.title} className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: index === 2 ? 0 : 0.5, borderBottomColor: "#ece6df" }}>
+                  <View key={p.title} className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: index === PRICED.length - 1 ? 0 : 0.5, borderBottomColor: "#ece6df" }}>
                     <View>
                       <Text className="text-[13px] font-sans-bold text-ink">{p.title}</Text>
                       <Text className="text-[11px] text-ink-3 mt-0.5">One-week placement</Text>
