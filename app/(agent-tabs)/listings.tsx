@@ -15,6 +15,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Appear, PressableScale, stagger } from "@/components/anim";
 import listingsService from "@/api/services/listings";
+import partnersService from "@/api/services/partners";
+import type { HouseListing, PartnerMe } from "@/api/services/partners";
+import {
+  JoinPartnerPrompt,
+  StockCard,
+  StockIntro,
+} from "@/components/agent/PartnerStock";
 import { useAuth } from "@/context/auth";
 import type { Listing, ListingType } from "@/api/types";
 
@@ -34,10 +41,12 @@ const STATUS_UI: Record<string, { label: string; bg: string; fg: string }> = {
   ARCHIVED: { label: "Archived", bg: "#f0f0f0", fg: INK_3 },
 };
 
-type Scope = "mine" | "all";
+type Scope = "mine" | "all" | "stock";
 const SCOPES: { id: Scope; label: string }[] = [
-  { id: "mine", label: "My listings" },
-  { id: "all", label: "All listings" },
+  { id: "mine", label: "Mine" },
+  { id: "all", label: "All" },
+  // PropertyLoop's own inventory — what a partner is here to sell.
+  { id: "stock", label: "PL stock" },
 ];
 
 type TabId = "all" | "ACTIVE" | "PENDING_REVIEW" | "PAUSED" | "closed";
@@ -87,6 +96,33 @@ export default function AgentListingsScreen() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 
+  // Stock — PropertyLoop's own listings, which partners may sell.
+  const [partner, setPartner] = useState<PartnerMe | null>(null);
+  const [stock, setStock] = useState<HouseListing[]>([]);
+  const [commissionPct, setCommissionPct] = useState<number | null>(null);
+  const [loadingStock, setLoadingStock] = useState(true);
+
+  // Partner status and stock load together: without a partner record the
+  // inventory endpoint refuses, and the tab shows the join prompt instead.
+  const loadStock = useCallback(async () => {
+    setLoadingStock(true);
+    try {
+      const me = await partnersService.me();
+      setPartner(me);
+      if (me) {
+        const inv = await partnersService.inventory({ limit: 40 });
+        setStock(inv.items);
+        setCommissionPct(inv.commissionPercent);
+      } else {
+        setStock([]);
+      }
+    } catch {
+      setStock([]);
+    } finally {
+      setLoadingStock(false);
+    }
+  }, []);
+
   const loadMine = useCallback(async () => {
     try {
       const res = await listingsService.listMine({ limit: 100 });
@@ -114,7 +150,8 @@ export default function AgentListingsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadMine();
-    }, [loadMine]),
+      loadStock();
+    }, [loadMine, loadStock]),
   );
 
   // The marketplace loads lazily the first time the agent switches to it.
@@ -164,7 +201,11 @@ export default function AgentListingsScreen() {
           <View className="flex-row items-end justify-between">
             <View className="flex-1">
               <Text className="text-[11px] font-sans-bold text-primary tracking-widest uppercase">
-                {scope === "mine" ? "Your portfolio" : "The marketplace"}
+                {scope === "mine"
+                  ? "Your portfolio"
+                  : scope === "all"
+                    ? "The marketplace"
+                    : "Sell for PropertyLoop"}
               </Text>
               <Text
                 className="font-serif text-ink mt-1"
@@ -173,6 +214,10 @@ export default function AgentListingsScreen() {
                 {scope === "mine" ? (
                   <>
                     Your <Text className="font-serif-italic">listings</Text>
+                  </>
+                ) : scope === "stock" ? (
+                  <>
+                    PropertyLoop <Text className="font-serif-italic">stock</Text>
                   </>
                 ) : (
                   <>
@@ -378,6 +423,35 @@ export default function AgentListingsScreen() {
             )}
           </View>
         )}
+
+        {scope === "stock" &&
+          (loadingStock ? (
+            <Loader />
+          ) : !partner ? (
+            <View className="px-4 pt-3">
+              <JoinPartnerPrompt />
+            </View>
+          ) : (
+            <View className="px-4 pt-3 gap-3.5">
+              <StockIntro
+                partner={partner}
+                count={stock.length}
+                commissionPct={commissionPct}
+              />
+              {stock.map((l, i) => (
+                <Appear key={l.id} delay={stagger(Math.min(i, 8))}>
+                  <StockCard listing={l} commissionPct={commissionPct} />
+                </Appear>
+              ))}
+              {stock.length === 0 && (
+                <EmptyState
+                  icon="business-outline"
+                  title="No stock yet"
+                  detail="Nothing published for partners to sell right now. Check back — new inventory lands here first."
+                />
+              )}
+            </View>
+          ))}
       </ScrollView>
     </SafeAreaView>
   );
