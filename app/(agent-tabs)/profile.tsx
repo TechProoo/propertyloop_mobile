@@ -76,6 +76,18 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     ],
   },
   {
+    label: "Partnership",
+    rows: [
+      {
+        id: "partnership",
+        icon: "ribbon-outline",
+        title: "My partnership",
+        detail: "Partner number, referral link & commission",
+        href: "/partnership",
+      },
+    ],
+  },
+  {
     label: "Practice",
     rows: [
       { id: "edit",     icon: "create-outline",          title: "Edit profile",   detail: "Name, bio, agency", href: "/edit-profile" },
