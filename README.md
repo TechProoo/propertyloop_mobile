@@ -38,8 +38,8 @@ This command will move the starter code to the **app-example** directory and cre
 ## Shipping updates over the air
 
 ```bash
-node scripts/ota.js --dry-run "What changed"   # verify, publish nothing
-node scripts/ota.js "What changed"             # publish to both platforms
+npm run ota:dry -- "What changed"   # verify, publish nothing
+npm run ota -- "What changed"       # publish to both platforms
 ```
 
 Never run `eas update` by hand. Two things go wrong silently, and the script
@@ -70,10 +70,10 @@ Both feed the fingerprint. Editing either strands every installed build until
 you ship a new one. If you are about to publish an update, publish it first and
 edit afterwards.
 
-The durable fix is on the **`next-build` branch**: a `fingerprint.config.js`
-that skips version fields, plus `npm run ota` wiring. It is deliberately not on
-`main`, because merging it changes the fingerprint and would itself strand
-installed builds. Merge it when you next build both platforms, not before.
+`fingerprint.config.js` takes the version fields out of the hash, so syncing
+`versionCode` after a build no longer strands the other platform. It cannot
+cover everything — `package.json` still feeds the fingerprint — which is why
+the script verifies before every publish rather than trusting the config.
 
 ## Learn more
 

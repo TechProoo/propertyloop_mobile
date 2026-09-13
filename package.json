@@ -9,7 +9,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "ota": "eas update --branch preview --platform android"
+    "ota": "node scripts/ota.js",
+    "ota:dry": "node scripts/ota.js --dry-run",
+    "ota:android": "node scripts/ota.js --platform android",
+    "ota:ios": "node scripts/ota.js --platform ios"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

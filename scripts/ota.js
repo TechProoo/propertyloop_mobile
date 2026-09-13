@@ -31,14 +31,13 @@
  * shipping an update into the void. That means a new build is needed.
  *
  * Usage:
- *   node scripts/ota.js --dry-run "What changed"   # verify only, publish nothing
- *   node scripts/ota.js "What changed"
- *   node scripts/ota.js --platform ios "What changed"
+ *   npm run ota:dry -- "What changed"    # verify only, publish nothing
+ *   npm run ota -- "What changed"
+ *   npm run ota:ios -- "What changed"
  *
- * Invoked directly rather than through an npm script on purpose: package.json
- * feeds the fingerprint, so adding one here would itself strand every
- * installed build. The `npm run ota` wiring waits on the `next-build` branch
- * with fingerprint.config.js, to land when both platforms are next built.
+ * Note that editing package.json to add those scripts changed the fingerprint
+ * itself — it is a fingerprint source like app.json. That is why this wiring
+ * only lands alongside a new build of both platforms.
  *
  * Each fingerprint takes a minute or so, so a full run is a few minutes.
  */
