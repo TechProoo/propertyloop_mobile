@@ -4,15 +4,11 @@
 // all when no campaign is live, so screens carry zero layout cost by default.
 // Impression counts once when the ad first renders; a tap records the click
 // and opens the brand's landing page in the browser.
-//
-// <SplashAd /> — full-screen interstitial for the SPLASH placement, shown at
-// most once per app session (module-level latch survives remounts).
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
   Linking,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -22,7 +18,6 @@ import {
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import adsService, { type AdPlacement, type PublicAd } from "@/api/services/ads";
 
 const INK = "#1a2120";
@@ -314,115 +309,5 @@ export function AdRail({
         )}
       />
     </View>
-  );
-}
-
-// Shown at most once per cold start, and only when a SPLASH campaign is live.
-let splashShownThisSession = false;
-
-export function SplashAd() {
-  const insets = useSafeAreaInsets();
-  // Latch once per cold start: after it has shown, later mounts fetch nothing.
-  const armed = useRef(!splashShownThisSession);
-  const { ad, open, markSeen } = useAd("SPLASH", armed.current);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (ad && armed.current && !splashShownThisSession) {
-      splashShownThisSession = true;
-      setVisible(true);
-      markSeen(); // the interstitial is now actually on screen
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ad]);
-
-  if (!armed.current || !ad) return null;
-
-  const go = () => {
-    setVisible(false);
-    open();
-  };
-
-  return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={() => setVisible(false)}>
-      <View className="flex-1">
-        <LinearGradient colors={["rgba(9,16,11,0.98)", "rgba(8,12,9,0.98)"]} style={StyleSheet.absoluteFill} />
-
-        <Pressable
-          onPress={() => setVisible(false)}
-          className="absolute z-10 w-9 h-9 rounded-full items-center justify-center"
-          style={{ top: insets.top + 10, right: 16, backgroundColor: "rgba(255,255,255,0.15)" }}
-          hitSlop={8}
-          accessibilityLabel="Close ad"
-        >
-          <Ionicons name="close" size={18} color="#ffffff" />
-        </Pressable>
-
-        <View className="flex-1 items-center justify-center px-6">
-          {/* Creative card: brand-ringed, headline overlaid on a bottom gradient */}
-          <Pressable
-            onPress={go}
-            className="w-full rounded-[28px] overflow-hidden active:opacity-90"
-            style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.12)" }}
-            accessibilityRole="button"
-            accessibilityLabel={`Sponsored by ${ad.brandName}: ${ad.headline}`}
-          >
-            <Image
-              source={ad.imageUrl}
-              style={{ width: "100%", aspectRatio: 4 / 5 }}
-              contentFit="cover"
-              transition={200}
-            />
-            <LinearGradient
-              colors={["transparent", "rgba(8,16,11,0.35)", "rgba(8,16,11,0.82)"]}
-              start={{ x: 0, y: 0.4 }}
-              end={{ x: 0, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <View className="absolute left-4 top-4">
-              <SponsoredChip dark />
-            </View>
-            <View className="absolute left-4 right-4 bottom-4">
-              <Text
-                className="text-[10.5px] font-sans-semibold"
-                style={{ color: "rgba(255,255,255,0.8)" }}
-                numberOfLines={1}
-              >
-                {ad.brandName}
-              </Text>
-              <Text className="text-[19px] font-sans-bold text-white mt-0.5" numberOfLines={2}>
-                {ad.headline}
-              </Text>
-            </View>
-          </Pressable>
-
-          {!!ad.body && (
-            <Text
-              className="text-[12.5px] mt-4 text-center leading-5"
-              style={{ color: "rgba(255,255,255,0.72)" }}
-            >
-              {ad.body}
-            </Text>
-          )}
-
-          <Pressable
-            onPress={go}
-            className="bg-white rounded-full mt-5 flex-row items-center justify-center active:opacity-85"
-            style={{ paddingVertical: 14, paddingHorizontal: 32 }}
-          >
-            <Text className="text-[14px] font-sans-bold mr-1.5" style={{ color: INK }}>
-              {ad.ctaLabel}
-            </Text>
-            <Ionicons name="arrow-forward" size={15} color={INK} />
-          </Pressable>
-
-          <Pressable onPress={() => setVisible(false)} className="mt-3 py-2 px-4 active:opacity-70" hitSlop={6}>
-            <Text className="text-[12px] font-sans-semibold" style={{ color: "rgba(255,255,255,0.55)" }}>
-              Continue to PropertyLoop
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
   );
 }

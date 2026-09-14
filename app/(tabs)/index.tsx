@@ -32,7 +32,7 @@ import { useAuth } from "@/context/auth";
 import { useSelectedLocation, labelForLocation } from "@/lib/location";
 import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { LocationSheet } from "@/components/LocationSheet";
-import { AdRail, AdSlot, SplashAd } from "@/components/AdSlot";
+import { AdRail, AdSlot } from "@/components/AdSlot";
 
 // The minimal shape the horizontal rail cards render — satisfied by both a full
 // Listing and a stored RecentListing.
@@ -270,9 +270,6 @@ export default function HomeScreen() {
         )}
       </RevealScrollView>
 
-      {/* Full-screen sponsored interstitial — once per session, only when a
-          SPLASH campaign is live. */}
-      <SplashAd />
     </SafeAreaView>
   );
 }
