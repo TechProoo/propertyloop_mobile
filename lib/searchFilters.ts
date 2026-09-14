@@ -43,8 +43,13 @@ export function getSearchFilters(): SearchFilters {
   return current;
 }
 
+/**
+ * How many filters a person would count on screen. A price range is one filter
+ * even though it's two fields, so this matches the chips from describeFilters —
+ * a badge reading "2" beside a single "₦1M – ₦5M" chip reads as a bug.
+ */
 export function activeFilterCount(f: SearchFilters = current): number {
-  return Object.keys(f).length;
+  return describeFilters(f).length;
 }
 
 export function useSearchFilters(): SearchFilters {
@@ -56,4 +61,78 @@ export function useSearchFilters(): SearchFilters {
     () => current,
     () => current,
   );
+}
+
+/** Merge into the applied filters; a key set to undefined is removed. */
+export function patchSearchFilters(patch: Partial<SearchFilters>) {
+  setSearchFilters({ ...current, ...patch });
+}
+
+/** "₦2.5M", "₦800k" — compact enough for a chip. */
+export function formatNaira(n: number): string {
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    return `₦${Number.isInteger(m) ? m : m.toFixed(1)}M`;
+  }
+  if (n >= 1_000) return `₦${Math.round(n / 1_000)}k`;
+  return `₦${n}`;
+}
+
+export type FilterChipKey =
+  | "type"
+  | "propertyType"
+  | "price"
+  | "minBeds"
+  | "minBaths";
+
+export interface ActiveFilter {
+  key: FilterChipKey;
+  label: string;
+}
+
+const TYPE_LABEL: Record<NonNullable<SearchFilters["type"]>, string> = {
+  SALE: "For sale",
+  RENT: "For rent",
+  SHORTLET: "Shortlet",
+};
+
+/**
+ * The applied filters as the labels a person reads on a chip. Shared by the
+ * results screen and every filter badge, so the count and the chips can never
+ * disagree about what's applied.
+ */
+export function describeFilters(f: SearchFilters = current): ActiveFilter[] {
+  const out: ActiveFilter[] = [];
+  if (f.type) out.push({ key: "type", label: TYPE_LABEL[f.type] });
+  if (f.propertyType) out.push({ key: "propertyType", label: f.propertyType });
+  if (f.minPrice !== undefined || f.maxPrice !== undefined) {
+    let label: string;
+    if (f.minPrice !== undefined && f.maxPrice !== undefined) {
+      label = `${formatNaira(f.minPrice)} – ${formatNaira(f.maxPrice)}`;
+    } else if (f.minPrice !== undefined) {
+      label = `From ${formatNaira(f.minPrice)}`;
+    } else {
+      label = `Up to ${formatNaira(f.maxPrice!)}`;
+    }
+    out.push({ key: "price", label });
+  }
+  if (f.minBeds) {
+    out.push({ key: "minBeds", label: `${f.minBeds}+ bed${f.minBeds === 1 ? "" : "s"}` });
+  }
+  if (f.minBaths) {
+    out.push({ key: "minBaths", label: `${f.minBaths}+ bath${f.minBaths === 1 ? "" : "s"}` });
+  }
+  return out;
+}
+
+/** Drop one filter. A price chip clears both ends of the range. */
+export function removeFilter(key: FilterChipKey) {
+  const next: SearchFilters = { ...current };
+  if (key === "price") {
+    delete next.minPrice;
+    delete next.maxPrice;
+  } else {
+    delete next[key];
+  }
+  setSearchFilters(next);
 }

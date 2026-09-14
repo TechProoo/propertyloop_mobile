@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import {
@@ -6,10 +6,13 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import {
+  formatNaira,
   getSearchFilters,
   setSearchFilters,
   type SearchFilters,
 } from "@/lib/searchFilters";
+import listingsService from "@/api/services/listings";
+import { useSelectedLocation } from "@/lib/location";
 
 const INK = "#1a2120";
 const INK_2 = "#4d524f";
@@ -32,12 +35,6 @@ const PROPERTY_TYPES = [
 const BEDS = ["Any", "1+", "2+", "3+", "4+", "5+"];
 const BATHS = ["Any", "1+", "2+", "3+", "4+"];
 
-function fmtNaira(n: number) {
-  if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(0)}M`;
-  if (n >= 1_000) return `₦${(n / 1_000).toFixed(0)}k`;
-  return `₦${n}`;
-}
-
 // Reverse-map the stored filters back to the chip labels so reopening the
 // modal shows what's actually applied (previously it always showed defaults).
 function listingTypeFromStore(f: SearchFilters): string {
@@ -53,7 +50,7 @@ export default function FiltersScreen() {
   // Explore tab) means the opener is already mounted underneath and subscribes
   // to the shared filter store, so applying just goes back to it. With no
   // `from` (Home), applying navigates on to search-results.
-  const params = useLocalSearchParams<{ from?: string }>();
+  const params = useLocalSearchParams<{ from?: string; q?: string }>();
   const applied = getSearchFilters();
 
   const [listingType, setListingType] = useState(listingTypeFromStore(applied));
@@ -81,11 +78,15 @@ export default function FiltersScreen() {
     setMaxPrice("");
   };
 
-  const apply = () => {
-    // Commit to the shared store — search-results subscribes and refetches the
-    // moment this changes. Filters used to travel as route params, but
-    // replacing/pushing to an already-mounted search-results didn't refresh
-    // its useLocalSearchParams, so a second "Show homes" kept stale results.
+  const location = useSelectedLocation();
+  const minN = minPrice ? Number(minPrice) : undefined;
+  const maxN = maxPrice ? Number(maxPrice) : undefined;
+  const priceInverted =
+    minN !== undefined && maxN !== undefined && minN > maxN;
+
+  // One builder for both the live count and "Show homes", so the number on the
+  // button can never be computed from different rules than what gets applied.
+  const buildFilters = (): SearchFilters => {
     const next: SearchFilters = {};
     if (listingType === "Sale") next.type = "SALE";
     else if (listingType === "Rent") next.type = "RENT";
@@ -93,9 +94,59 @@ export default function FiltersScreen() {
     if (propertyType !== "Any") next.propertyType = propertyType;
     if (beds !== "Any") next.minBeds = parseInt(beds, 10);
     if (baths !== "Any") next.minBaths = parseInt(baths, 10);
-    if (minPrice) next.minPrice = Number(minPrice);
-    if (maxPrice) next.maxPrice = Number(maxPrice);
-    setSearchFilters(next);
+    if (minN) next.minPrice = minN;
+    if (maxN) next.maxPrice = maxN;
+    return next;
+  };
+
+  // Live match count on the button. "Show homes" gave no signal, so people
+  // applied a filter, saw little change, and assumed it hadn't taken. Counting
+  // before they commit shows what they're about to get — including the search
+  // term and area already in force, so the number matches the results screen.
+  const [count, setCount] = useState<number | null>(null);
+  const [counting, setCounting] = useState(false);
+  const countReq = useRef(0);
+  const filtersKey = JSON.stringify(buildFilters());
+
+  useEffect(() => {
+    const ticket = ++countReq.current;
+    setCounting(true);
+    const timer = setTimeout(() => {
+      listingsService
+        .list({
+          ...(JSON.parse(filtersKey) as SearchFilters),
+          search: params.q?.trim() || undefined,
+          location: location || undefined,
+          limit: 1,
+        })
+        .then((res) => {
+          if (ticket === countReq.current) setCount(res.total);
+        })
+        .catch(() => {
+          // Unknown, not zero — never block Apply on a failed count.
+          if (ticket === countReq.current) setCount(null);
+        })
+        .finally(() => {
+          if (ticket === countReq.current) setCounting(false);
+        });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [filtersKey, location, params.q]);
+
+  const noMatches = !counting && count === 0;
+  const ctaLabel =
+    counting || count === null
+      ? "Show homes"
+      : noMatches
+        ? "No homes match these filters"
+        : `Show ${count.toLocaleString("en-NG")} home${count === 1 ? "" : "s"}`;
+
+  const apply = () => {
+    // Commit to the shared store — search-results subscribes and refetches the
+    // moment this changes. Filters used to travel as route params, but
+    // replacing/pushing to an already-mounted search-results didn't refresh
+    // its useLocalSearchParams, so a second "Show homes" kept stale results.
+    setSearchFilters(buildFilters());
 
     if (params.from) router.back();
     else router.replace("/search-results" as Href);
@@ -150,10 +201,18 @@ export default function FiltersScreen() {
             placeholder="₦ any"
           />
         </View>
-        <Text className="text-[11.5px] text-ink-3 mt-2">
-          {minPrice ? fmtNaira(Number(minPrice)) : "₦0"} —{" "}
-          {maxPrice ? fmtNaira(Number(maxPrice)) : "any"}
-        </Text>
+        {priceInverted ? (
+          <Text
+            className="text-[11.5px] font-sans-semibold mt-2"
+            style={{ color: "#b42318" }}
+          >
+            Min is higher than max, so no home can match.
+          </Text>
+        ) : (
+          <Text className="text-[11.5px] text-ink-3 mt-2">
+            {minN ? formatNaira(minN) : "₦0"} — {maxN ? formatNaira(maxN) : "any"}
+          </Text>
+        )}
 
         {/* Listing type */}
         <SectionLabel className="mt-6">Listing type</SectionLabel>
@@ -192,11 +251,17 @@ export default function FiltersScreen() {
       >
         <Pressable
           onPress={apply}
-          className="bg-primary rounded-full items-center active:opacity-80"
-          style={{ paddingVertical: 16 }}
+          disabled={noMatches}
+          className="rounded-full items-center active:opacity-80"
+          style={{
+            paddingVertical: 16,
+            backgroundColor: noMatches ? "#b8c2ba" : "#1f6f43",
+          }}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: noMatches, busy: counting }}
         >
           <Text className="text-white font-sans-bold text-[15px]">
-            Show homes
+            {ctaLabel}
           </Text>
         </Pressable>
       </View>
