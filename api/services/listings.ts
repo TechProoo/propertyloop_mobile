@@ -40,6 +40,8 @@ export interface ListListingsParams {
   page?: number;
   limit?: number;
   type?: ListingType;
+  /** "HOUSE" is PropertyLoop's own stock. */
+  ownership?: "HOUSE" | "AGENT_OWN";
   propertyType?: string;
   location?: string;
   minPrice?: number;

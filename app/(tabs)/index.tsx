@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import {
   Linking,
   Pressable,
+  Share,
   ScrollView,
   Text,
   View,
@@ -75,7 +76,8 @@ const AFFORDABLE_MAX = 5_000_000;
 // An agent needs at least this many listings to count as a "Top agent".
 const TOP_AGENT_MIN_LISTINGS = 5;
 
-const MODE_TO_TYPE: Record<Mode, ListingType> = {
+// PL stock filters on who owns the listing, not on rent/sale/shortlet.
+const MODE_TO_TYPE: Partial<Record<Mode, ListingType>> = {
   Rent: "RENT",
   Buy: "SALE",
   Shortlet: "SHORTLET",
@@ -85,6 +87,7 @@ const MODE_HEADING: Record<Mode, string> = {
   Rent: "Homes for rent",
   Buy: "Homes for sale",
   Shortlet: "Shortlet stays",
+  "PL stock": "PropertyLoop stock",
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -111,7 +114,9 @@ export default function HomeScreen() {
     setError(false);
     listingsService
       .list({
-        type: MODE_TO_TYPE[mode],
+        ...(mode === "PL stock"
+          ? { ownership: "HOUSE" as const }
+          : { type: MODE_TO_TYPE[mode] }),
         sort: "newest",
         limit: 20,
         ...(location ? { location } : {}),
@@ -201,6 +206,7 @@ export default function HomeScreen() {
           {MODE_HEADING[mode]}
         </Text>
         <ModeChips active={mode} onSelect={setMode} />
+        {mode === "PL stock" && <PLStockNote />}
 
         {loading ? (
           <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
@@ -947,7 +953,79 @@ function CardSkeleton() {
   return <Skeleton style={{ width: "47.5%", height: 168 }} radius={18} />;
 }
 
+const PARTNER_URL = "https://propertyloop.ng/realtors/partners";
+
+/**
+ * Share the partner programme with an agent. Anybody on the home screen might
+ * know one — a buyer's cousin, a vendor's client — and an agent can sell
+ * PropertyLoop stock without listing anything of their own.
+ */
+function shareWithAgent() {
+  void Share.share({
+    message:
+      "PropertyLoop lets agents sell its own property listings and earn " +
+      `commission — free to join:\n\n${PARTNER_URL}`,
+  }).catch(() => {
+    // Dismissed the share sheet. Nothing to report.
+  });
+}
+
+/** Sits above the PL stock grid: what these listings are, and who can sell them. */
+function PLStockNote() {
+  return (
+    <PressableScale
+      onPress={() => {
+        tapLight();
+        shareWithAgent();
+      }}
+      className="mx-5 mt-3 rounded-2xl px-4 py-3 flex-row items-center gap-3"
+      style={{ backgroundColor: "#e3efe7" }}
+    >
+      <Ionicons name="business-outline" size={18} color={PRIMARY} />
+      <View className="flex-1">
+        <Text className="text-[12.5px] font-sans-bold" style={{ color: "#134a2d" }}>
+          Listed by PropertyLoop
+        </Text>
+        <Text className="text-[11.5px] mt-0.5" style={{ color: INK_2, lineHeight: 16 }}>
+          Know an agent? They can sell these and earn commission. Tap to share.
+        </Text>
+      </View>
+      <Ionicons name="share-social-outline" size={17} color={PRIMARY} />
+    </PressableScale>
+  );
+}
+
 function EmptyState({ mode }: { mode: Mode }) {
+  if (mode === "PL stock") {
+    return (
+      <View className="items-center px-6 py-10">
+        <View
+          className="w-16 h-16 rounded-full items-center justify-center"
+          style={{ backgroundColor: "#e3efe7" }}
+        >
+          <Ionicons name="business-outline" size={28} color={PRIMARY} />
+        </View>
+        <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+          No PropertyLoop stock yet
+        </Text>
+        <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+          PropertyLoop&apos;s own properties land here first. Know an agent? They
+          can sell them and earn commission.
+        </Text>
+        <Pressable
+          onPress={() => {
+            tapLight();
+            shareWithAgent();
+          }}
+          className="mt-4 px-5 py-2.5 rounded-full bg-ink active:opacity-80 flex-row items-center gap-2"
+        >
+          <Ionicons name="share-social-outline" size={15} color="#ffffff" />
+          <Text className="text-white text-[13px] font-sans-bold">Share with an agent</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View className="items-center px-6 py-10">
       <View className="w-16 h-16 rounded-full bg-cream-2 items-center justify-center">
