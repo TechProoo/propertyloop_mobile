@@ -19,6 +19,7 @@ import partnersService from "@/api/services/partners";
 import type { HouseListing, PartnerMe } from "@/api/services/partners";
 import {
   JoinPartnerPrompt,
+  NoStockYet,
   StockCard,
   StockIntro,
 } from "@/components/agent/PartnerStock";
@@ -101,11 +102,15 @@ export default function AgentListingsScreen() {
   const [stock, setStock] = useState<HouseListing[]>([]);
   const [commissionPct, setCommissionPct] = useState<number | null>(null);
   const [loadingStock, setLoadingStock] = useState(true);
+  // Kept apart from "no stock": a failed request must not pass for an empty
+  // shelf, or a dropped connection tells a partner there is nothing to sell.
+  const [stockFailed, setStockFailed] = useState(false);
 
   // Partner status and stock load together: without a partner record the
   // inventory endpoint refuses, and the tab shows the join prompt instead.
   const loadStock = useCallback(async () => {
     setLoadingStock(true);
+    setStockFailed(false);
     try {
       const me = await partnersService.me();
       setPartner(me);
@@ -118,6 +123,7 @@ export default function AgentListingsScreen() {
       }
     } catch {
       setStock([]);
+      setStockFailed(true);
     } finally {
       setLoadingStock(false);
     }
@@ -399,9 +405,10 @@ export default function AgentListingsScreen() {
               )}
             </View>
           )
-        ) : loadingAll && all.length === 0 ? (
-          <Loader />
-        ) : (
+        ) : scope === "all" ? (
+          loadingAll && all.length === 0 ? (
+            <Loader />
+          ) : (
           <View className="px-4 pt-3 gap-3.5">
             {allFiltered.length > 0 && (
               <Text className="text-[11.5px] font-sans-semibold text-ink-3 px-1">
@@ -422,14 +429,35 @@ export default function AgentListingsScreen() {
               />
             )}
           </View>
-        )}
+          )
+        ) : null}
 
+        {/* PropertyLoop's own stock only. Other agents' listings live under
+            All — showing them here would invite partners to sell property
+            nobody gave them a mandate on. */}
         {scope === "stock" &&
           (loadingStock ? (
             <Loader />
           ) : !partner ? (
             <View className="px-4 pt-3">
               <JoinPartnerPrompt />
+            </View>
+          ) : stockFailed ? (
+            <View className="px-4 pt-3">
+              <EmptyState
+                icon="cloud-offline-outline"
+                title="Couldn't load stock"
+                detail="Check your connection and try again."
+                action={{ label: "Try again", onPress: () => void loadStock() }}
+              />
+            </View>
+          ) : stock.length === 0 ? (
+            <View className="px-4 pt-3">
+              <NoStockYet
+                partner={partner}
+                onRefresh={() => void loadStock()}
+                onShareLink={() => router.push("/partnership" as Href)}
+              />
             </View>
           ) : (
             <View className="px-4 pt-3 gap-3.5">
@@ -443,13 +471,6 @@ export default function AgentListingsScreen() {
                   <StockCard listing={l} commissionPct={commissionPct} />
                 </Appear>
               ))}
-              {stock.length === 0 && (
-                <EmptyState
-                  icon="business-outline"
-                  title="No stock yet"
-                  detail="Nothing published for partners to sell right now. Check back — new inventory lands here first."
-                />
-              )}
             </View>
           ))}
       </ScrollView>
@@ -469,10 +490,12 @@ function EmptyState({
   icon,
   title,
   detail,
+  action,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   detail: string;
+  action?: { label: string; onPress: () => void };
 }) {
   return (
     <Appear delay={60} from="fade">
@@ -496,6 +519,15 @@ function EmptyState({
         <Text className="text-[12px] text-ink-3 mt-1.5 text-center px-8 leading-5">
           {detail}
         </Text>
+        {action && (
+          <PressableScale
+            onPress={action.onPress}
+            className="rounded-full mt-4 px-5 py-2.5"
+            style={{ backgroundColor: PRIMARY }}
+          >
+            <Text className="text-white font-sans-bold text-[13px]">{action.label}</Text>
+          </PressableScale>
+        )}
       </View>
     </Appear>
   );
