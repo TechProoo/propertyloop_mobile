@@ -9,8 +9,9 @@
 // It watches expo-updates' own state (useUpdates) rather than running a
 // parallel check of its own, so it can't race the native startup procedure.
 // Anything slow or failing opens the app normally: the download carries on in
-// the background and UpdatePrompt offers it once it's ready.
+// the background and runs the next time the app is opened.
 import { useEffect, useRef, useState } from "react";
+import { AppState, type AppStateStatus } from "react-native";
 import * as Updates from "expo-updates";
 import { useUpdates } from "expo-updates";
 import * as SecureStore from "expo-secure-store";
@@ -103,6 +104,23 @@ export function useLaunchUpdate(): {
       clearTimeout(checkTimer);
       clearTimeout(ceiling);
     };
+  }, [enabled]);
+
+  // Releases that land while the app is open download silently and run the
+  // next time it's opened — expo-updates starts the newest downloaded bundle on
+  // a cold start. No banner and no restart: that would throw away whatever
+  // someone was halfway through.
+  useEffect(() => {
+    if (!enabled) return;
+    const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
+      if (state !== "active") return;
+      Updates.checkForUpdateAsync()
+        .then((r) => (r.isAvailable ? Updates.fetchUpdateAsync() : null))
+        .catch(() => {
+          /* offline or no update */
+        });
+    });
+    return () => sub.remove();
   }, [enabled]);
 
   // A failed download just opens the app.

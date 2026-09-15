@@ -9,7 +9,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth, roleHome } from '@/context/auth';
 import vendorsService from '@/api/services/vendors';
 import { AppLaunchScreen } from '@/components/brand/AppLaunchScreen';
-import { UpdatePrompt } from '@/components/UpdatePrompt';
 import { useLaunchUpdate } from '@/lib/launchUpdate';
 import { DialogHost } from '@/lib/dialog';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
@@ -176,7 +175,6 @@ export default function RootLayout() {
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />
-        <UpdatePrompt />
         <DialogHost />
         <BootGate />
       </ThemeProvider>
