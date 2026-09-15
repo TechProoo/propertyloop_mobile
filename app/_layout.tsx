@@ -10,6 +10,7 @@ import { AuthProvider, useAuth, roleHome } from '@/context/auth';
 import vendorsService from '@/api/services/vendors';
 import { AppLaunchScreen } from '@/components/brand/AppLaunchScreen';
 import { UpdatePrompt } from '@/components/UpdatePrompt';
+import { useLaunchUpdate } from '@/lib/launchUpdate';
 import { DialogHost } from '@/lib/dialog';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
 // bundle the weights you actually use (instead of all 18 variants).
@@ -192,11 +193,16 @@ export default function RootLayout() {
  */
 function BootGate() {
   const { status } = useAuth();
+  // Holds the launch screen while an over-the-air update is found and fetched,
+  // then restarts straight into it — so a release shows on the launch that
+  // finds it instead of the one after. Anything slow opens the app normally.
+  const launch = useLaunchUpdate();
   const [done, setDone] = useState(false);
   if (done) return null;
   return (
     <AppLaunchScreen
-      authReady={status !== 'loading'}
+      authReady={status !== 'loading' && launch.settled}
+      note={launch.updating ? 'Getting the latest version…' : undefined}
       onDone={() => setDone(true)}
     />
   );
