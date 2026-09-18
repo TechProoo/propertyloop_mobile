@@ -65,6 +65,13 @@
       ],
       "expo-video",
       [
+        "expo-notifications",
+        {
+          "color": "#1f6f43",
+          "defaultChannel": "default"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "PropertyLoop needs access to your photos so you can choose a profile picture, upload property images for your listings, attach photos of completed work or a job dispute, and send photo attachments in chat.",

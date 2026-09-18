@@ -46,6 +46,12 @@ const notificationsService = {
       .post("/notifications/push-tokens", { token, platform })
       .then((r) => r.data);
   },
+  /** Drop this device's token — used on sign-out. */
+  removePushToken(token: string): Promise<{ success: boolean }> {
+    return api
+      .delete(`/notifications/push-tokens/${encodeURIComponent(token)}`)
+      .then((r) => r.data);
+  },
 };
 
 export default notificationsService;

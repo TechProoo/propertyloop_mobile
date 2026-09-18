@@ -6,13 +6,14 @@ import {
   View,
 } from "react-native";
 import { BouncyLoader } from "@/components/brand/BouncyLoader";
-import { Stack, router, type Href } from "expo-router";
+import { Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import notificationsService, {
   type AppNotification,
 } from "@/api/services/notifications";
 import { useAuth } from "@/context/auth";
+import { hrefForNotification } from "@/lib/notificationRoutes";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -50,37 +51,6 @@ function iconFor(type: string): {
   return { icon: "notifications-outline", tone: "neutral" };
 }
 
-function hrefFor(n: AppNotification, role?: string): Href | null {
-  const d = n.data ?? {};
-  const isAgent = role === "AGENT";
-  if (d.purchaseId) return "/purchase-progress" as Href;
-  // Offers: agents review and accept/counter/decline on their offers screen;
-  // buyers track the offers they've made on the buyer offers screen. (Routing
-  // an agent to the buyer "/offers" screen showed an empty list.)
-  if (d.offerId) return (isAgent ? "/agent-offers" : "/offers") as Href;
-  // Viewings: agents accept/decline/reschedule from the Leads → Viewings tab;
-  // buyers see their booked viewings on the Account tab. (Previously viewing
-  // notifications had no destination, so they weren't tappable.)
-  if (d.viewingId) {
-    return (
-      isAgent ? "/(agent-tabs)/leads?tab=viewing" : "/(tabs)/account"
-    ) as Href;
-  }
-  // Withdrawal decisions land the vendor on their earnings tab, where the
-  // paid/returned balance is visible.
-  if (d.withdrawalId) return "/(vendor-tabs)/earnings" as Href;
-  // Job events route to the recipient's own job screen: the vendor's
-  // active-job view (surfaces the dispute banner), or the buyer's service-job
-  // view (where they confirm/release escrow).
-  if (d.jobId) {
-    return (
-      role === "VENDOR"
-        ? `/vendor-active-job/${d.jobId}`
-        : `/service-job/${d.jobId}`
-    ) as Href;
-  }
-  return null;
-}
 
 function timeAgo(iso: string): string {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -149,7 +119,7 @@ export default function NotificationsScreen() {
       );
       notificationsService.markRead(n.id).catch(() => {});
     }
-    const href = hrefFor(n, user?.role);
+    const href = hrefForNotification(n.data, user?.role);
     if (href) router.push(href);
   };
 

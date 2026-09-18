@@ -10,6 +10,11 @@ import { AuthProvider, useAuth, roleHome } from '@/context/auth';
 import vendorsService from '@/api/services/vendors';
 import { AppLaunchScreen } from '@/components/brand/AppLaunchScreen';
 import { useLaunchUpdate } from '@/lib/launchUpdate';
+import {
+  configureNotificationHandler,
+  unregisterPushToken,
+  usePushNotifications,
+} from '@/lib/push';
 import { DialogHost } from '@/lib/dialog';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
 // bundle the weights you actually use (instead of all 18 variants).
@@ -31,6 +36,10 @@ SplashScreen.preventAutoHideAsync().catch(() => {
   /* already hidden — fine */
 });
 SplashScreen.setOptions({ duration: 260, fade: true });
+
+// Before any notification can arrive, so one landing while the app is open is
+// actually shown rather than silently swallowed.
+configureNotificationHandler();
 
 export const unstable_settings = {
   anchor: 'welcome',
@@ -176,6 +185,7 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
         <DialogHost />
+        <PushGate />
         <BootGate />
       </ThemeProvider>
       </AuthProvider>
@@ -204,6 +214,30 @@ function BootGate() {
       onDone={() => setDone(true)}
     />
   );
+}
+
+/**
+ * Registers this device for phone notifications while signed in, routes a
+ * tapped notification to the screen it belongs to, and drops the token on
+ * sign-out so the next person on this phone doesn't inherit them.
+ */
+function PushGate() {
+  const { status, user } = useAuth();
+  usePushNotifications(status === 'authed', user?.role);
+
+  const wasAuthed = useRef(false);
+  useEffect(() => {
+    if (status === 'authed') {
+      wasAuthed.current = true;
+      return;
+    }
+    if (status === 'guest' && wasAuthed.current) {
+      wasAuthed.current = false;
+      void unregisterPushToken();
+    }
+  }, [status]);
+
+  return null;
 }
 
 /**
