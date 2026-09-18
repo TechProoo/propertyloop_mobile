@@ -124,6 +124,147 @@ export function JoinPartnerPrompt() {
   );
 }
 
+const HOW_IT_WORKS: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  detail: string;
+}[] = [
+  {
+    icon: "business-outline",
+    title: "PropertyLoop publishes stock",
+    detail: "Property the company holds a mandate on, checked and priced.",
+  },
+  {
+    icon: "person-add-outline",
+    title: "You bring a buyer",
+    detail: "Record them from the listing before the agent speaks to them.",
+  },
+  {
+    icon: "cash-outline",
+    title: "The sale closes, you earn",
+    detail: "The commission is attributed to you and paid to your account.",
+  },
+];
+
+/**
+ * Shown to a partner when PropertyLoop has nothing published to sell.
+ *
+ * A bare empty list reads as "this is broken". This says what the tab is for,
+ * what will arrive here, and the one useful thing to do while waiting — share
+ * the referral link.
+ */
+export function NoStockYet({
+  partner,
+  onRefresh,
+  onShareLink,
+}: {
+  partner: PartnerMe;
+  onRefresh: () => void;
+  onShareLink: () => void;
+}) {
+  const card = {
+    shadowColor: INK,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
+  };
+
+  return (
+    <Appear from="fade">
+      <View className="gap-3">
+        <View className="rounded-3xl overflow-hidden" style={{ backgroundColor: PRIMARY_INK }}>
+          <View className="p-6 items-center">
+            <View
+              className="w-16 h-16 rounded-full items-center justify-center"
+              style={{ backgroundColor: "rgba(252,211,77,0.14)" }}
+            >
+              <Ionicons name="business-outline" size={30} color="#fcd34d" />
+            </View>
+            <Text
+              className="text-[10.5px] font-sans-bold tracking-widest uppercase mt-4"
+              style={{ color: "#fcd34d" }}
+            >
+              Partner {partner.code}
+            </Text>
+            <Text
+              className="font-serif text-white text-center mt-2"
+              style={{ fontSize: 23, lineHeight: 29, letterSpacing: -0.4 }}
+            >
+              No PropertyLoop stock yet
+            </Text>
+            <Text
+              className="text-[13.5px] text-center mt-2.5"
+              style={{ color: "rgba(255,255,255,0.75)", lineHeight: 20 }}
+            >
+              The team has not published a property for partners to sell yet.
+              When they do, it lands here first — with your commission already
+              worked out.
+            </Text>
+            <PressableScale
+              onPress={onRefresh}
+              className="rounded-2xl mt-5 px-5 py-3 flex-row items-center gap-2"
+              style={{ backgroundColor: "rgba(255,255,255,0.12)" }}
+            >
+              <Ionicons name="refresh" size={15} color="#ffffff" />
+              <Text className="text-white font-sans-bold text-[13.5px]">Check again</Text>
+            </PressableScale>
+          </View>
+        </View>
+
+        <View className="bg-white rounded-3xl p-5" style={card}>
+          <Text
+            className="text-[11px] font-sans-bold tracking-widest uppercase"
+            style={{ color: INK_3 }}
+          >
+            How it works
+          </Text>
+          {HOW_IT_WORKS.map((step, i) => (
+            <View key={step.title} className="flex-row gap-3 mt-4">
+              <View
+                className="w-9 h-9 rounded-full items-center justify-center"
+                style={{ backgroundColor: "#e3efe7" }}
+              >
+                <Ionicons name={step.icon} size={17} color={PRIMARY} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[13.5px] font-sans-bold" style={{ color: INK }}>
+                  {i + 1}. {step.title}
+                </Text>
+                <Text className="text-[12px] mt-0.5" style={{ color: INK_3, lineHeight: 17 }}>
+                  {step.detail}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <PressableScale
+          onPress={onShareLink}
+          className="bg-white rounded-2xl px-4 py-3.5 flex-row items-center gap-3"
+          style={card}
+        >
+          <View
+            className="w-10 h-10 rounded-full items-center justify-center"
+            style={{ backgroundColor: "#e3efe7" }}
+          >
+            <Ionicons name="share-social-outline" size={18} color={PRIMARY} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[13.5px] font-sans-bold" style={{ color: INK }}>
+              Meanwhile, grow your network
+            </Text>
+            <Text className="text-[12px] mt-0.5" style={{ color: INK_3, lineHeight: 17 }}>
+              Share your referral link — partners you bring in are credited to you.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={INK_3} />
+        </PressableScale>
+      </View>
+    </Appear>
+  );
+}
+
 /** Partner status strip above the stock list. */
 export function StockIntro({
   partner,

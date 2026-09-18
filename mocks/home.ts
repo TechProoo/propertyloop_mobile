@@ -161,7 +161,9 @@ export const CONTACT = {
 export const LOCATIONS = ["All", "Lekki", "Ikoyi", "Ikeja", "Yaba", "V.I.", "Maitama"];
 
 // ─── Mode switcher ──────────────────────────────────────────────
-export const MODES = ["Rent", "Buy", "Shortlet"] as const;
+// "PL stock" is PropertyLoop's own listings, of every type. It is on the
+// shared home, so buyers, agents and vendors all see it.
+export const MODES = ["Rent", "Buy", "Shortlet", "PL stock"] as const;
 export type Mode = (typeof MODES)[number];
 
 // ─── Buyer home grid (photo-led 2-up cards) ─────────────────────

@@ -424,7 +424,10 @@ function ExploreHeader({
         <Pressable
           onPress={() => {
             tapLight();
-            router.push("/filters?from=explore" as Href);
+            // Pass the search term so the Filters modal's live count matches this list.
+            router.push(
+              `/filters?from=explore&q=${encodeURIComponent(search.trim())}` as Href,
+            );
           }}
           className="w-11 h-11 rounded-full items-center justify-center"
           style={{ backgroundColor: INK }}

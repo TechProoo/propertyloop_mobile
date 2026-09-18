@@ -18,9 +18,12 @@ const MIN_VISIBLE_MS = 700;
 
 export function AppLaunchScreen({
   authReady,
+  note,
   onDone,
 }: {
   authReady: boolean;
+  /** One line under the progress bar, e.g. while an update downloads. */
+  note?: string;
   onDone: () => void;
 }) {
   const entrance = useRef(new Animated.Value(0)).current;
@@ -157,6 +160,12 @@ export function AppLaunchScreen({
         >
           <Animated.View style={[styles.progressSegment, progressStyle]} />
         </View>
+
+        {/* A space rather than nothing when idle, so the line appearing
+            doesn't shift the mark and wordmark above it. */}
+        <Text style={styles.note} accessibilityLiveRegion="polite">
+          {note ?? " "}
+        </Text>
       </Animated.View>
 
       <Text style={styles.footer}>PROPERTYLOOP</Text>
@@ -240,6 +249,13 @@ const styles = StyleSheet.create({
     height: 2,
     borderRadius: 1,
     backgroundColor: EMERALD,
+  },
+  note: {
+    marginTop: 14,
+    color: "rgba(247, 245, 239, 0.62)",
+    fontFamily: "Inter_500Medium",
+    fontSize: 12.5,
+    letterSpacing: 0.1,
   },
   footer: {
     position: "absolute",

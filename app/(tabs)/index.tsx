@@ -1,10 +1,10 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import {
   Linking,
   Pressable,
+  Share,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { Image } from "expo-image";
@@ -30,9 +30,10 @@ import agentsService, { type PublicAgent } from "@/api/services/agents";
 import type { Listing, ListingType } from "@/api/types";
 import { useAuth } from "@/context/auth";
 import { useSelectedLocation, labelForLocation } from "@/lib/location";
+import { activeFilterCount, useSearchFilters } from "@/lib/searchFilters";
 import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { LocationSheet } from "@/components/LocationSheet";
-import { AdRail, AdSlot, SplashAd } from "@/components/AdSlot";
+import { AdRail, AdSlot } from "@/components/AdSlot";
 
 // The minimal shape the horizontal rail cards render — satisfied by both a full
 // Listing and a stored RecentListing.
@@ -75,7 +76,8 @@ const AFFORDABLE_MAX = 5_000_000;
 // An agent needs at least this many listings to count as a "Top agent".
 const TOP_AGENT_MIN_LISTINGS = 5;
 
-const MODE_TO_TYPE: Record<Mode, ListingType> = {
+// PL stock filters on who owns the listing, not on rent/sale/shortlet.
+const MODE_TO_TYPE: Partial<Record<Mode, ListingType>> = {
   Rent: "RENT",
   Buy: "SALE",
   Shortlet: "SHORTLET",
@@ -85,6 +87,7 @@ const MODE_HEADING: Record<Mode, string> = {
   Rent: "Homes for rent",
   Buy: "Homes for sale",
   Shortlet: "Shortlet stays",
+  "PL stock": "PropertyLoop stock",
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -92,7 +95,6 @@ const MODE_HEADING: Record<Mode, string> = {
 // ─────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const [mode, setMode] = useState<Mode>("Rent");
-  const [query, setQuery] = useState("");
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -112,7 +114,9 @@ export default function HomeScreen() {
     setError(false);
     listingsService
       .list({
-        type: MODE_TO_TYPE[mode],
+        ...(mode === "PL stock"
+          ? { ownership: "HOUSE" as const }
+          : { type: MODE_TO_TYPE[mode] }),
         sort: "newest",
         limit: 20,
         ...(location ? { location } : {}),
@@ -167,17 +171,6 @@ export default function HomeScreen() {
     };
   }, [location, reloadKey]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (h) =>
-        h.title.toLowerCase().includes(q) ||
-        h.location.toLowerCase().includes(q) ||
-        h.address.toLowerCase().includes(q),
-    );
-  }, [items, query]);
-
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
       <RevealScrollView
@@ -189,8 +182,7 @@ export default function HomeScreen() {
         <Greeting />
         {/* Search leads: this is a property app, and the entry cards used to
             push it off the first screen entirely. */}
-        <SearchRow query={query} onChange={setQuery} />
-        <ModeChips active={mode} onSelect={setMode} />
+        <SearchRow />
         <QuickActions />
 
         {/* Paid brand rail — every live HOME_BANNER campaign, scrollable.
@@ -206,9 +198,15 @@ export default function HomeScreen() {
           </>
         )}
 
-        <Text className="px-5 pt-5 text-[16px] font-sans-bold text-ink tracking-tight">
+        {/* The Rent/Buy/Shortlet chips sit directly on the grid they switch. They
+            used to sit at the top of the screen, above the sponsored rail and
+            "Jump back in", so a tap changed a grid the viewer couldn't see and
+            read as if nothing had happened. */}
+        <Text className="px-5 pt-6 text-[16px] font-sans-bold text-ink tracking-tight">
           {MODE_HEADING[mode]}
         </Text>
+        <ModeChips active={mode} onSelect={setMode} />
+        {mode === "PL stock" && <PLStockNote />}
 
         {loading ? (
           <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
@@ -219,11 +217,11 @@ export default function HomeScreen() {
           </View>
         ) : error ? (
           <ErrorState onRetry={() => setReloadKey((k) => k + 1)} />
-        ) : filtered.length === 0 ? (
-          <EmptyState query={query} mode={mode} />
+        ) : items.length === 0 ? (
+          <EmptyState mode={mode} />
         ) : (
           <View className="flex-row flex-wrap px-5 pt-3.5" style={{ gap: 14 }}>
-            {filtered.map((h, i) => (
+            {items.map((h, i) => (
               <Fragment key={h.id}>
                 {/* Sponsored card as its own grid cell after the 4th listing.
                     AdSlot renders null with no live campaign — no empty cell. */}
@@ -270,9 +268,6 @@ export default function HomeScreen() {
         )}
       </RevealScrollView>
 
-      {/* Full-screen sponsored interstitial — once per session, only when a
-          SPLASH campaign is live. */}
-      <SplashAd />
     </SafeAreaView>
   );
 }
@@ -407,61 +402,75 @@ function Greeting() {
 // ─────────────────────────────────────────────────────────────────
 // Search + inline filter
 // ─────────────────────────────────────────────────────────────────
-function SearchRow({
-  query,
-  onChange,
-}: {
-  query: string;
-  onChange: (q: string) => void;
-}) {
+function SearchRow() {
+  const count = activeFilterCount(useSearchFilters());
   return (
     <View className="px-5 pt-4">
-      <View
-        className="rounded-2xl px-4 flex-row items-center gap-2.5"
+      {/* A launcher, not a live input. Typing here used to narrow the grid far
+          below — under the sponsored rail and "Jump back in" — so a search
+          looked like it did nothing. It opens the results screen instead,
+          where results are the only thing on it. */}
+      <Pressable
+        onPress={() => {
+          tapLight();
+          router.push("/search-results?focus=1" as Href);
+        }}
+        className="rounded-2xl pl-4 pr-1.5 flex-row items-center gap-2.5 active:opacity-90"
         style={{ height: 52, backgroundColor: "#f0f0f0" }}
+        accessibilityRole="search"
+        accessibilityLabel="Search properties by city or area"
       >
         <Ionicons name="search" size={19} color={INK_3} />
-        <TextInput
-          value={query}
-          onChangeText={onChange}
-          placeholder="Search properties in Lagos, Abuja, Ibadan…"
-          placeholderTextColor="#5f655f"
+        <Text
           numberOfLines={1}
-          className="flex-1 text-[14.5px] text-ink font-sans-medium"
-          style={{ paddingVertical: 0 }}
-          returnKeyType="search"
-          accessibilityLabel="Search properties by city or area"
-        />
-        {query.length > 0 ? (
-          <Pressable
-            onPress={() => onChange("")}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Clear search"
-          >
-            <Ionicons name="close-circle" size={19} color={INK_3} />
-          </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => {
-              tapLight();
-              router.push("/filters" as Href);
-            }}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Filters"
-          >
-            <Ionicons name="options-outline" size={20} color={INK} />
-          </Pressable>
-        )}
-      </View>
+          className="flex-1 text-[14.5px] font-sans-medium"
+          style={{ color: "#5f655f" }}
+        >
+          Search properties in Lagos, Abuja, Ibadan…
+        </Text>
+        {/* Always reachable — it used to vanish the moment you typed. Filled and
+            badged while filters are on, so it's clear they're in force. */}
+        <Pressable
+          onPress={() => {
+            tapLight();
+            router.push("/filters" as Href);
+          }}
+          hitSlop={6}
+          className="w-10 h-10 rounded-xl items-center justify-center"
+          style={{ backgroundColor: count > 0 ? INK : "transparent" }}
+          accessibilityRole="button"
+          accessibilityLabel={`Filters${count ? `, ${count} applied` : ""}`}
+        >
+          <Ionicons
+            name="options-outline"
+            size={20}
+            color={count > 0 ? "#ffffff" : INK}
+          />
+          {count > 0 && (
+            <View
+              className="absolute items-center justify-center"
+              style={{
+                top: -4,
+                right: -4,
+                minWidth: 17,
+                height: 17,
+                paddingHorizontal: 3,
+                borderRadius: 9,
+                backgroundColor: PRIMARY,
+                borderWidth: 1.5,
+                borderColor: "#ffffff",
+              }}
+            >
+              <Text className="text-white font-sans-bold" style={{ fontSize: 9 }}>
+                {count}
+              </Text>
+            </View>
+          )}
+        </Pressable>
+      </Pressable>
     </View>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Mode chips — Rent / Buy / Shortlet
-// ─────────────────────────────────────────────────────────────────
 function ModeChips({
   active,
   onSelect,
@@ -944,7 +953,79 @@ function CardSkeleton() {
   return <Skeleton style={{ width: "47.5%", height: 168 }} radius={18} />;
 }
 
-function EmptyState({ query, mode }: { query: string; mode: Mode }) {
+const PARTNER_URL = "https://propertyloop.ng/realtors/partners";
+
+/**
+ * Share the partner programme with an agent. Anybody on the home screen might
+ * know one — a buyer's cousin, a vendor's client — and an agent can sell
+ * PropertyLoop stock without listing anything of their own.
+ */
+function shareWithAgent() {
+  void Share.share({
+    message:
+      "PropertyLoop lets agents sell its own property listings and earn " +
+      `commission — free to join:\n\n${PARTNER_URL}`,
+  }).catch(() => {
+    // Dismissed the share sheet. Nothing to report.
+  });
+}
+
+/** Sits above the PL stock grid: what these listings are, and who can sell them. */
+function PLStockNote() {
+  return (
+    <PressableScale
+      onPress={() => {
+        tapLight();
+        shareWithAgent();
+      }}
+      className="mx-5 mt-3 rounded-2xl px-4 py-3 flex-row items-center gap-3"
+      style={{ backgroundColor: "#e3efe7" }}
+    >
+      <Ionicons name="business-outline" size={18} color={PRIMARY} />
+      <View className="flex-1">
+        <Text className="text-[12.5px] font-sans-bold" style={{ color: "#134a2d" }}>
+          Listed by PropertyLoop
+        </Text>
+        <Text className="text-[11.5px] mt-0.5" style={{ color: INK_2, lineHeight: 16 }}>
+          Know an agent? They can sell these and earn commission. Tap to share.
+        </Text>
+      </View>
+      <Ionicons name="share-social-outline" size={17} color={PRIMARY} />
+    </PressableScale>
+  );
+}
+
+function EmptyState({ mode }: { mode: Mode }) {
+  if (mode === "PL stock") {
+    return (
+      <View className="items-center px-6 py-10">
+        <View
+          className="w-16 h-16 rounded-full items-center justify-center"
+          style={{ backgroundColor: "#e3efe7" }}
+        >
+          <Ionicons name="business-outline" size={28} color={PRIMARY} />
+        </View>
+        <Text className="text-[16px] font-sans-bold text-ink mt-4 text-center">
+          No PropertyLoop stock yet
+        </Text>
+        <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
+          PropertyLoop&apos;s own properties land here first. Know an agent? They
+          can sell them and earn commission.
+        </Text>
+        <Pressable
+          onPress={() => {
+            tapLight();
+            shareWithAgent();
+          }}
+          className="mt-4 px-5 py-2.5 rounded-full bg-ink active:opacity-80 flex-row items-center gap-2"
+        >
+          <Ionicons name="share-social-outline" size={15} color="#ffffff" />
+          <Text className="text-white text-[13px] font-sans-bold">Share with an agent</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View className="items-center px-6 py-10">
       <View className="w-16 h-16 rounded-full bg-cream-2 items-center justify-center">
@@ -958,9 +1039,7 @@ function EmptyState({ query, mode }: { query: string; mode: Mode }) {
             : "No rentals here yet"}
       </Text>
       <Text className="text-[13px] text-ink-3 mt-1.5 text-center leading-5">
-        {query.trim()
-          ? `Nothing matches “${query.trim()}” right now. Try another area or filter.`
-          : "New verified homes land here every week — check back soon."}
+        {"New verified homes land here every week — check back soon."}
       </Text>
     </View>
   );
