@@ -100,7 +100,6 @@ export default function AgentListingsScreen() {
   // Stock — PropertyLoop's own listings, which partners may sell.
   const [partner, setPartner] = useState<PartnerMe | null>(null);
   const [stock, setStock] = useState<HouseListing[]>([]);
-  const [commissionPct, setCommissionPct] = useState<number | null>(null);
   const [loadingStock, setLoadingStock] = useState(true);
   // Kept apart from "no stock": a failed request must not pass for an empty
   // shelf, or a dropped connection tells a partner there is nothing to sell.
@@ -117,7 +116,6 @@ export default function AgentListingsScreen() {
       if (me) {
         const inv = await partnersService.inventory({ limit: 40 });
         setStock(inv.items);
-        setCommissionPct(inv.commissionPercent);
       } else {
         setStock([]);
       }
@@ -464,11 +462,10 @@ export default function AgentListingsScreen() {
               <StockIntro
                 partner={partner}
                 count={stock.length}
-                commissionPct={commissionPct}
               />
               {stock.map((l, i) => (
                 <Appear key={l.id} delay={stagger(Math.min(i, 8))}>
-                  <StockCard listing={l} commissionPct={commissionPct} />
+                  <StockCard listing={l} />
                 </Appear>
               ))}
             </View>

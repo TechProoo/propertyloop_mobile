@@ -269,11 +269,9 @@ export function NoStockYet({
 export function StockIntro({
   partner,
   count,
-  commissionPct,
 }: {
   partner: PartnerMe;
   count: number;
-  commissionPct: number | null;
 }) {
   // Somebody who cannot be paid should hear it here, not after their first
   // sale closes — by then it is no longer a small errand.
@@ -294,8 +292,8 @@ export function StockIntro({
               Partner {partner.code}
             </Text>
             <Text className="text-[12.5px] mt-0.5" style={{ color: INK_2 }}>
-              {count} {count === 1 ? "property" : "properties"} you can sell
-              {commissionPct !== null ? ` · ${commissionPct}% commission` : ""}
+              {count} {count === 1 ? "property" : "properties"} you can sell ·
+              commission agreed per property
             </Text>
           </View>
           <View className="items-end">
@@ -337,15 +335,9 @@ export function StockIntro({
 /** One house listing, with the action that makes a commission attributable. */
 export function StockCard({
   listing,
-  commissionPct,
 }: {
   listing: HouseListing;
-  commissionPct: number | null;
 }) {
-  const cut =
-    commissionPct !== null
-      ? Math.round((listing.priceNaira * commissionPct) / 100)
-      : null;
 
   return (
     <View
@@ -417,22 +409,20 @@ export function StockCard({
         style={{ borderTopWidth: 1, borderTopColor: "#f0eee9" }}
       >
         <View>
-          {cut !== null && (
-            <>
-              <Text
-                className="text-[10px] tracking-wider uppercase"
-                style={{ color: INK_3 }}
-              >
-                You earn
-              </Text>
-              <Text
-                className="font-sans-bold text-[13.5px]"
-                style={{ color: PRIMARY_INK }}
-              >
-                ₦{cut.toLocaleString("en-NG")}
-              </Text>
-            </>
-          )}
+          {/* No rate: commission is negotiated per property, so a figure
+              here would read as a promise. */}
+          <Text
+            className="text-[10px] tracking-wider uppercase"
+            style={{ color: INK_3 }}
+          >
+            You earn
+          </Text>
+          <Text
+            className="font-sans-semibold text-[11.5px]"
+            style={{ color: PRIMARY_INK }}
+          >
+            Commission agreed per property
+          </Text>
         </View>
         <PressableScale
           onPress={() => {
@@ -444,9 +434,6 @@ export function StockCard({
               listingId: listing.id,
               title: listing.title,
               price: listing.priceLabel,
-              ...(commissionPct !== null && {
-                commission: String(commissionPct),
-              }),
             }).toString();
             router.push(`/bring-buyer?${q}` as Href);
           }}

@@ -30,11 +30,10 @@ function isValidNgPhone(raw: string): boolean {
  * the commission attributable — after the sale it is just a claim.
  */
 export default function BringBuyer() {
-  const { listingId, title, price, commission } = useLocalSearchParams<{
+  const { listingId, title, price } = useLocalSearchParams<{
     listingId: string;
     title?: string;
     price?: string;
-    commission?: string;
   }>();
 
   const [name, setName] = useState("");
@@ -161,17 +160,13 @@ export default function BringBuyer() {
                 {!!price && (
                   <Text className="text-[13px] text-white/80">{price}</Text>
                 )}
-                {!!commission && (
-                  <>
-                    <Text className="text-white/40">·</Text>
-                    <Text
-                      className="text-[12.5px] font-sans-bold"
-                      style={{ color: "#fcd34d" }}
-                    >
-                      {commission}% to you
-                    </Text>
-                  </>
-                )}
+                <Text className="text-white/40">·</Text>
+                <Text
+                  className="text-[12.5px] font-sans-bold"
+                  style={{ color: "#fcd34d" }}
+                >
+                  Commission agreed per property
+                </Text>
               </View>
             </View>
           </Appear>
