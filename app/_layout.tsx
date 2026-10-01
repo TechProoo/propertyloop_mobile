@@ -9,6 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth, roleHome } from '@/context/auth';
 import vendorsService from '@/api/services/vendors';
 import { AppLaunchScreen } from '@/components/brand/AppLaunchScreen';
+import { IndependenceSplash } from '@/components/brand/IndependenceSplash';
 import { useLaunchUpdate } from '@/lib/launchUpdate';
 import { DialogHost } from '@/lib/dialog';
 // v0.4 of @expo-google-fonts moved to per-weight subpaths so you only
@@ -196,7 +197,9 @@ function BootGate() {
   // finds it instead of the one after. Anything slow opens the app normally.
   const launch = useLaunchUpdate();
   const [done, setDone] = useState(false);
-  if (done) return null;
+  // Once the launch screen is out of the way, the day's greeting (if any) gets
+  // its turn — never on top of the boot animation.
+  if (done) return <IndependenceSplash />;
   return (
     <AppLaunchScreen
       authReady={status !== 'loading' && launch.settled}
