@@ -68,8 +68,6 @@ export interface HouseInventory {
   page: number;
   limit: number;
   pages: number;
-  /** What a partner earns on a sale, as a percentage. */
-  commissionPercent: number;
 }
 
 export interface IntroduceBuyerPayload {
