@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
+import { ARTISAN_CORNER } from '@/config/features';
 import {
   Linking,
   Pressable,
@@ -701,7 +702,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     tint: "#245a82",
     title: "Community",
     caption: "Market feed",
-    a11y: "Community feed — updates, insights and projects from agents and vendors",
+    a11y: "Community feed — updates, insights and projects from agents",
     onPress: () => router.push("/feed" as Href),
   },
   {
@@ -729,7 +730,9 @@ const QUICK_ACTIONS: QuickAction[] = [
 function QuickActions() {
   const { user } = useAuth();
   const actions = QUICK_ACTIONS.filter(
-    (a) => !a.buyerOnly || user?.role === "BUYER",
+    (a) =>
+      (!a.buyerOnly || user?.role === "BUYER") &&
+      (ARTISAN_CORNER || a.id !== "services"),
   );
 
   return (

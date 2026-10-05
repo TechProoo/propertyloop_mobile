@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { ARTISAN_CORNER } from '@/config/features';
 import {
   Pressable,
   ScrollView,
@@ -71,7 +72,10 @@ const GROUPS: { label: string; rows: LinkRow[] }[] = [
     label: "Marketplace",
     rows: [
       { id: "browse",  icon: "home-outline",         title: "Browse properties",  detail: "Search & save listings", href: "/(tabs)" },
-      { id: "vendors", icon: "construct-outline",    title: "Hire vendors",       detail: "Find service professionals", href: "/services" },
+      // Artisan Corner is hidden (config/features.ts).
+      ...(ARTISAN_CORNER
+        ? [{ id: "vendors" as const, icon: "construct-outline" as const, title: "Hire vendors", detail: "Find service professionals", href: "/services" }]
+        : []),
       { id: "feed",    icon: "chatbubbles-outline",  title: "Community feed",     detail: "Share updates, insights & projects", href: "/feed" },
     ],
   },

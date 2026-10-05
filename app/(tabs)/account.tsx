@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { ARTISAN_CORNER } from '@/config/features';
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -315,7 +316,7 @@ export default function AccountScreen() {
             <View className="py-10 items-center">
               <BouncyLoader color={PRIMARY} />
             </View>
-          ) : upNext.length === 0 && openJobs.length === 0 ? (
+          ) : upNext.length === 0 && (!ARTISAN_CORNER || openJobs.length === 0) ? (
             /* A new buyer has nothing in either section. Two headed sections,
                each with a paragraph AND a card repeating that same paragraph,
                made the page read as broken rather than new — so it collapses
@@ -335,6 +336,7 @@ export default function AccountScreen() {
                   onPress={() => router.push("/(tabs)/explore" as Href)}
                   divider
                 />
+                {ARTISAN_CORNER && (
                 <StartRow
                   icon="construct-outline"
                   tint="#f5ead4"
@@ -343,6 +345,7 @@ export default function AccountScreen() {
                   detail="Vetted pros, paid through escrow"
                   onPress={() => router.push("/services" as Href)}
                 />
+                )}
               </View>
             </>
           ) : (
@@ -363,6 +366,8 @@ export default function AccountScreen() {
                 />
               )}
 
+              {ARTISAN_CORNER && (
+              <>
               <SectionLabel className="px-5 pt-5">
                 Service Loop · open jobs
               </SectionLabel>
@@ -380,6 +385,8 @@ export default function AccountScreen() {
                   onPress={() => router.push("/services" as Href)}
                   tone="accent"
                 />
+              )}
+              </>
               )}
             </>
           )}
@@ -418,8 +425,8 @@ function GuestAccountView() {
               You're browsing as a guest
             </Text>
             <Text className="text-[13px] text-ink-3 mt-1 text-center leading-5 max-w-[280px]">
-              Create a free account to save homes, message agents and
-              vendors, and track viewings and offers.
+              Create a free account to save homes, message agents
+              and track viewings and offers.
             </Text>
             <Pressable
               onPress={() => router.push("/intro" as Href)}

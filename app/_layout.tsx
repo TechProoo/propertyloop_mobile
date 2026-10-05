@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { ARTISAN_CORNER } from '@/config/features';
 import { Stack, router, useRootNavigationState, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -228,7 +229,7 @@ function SessionRedirect() {
       // A vendor who hasn't finished the setup wizard yet (no bio on their
       // trade profile) resumes onboarding instead of landing on an empty
       // dashboard; everyone else goes straight to their role's home.
-      if (user.role === 'VENDOR') {
+      if (ARTISAN_CORNER && user.role === 'VENDOR') {
         vendorsService
           .needsOnboarding()
           .then((needs) =>

@@ -1,3 +1,4 @@
+import { ARTISAN_CORNER } from '@/config/features';
 import {
   createContext,
   useCallback,
@@ -179,7 +180,7 @@ export function roleHome(role: AuthUser["role"]): string {
     case "AGENT":
       return "/(agent-tabs)";
     case "VENDOR":
-      return "/(vendor-tabs)";
+      return ARTISAN_CORNER ? "/(vendor-tabs)" : "/(tabs)";
     default:
       return "/(tabs)";
   }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ARTISAN_CORNER } from '@/config/features';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -52,7 +53,7 @@ export default function LoginScreen() {
       // A verified vendor who hasn't finished the setup wizard yet (no bio on
       // their trade profile) resumes onboarding; everyone else goes straight to
       // their role's home.
-      if (user.role === "VENDOR" && (await vendorsService.needsOnboarding())) {
+      if (ARTISAN_CORNER && user.role === "VENDOR" && (await vendorsService.needsOnboarding())) {
         router.replace("/vendor-setup" as Href);
         return;
       }

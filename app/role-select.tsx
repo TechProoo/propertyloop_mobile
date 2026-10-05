@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ARTISAN_CORNER } from '@/config/features';
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, router, type Href } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,7 +31,7 @@ type RoleCard = {
   ctaLabel: string;
 };
 
-const CARDS: RoleCard[] = [
+const ALL_CARDS: RoleCard[] = [
   {
     id: "BUYER",
     badge: "BUYER · RENTER",
@@ -68,6 +69,10 @@ const CARDS: RoleCard[] = [
     ctaLabel: "Continue as service provider",
   },
 ];
+
+const CARDS = ARTISAN_CORNER
+  ? ALL_CARDS
+  : ALL_CARDS.filter((c) => c.id !== 'VENDOR');
 
 const badgeClasses: Record<RoleCard["badgeTone"], string> = {
   emerald: "bg-primary",

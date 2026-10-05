@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ARTISAN_CORNER } from '@/config/features';
 import {
   AppState,
   KeyboardAvoidingView,
@@ -58,7 +59,7 @@ export default function SignupScreen() {
     budget?: string;
   }>();
   const role: Role =
-    params.role === "AGENT" || params.role === "VENDOR" ? params.role : "BUYER";
+    params.role === "AGENT" || (ARTISAN_CORNER && params.role === "VENDOR") ? params.role : "BUYER";
   // areas comes in as "Lekki Phase 1|Ikoyi|Victoria Island" — buyer-preferences
   // joins on "|" because commas appear inside area names like "Maitama (Abuja)".
   const preferredLocations =

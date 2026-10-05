@@ -177,8 +177,8 @@ export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {
         {status !== "authed" ? (
           <Empty
             icon="chatbubbles-outline"
-            title="Sign in to message agents & vendors"
-            body="Create a free account to chat with agents and vendors about a listing or service."
+            title="Sign in to message agents"
+            body="Create a free account to chat with agents about a listing."
             actionLabel="Sign in"
             onAction={() => router.push("/login" as Href)}
           />
@@ -204,7 +204,7 @@ export default function InboxScreen({ vendor = false }: { vendor?: boolean } = {
             body={
               query
                 ? "Try a different name."
-                : "Message an agent or vendor from a listing to start a conversation."
+                : "Message an agent from a listing to start a conversation."
             }
           />
         ) : (
