@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { ARTISAN_CORNER } from '@/config/features';
+import { ARTISAN_CORNER, PRODUCT_MARKETPLACE } from "@/config/features";
 import {
   Linking,
   Pressable,
@@ -12,7 +12,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, type Href } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PLAvatar } from "@/components/brand/PLAvatar";
 import { NotificationBell } from "@/components/brand/NotificationBell";
 import notificationsService from "@/api/services/notifications";
@@ -35,6 +35,11 @@ import { activeFilterCount, useSearchFilters } from "@/lib/searchFilters";
 import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { LocationSheet } from "@/components/LocationSheet";
 import { AdRail, AdSlot } from "@/components/AdSlot";
+import { ProductCard } from "@/components/marketplace/ProductCard";
+import marketplaceService, {
+  type ProductWithStore,
+} from "@/api/services/marketplace";
+import { PRODUCT_MARKETPLACE } from "@/config/features";
 
 // The minimal shape the horizontal rail cards render — satisfied by both a full
 // Listing and a stored RecentListing.
@@ -173,17 +178,16 @@ export default function HomeScreen() {
   }, [location, reloadKey]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+    <View className="flex-1 bg-white">
       <RevealScrollView
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"
       >
-        <Header />
-        <Greeting />
-        {/* Search leads: this is a property app, and the entry cards used to
-            push it off the first screen entirely. */}
-        <SearchRow />
+        {/* Dark hero — mirrors the website: greeting, headline, search and
+            category shortcuts on a deep-green field that bleeds under the
+            status bar. */}
+        <HomeHero mode={mode} onSelectMode={setMode} />
         <QuickActions />
 
         {/* Paid brand rail — every live HOME_BANNER campaign, scrollable.
@@ -241,6 +245,9 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* Shop the marketplace — furniture, materials and décor. */}
+        <MarketplaceStrip />
+
         {/* Curated rails — only render when there's something to show. */}
         {recent.length > 0 && (
           <>
@@ -269,23 +276,54 @@ export default function HomeScreen() {
         )}
       </RevealScrollView>
 
-    </SafeAreaView>
+    </View>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Header — location pill + bell + avatar
+// HomeHero — the dark-green hero: location + bell + avatar, a headline,
+// the search launcher and category shortcuts. Mirrors the website hero and
+// bleeds under the status bar.
 // ─────────────────────────────────────────────────────────────────
-function Header() {
+const HERO_BG = "#0f2e1b";
+
+const HERO_PILLS: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  mode?: Mode;
+  href?: Href;
+}[] = [
+  { label: "Buy", icon: "home-outline", mode: "Buy" },
+  { label: "Rent", icon: "key-outline", mode: "Rent" },
+  { label: "Shortlet", icon: "bed-outline", mode: "Shortlet" },
+  { label: "Find agent", icon: "person-outline", href: "/top-agents" as Href },
+  ...(PRODUCT_MARKETPLACE
+    ? [
+        {
+          label: "Marketplace",
+          icon: "cart-outline" as keyof typeof Ionicons.glyphMap,
+          href: "/marketplace" as Href,
+        },
+      ]
+    : []),
+];
+
+function HomeHero({
+  mode,
+  onSelectMode,
+}: {
+  mode: Mode;
+  onSelectMode: (m: Mode) => void;
+}) {
+  const insets = useSafeAreaInsets();
   const { user, status } = useAuth();
   const location = useSelectedLocation();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const label = labelForLocation(location);
+  const first = titleCase((user?.name ?? "").trim().split(/\s+/)[0] ?? "");
+  const count = activeFilterCount(useSearchFilters());
 
-  // Keep the bell's count fresh each time the home tab regains focus.
-  // Notifications are account-based — skip the call entirely for a guest
-  // rather than firing an authed request that can only 401.
   useFocusEffect(
     useCallback(() => {
       if (status !== "authed") {
@@ -302,26 +340,74 @@ function Header() {
       };
     }, [status]),
   );
+
   return (
-    <View className="px-5 pt-1 flex-row items-center justify-between">
-      <Pressable
-        onPress={() => {
-          tapLight();
-          setPickerOpen(true);
-        }}
-        hitSlop={8}
-        className="flex-row items-center gap-2 active:opacity-70"
-        accessibilityRole="button"
-        accessibilityLabel={`Current location, ${label}. Tap to change.`}
-      >
-        <Ionicons name="location-outline" size={22} color={INK} />
-        <View className="flex-row items-center gap-1.5 bg-ink rounded-full pl-3 pr-2.5 py-1.5">
-          <Text className="text-[12.5px] font-sans-bold text-white">
-            {label}
-          </Text>
-          <Ionicons name="chevron-down" size={13} color="#ffffff" />
+    <View
+      style={{ paddingTop: insets.top + 8, backgroundColor: HERO_BG }}
+      className="rounded-b-[28px] overflow-hidden"
+    >
+      <LinearGradient
+        colors={[HERO_BG, "#123a23"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+      />
+
+      {/* Top row */}
+      <View className="px-5 pt-1 flex-row items-center justify-between">
+        <Pressable
+          onPress={() => {
+            tapLight();
+            setPickerOpen(true);
+          }}
+          hitSlop={8}
+          className="flex-row items-center gap-1.5 active:opacity-70"
+          accessibilityRole="button"
+          accessibilityLabel={`Current location, ${label}. Tap to change.`}
+        >
+          <Ionicons name="location-outline" size={18} color="#ffffff" />
+          <View className="flex-row items-center gap-1.5 bg-white/15 rounded-full pl-3 pr-2.5 py-1.5">
+            <Text className="text-[12.5px] font-sans-bold text-white">{label}</Text>
+            <Ionicons name="chevron-down" size={13} color="#ffffff" />
+          </View>
+        </Pressable>
+
+        <View className="flex-row items-center gap-2.5">
+          <NotificationBell
+            count={unread}
+            onPress={() => {
+              tapLight();
+              router.push("/notifications" as Href);
+            }}
+            size={40}
+            iconColor="#ffffff"
+            bgColor="rgba(255,255,255,0.15)"
+            badgeBorderColor={HERO_BG}
+          />
+          <Pressable
+            onPress={() => {
+              tapLight();
+              const profileHref =
+                user?.role === "AGENT"
+                  ? "/(agent-tabs)/profile"
+                  : user?.role === "VENDOR"
+                    ? "/(vendor-tabs)/profile"
+                    : "/(tabs)/account";
+              router.push(profileHref as Href);
+            }}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel="Open your profile"
+          >
+            <PLAvatar
+              initials={initialsOf(user?.name)}
+              uri={user?.avatarUrl}
+              size={40}
+              tone="primary"
+            />
+          </Pressable>
         </View>
-      </Pressable>
+      </View>
 
       <LocationSheet
         visible={pickerOpen}
@@ -329,149 +415,105 @@ function Header() {
         onClose={() => setPickerOpen(false)}
       />
 
-      <View className="flex-row items-center gap-2.5">
-        <NotificationBell
-          count={unread}
-          onPress={() => {
-            tapLight();
-            router.push("/notifications" as Href);
-          }}
-          size={40}
-          iconColor={INK}
-          bgColor="#f0f0f0"
-          badgeBorderColor="#ffffff"
-        />
+      {/* Headline */}
+      <View className="px-5 pt-5">
+        <Text
+          className="font-serif text-white"
+          style={{ fontSize: 30, lineHeight: 35, letterSpacing: -0.6 }}
+        >
+          {first ? `Hi ${first}, find your` : "Find your next"}
+          {"\n"}
+          <Text className="font-serif-italic" style={{ color: "#a3e635" }}>
+            home — and shop for it.
+          </Text>
+        </Text>
+        <Text className="text-[13px] text-white/60 mt-2 font-sans-medium">
+          Verified listings, trusted agents, and everything for your home.
+        </Text>
+      </View>
+
+      {/* Search launcher */}
+      <View className="px-5 pt-4">
         <Pressable
           onPress={() => {
             tapLight();
-            // The home feed is shared across roles, so send each role to its
-            // own profile tab, not always the buyer account screen.
-            const profileHref =
-              user?.role === "AGENT"
-                ? "/(agent-tabs)/profile"
-                : user?.role === "VENDOR"
-                  ? "/(vendor-tabs)/profile"
-                  : "/(tabs)/account";
-            router.push(profileHref as Href);
+            router.push("/search-results?focus=1" as Href);
           }}
-          hitSlop={6}
-          accessibilityRole="button"
-          accessibilityLabel="Open your profile"
+          className="rounded-2xl pl-4 pr-1.5 flex-row items-center gap-2.5 bg-white active:opacity-95"
+          style={{ height: 52 }}
+          accessibilityRole="search"
+          accessibilityLabel="Search properties by city or area"
         >
-          <PLAvatar
-            initials={initialsOf(user?.name)}
-            uri={user?.avatarUrl}
-            size={40}
-            tone="primary"
-          />
+          <Ionicons name="search" size={19} color={INK_3} />
+          <Text
+            numberOfLines={1}
+            className="flex-1 text-[14px] font-sans-medium"
+            style={{ color: "#5f655f" }}
+          >
+            Search area, city or landmark…
+          </Text>
+          <Pressable
+            onPress={() => {
+              tapLight();
+              router.push("/filters" as Href);
+            }}
+            hitSlop={6}
+            className="w-10 h-10 rounded-xl items-center justify-center"
+            style={{ backgroundColor: count > 0 ? PRIMARY : "#f0f0f0" }}
+            accessibilityRole="button"
+            accessibilityLabel={`Filters${count ? `, ${count} applied` : ""}`}
+          >
+            <Ionicons
+              name="options-outline"
+              size={20}
+              color={count > 0 ? "#ffffff" : INK}
+            />
+          </Pressable>
         </Pressable>
       </View>
-    </View>
-  );
-}
 
-// ─────────────────────────────────────────────────────────────────
-// Greeting — personal, time-aware. Replaces the generic "Discover" head.
-// ─────────────────────────────────────────────────────────────────
-function Greeting() {
-  const { user } = useAuth();
-  const first = titleCase((user?.name ?? "").trim().split(/\s+/)[0] ?? "");
-  const h = new Date().getHours();
-  const tod =
-    h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  return (
-    <View className="px-5 pt-4">
-      <Text
-        className="font-serif text-ink"
-        style={{ fontSize: 26, lineHeight: 30, letterSpacing: -0.5 }}
+      {/* Category pills */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-2 px-5 py-4"
       >
-        {tod}
-        {first ? (
-          <>
-            , <Text className="font-serif-italic">{first}</Text>
-          </>
-        ) : null}
-        .
-      </Text>
-      <Text className="text-[13px] text-ink-2 mt-1 font-sans-medium">
-        Buy, Rent &amp; Hire Trusted Professionals.
-      </Text>
-    </View>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Search + inline filter
-// ─────────────────────────────────────────────────────────────────
-function SearchRow() {
-  const count = activeFilterCount(useSearchFilters());
-  return (
-    <View className="px-5 pt-4">
-      {/* A launcher, not a live input. Typing here used to narrow the grid far
-          below — under the sponsored rail and "Jump back in" — so a search
-          looked like it did nothing. It opens the results screen instead,
-          where results are the only thing on it. */}
-      <Pressable
-        onPress={() => {
-          tapLight();
-          router.push("/search-results?focus=1" as Href);
-        }}
-        className="rounded-2xl pl-4 pr-1.5 flex-row items-center gap-2.5 active:opacity-90"
-        style={{ height: 52, backgroundColor: "#f0f0f0" }}
-        accessibilityRole="search"
-        accessibilityLabel="Search properties by city or area"
-      >
-        <Ionicons name="search" size={19} color={INK_3} />
-        <Text
-          numberOfLines={1}
-          className="flex-1 text-[14.5px] font-sans-medium"
-          style={{ color: "#5f655f" }}
-        >
-          Search properties in Lagos, Abuja, Ibadan…
-        </Text>
-        {/* Always reachable — it used to vanish the moment you typed. Filled and
-            badged while filters are on, so it's clear they're in force. */}
-        <Pressable
-          onPress={() => {
-            tapLight();
-            router.push("/filters" as Href);
-          }}
-          hitSlop={6}
-          className="w-10 h-10 rounded-xl items-center justify-center"
-          style={{ backgroundColor: count > 0 ? INK : "transparent" }}
-          accessibilityRole="button"
-          accessibilityLabel={`Filters${count ? `, ${count} applied` : ""}`}
-        >
-          <Ionicons
-            name="options-outline"
-            size={20}
-            color={count > 0 ? "#ffffff" : INK}
-          />
-          {count > 0 && (
-            <View
-              className="absolute items-center justify-center"
-              style={{
-                top: -4,
-                right: -4,
-                minWidth: 17,
-                height: 17,
-                paddingHorizontal: 3,
-                borderRadius: 9,
-                backgroundColor: PRIMARY,
-                borderWidth: 1.5,
-                borderColor: "#ffffff",
+        {HERO_PILLS.map((p) => {
+          const active = p.mode && p.mode === mode;
+          return (
+            <Pressable
+              key={p.label}
+              onPress={() => {
+                tapSelection();
+                if (p.mode) onSelectMode(p.mode);
+                else if (p.href) router.push(p.href);
               }}
+              className={`flex-row items-center gap-1.5 rounded-full px-3.5 py-2 border ${
+                active
+                  ? "bg-white border-white"
+                  : "bg-white/10 border-white/20"
+              }`}
             >
-              <Text className="text-white font-sans-bold" style={{ fontSize: 9 }}>
-                {count}
+              <Ionicons
+                name={p.icon}
+                size={14}
+                color={active ? HERO_BG : "#ffffff"}
+              />
+              <Text
+                className={`text-[12.5px] font-sans-semibold ${
+                  active ? "text-primary-ink" : "text-white"
+                }`}
+              >
+                {p.label}
               </Text>
-            </View>
-          )}
-        </Pressable>
-      </Pressable>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
+
 function ModeChips({
   active,
   onSelect,
@@ -1066,6 +1108,69 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       >
         <Text className="text-white text-[13px] font-sans-bold">Try again</Text>
       </Pressable>
+    </View>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MarketplaceStrip — a taste of the product marketplace on the home feed,
+// linking through to the full catalogue. Renders nothing until there's stock.
+// ─────────────────────────────────────────────────────────────────
+function MarketplaceStrip() {
+  const [products, setProducts] = useState<ProductWithStore[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!PRODUCT_MARKETPLACE) {
+      setLoaded(true);
+      return;
+    }
+    let on = true;
+    marketplaceService
+      .listProducts({ limit: 8, sort: "newest" })
+      .then((res) => on && setProducts(res.items))
+      .catch(() => {})
+      .finally(() => on && setLoaded(true));
+    return () => {
+      on = false;
+    };
+  }, []);
+
+  if (!PRODUCT_MARKETPLACE || (loaded && products.length === 0)) return null;
+
+  return (
+    <View className="pt-6">
+      <View className="px-5 flex-row items-center justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-[16px] font-sans-bold text-ink tracking-tight">
+            Shop the marketplace
+          </Text>
+          <Text className="text-[12.5px] text-ink-3 mt-0.5">
+            Furniture, materials and décor for your home
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => {
+            tapLight();
+            router.push("/marketplace" as Href);
+          }}
+          hitSlop={8}
+          className="flex-row items-center gap-0.5"
+        >
+          <Text className="text-[13px] font-sans-bold text-primary">See all</Text>
+          <Ionicons name="chevron-forward" size={14} color={PRIMARY} />
+        </Pressable>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-3 px-5 pt-3.5"
+      >
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} width={160} />
+        ))}
+      </ScrollView>
     </View>
   );
 }

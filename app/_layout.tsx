@@ -174,6 +174,12 @@ export default function RootLayout() {
         <Stack.Screen name="vendor-edit-profile" options={{ headerShown: false }} />
         <Stack.Screen name="vendor-reply" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="vendor-blackout" options={{ headerShown: false, presentation: 'modal' }} />
+        {/* Product marketplace (config/features.ts) */}
+        <Stack.Screen name="marketplace/index" options={{ headerShown: false }} />
+        <Stack.Screen name="marketplace/store/[slug]" options={{ headerShown: false }} />
+        <Stack.Screen name="marketplace/product/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="marketplace/cart" options={{ headerShown: false }} />
+        <Stack.Screen name="marketplace/order/[reference]" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />
