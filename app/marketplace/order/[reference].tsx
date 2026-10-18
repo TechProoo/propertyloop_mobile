@@ -74,7 +74,7 @@ export default function OrderConfirmationScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <Ionicons name="alert-circle-outline" size={34} color="#c0392b" />
         <Text className="text-ink text-center mt-3 font-sans-bold">
-          We couldn't load this order
+          We couldn’t load this order
         </Text>
         <PressableScale
           onPress={() => router.replace("/marketplace" as Href)}
@@ -330,7 +330,7 @@ function DisputeModal({
                 </Text>
                 <Text className="text-ink-2 text-[13px] mt-1 leading-5">
                   Order {orderNumber}. Our team reviews every report and refunds
-                  you if it's warranted.
+                  you if it’s warranted.
                 </Text>
               </View>
               <Pressable onPress={onClose} hitSlop={10}>

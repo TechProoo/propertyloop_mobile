@@ -31,8 +31,6 @@ import {
 import { useAuth } from "@/context/auth";
 import marketplaceService from "@/api/services/marketplace";
 
-const PRIMARY = "#1f6f43";
-
 export default function CartScreen() {
   const lines = useCart();
   const subtotal = useCartSubtotal();

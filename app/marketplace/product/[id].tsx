@@ -78,7 +78,7 @@ export default function ProductDetailScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <Ionicons name="cube-outline" size={32} color="#c7ccc8" />
         <Text className="text-ink-2 text-center mt-3">
-          We couldn't open this product.
+          We couldn’t open this product.
         </Text>
         <Pressable onPress={() => router.back()} className="mt-4">
           <Text className="text-primary font-sans-bold">Go back</Text>

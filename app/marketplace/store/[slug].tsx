@@ -64,7 +64,7 @@ export default function StorefrontScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <Ionicons name="storefront-outline" size={32} color="#c7ccc8" />
         <Text className="text-ink-2 text-center mt-3">
-          We couldn't open this store.
+          We couldn’t open this store.
         </Text>
         <Pressable onPress={() => router.back()} className="mt-4">
           <Text className="text-primary font-sans-bold">Go back</Text>
@@ -221,7 +221,7 @@ export default function StorefrontScreen() {
           </Text>
           {store.products.length === 0 ? (
             <Text className="text-ink-3 text-sm py-6 text-center">
-              This store hasn't listed anything yet.
+              This store hasn’t listed anything yet.
             </Text>
           ) : (
             <View className="flex-row flex-wrap justify-between">
