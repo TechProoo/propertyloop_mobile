@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { Stack, router, type Href } from "expo-router";
+import { Stack, router, useLocalSearchParams, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Appear, PressableScale, stagger } from "@/components/anim";
@@ -35,12 +35,18 @@ const CATEGORIES = [
 ];
 
 export default function MarketplaceHubScreen() {
+  const params = useLocalSearchParams<{ category?: string }>();
   const cartCount = useCartCount();
   const [stores, setStores] = useState<StoreTeaser[]>([]);
   const [products, setProducts] = useState<ProductWithStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [category, setCategory] = useState("All");
+  // Open straight into a category when one is deep-linked from the home screen.
+  const [category, setCategory] = useState(
+    params.category && CATEGORIES.some((c) => c.label === params.category)
+      ? params.category
+      : "All",
+  );
   const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {

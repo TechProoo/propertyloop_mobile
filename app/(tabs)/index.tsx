@@ -245,7 +245,7 @@ export default function HomeScreen() {
         )}
 
         {/* Shop the marketplace — furniture, materials and décor. */}
-        <MarketplaceStrip />
+        <MarketplaceSection />
 
         {/* Curated rails — only render when there's something to show. */}
         {recent.length > 0 && (
@@ -1112,10 +1112,24 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// MarketplaceStrip — a taste of the product marketplace on the home feed,
-// linking through to the full catalogue. Renders nothing until there's stock.
+// MarketplaceSection — the shopping half of the home: shop-by-category
+// tiles plus a rail of fresh products, linking into the full catalogue.
+// Renders nothing until there's stock, so the home never shows an empty shop.
 // ─────────────────────────────────────────────────────────────────
-function MarketplaceStrip() {
+const SHOP_CATEGORIES: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  tint: string;
+}[] = [
+  { label: "Furniture", icon: "bed-outline", tint: "#e3efe7" },
+  { label: "Lighting & Decor", icon: "bulb-outline", tint: "#f5ead4" },
+  { label: "Building Materials", icon: "construct-outline", tint: "#e7eef5" },
+  { label: "Smart Home", icon: "home-outline", tint: "#efe7f5" },
+  { label: "Tools & Hardware", icon: "hammer-outline", tint: "#f5e7e7" },
+  { label: "Landscaping", icon: "leaf-outline", tint: "#e7f5ea" },
+];
+
+function MarketplaceSection() {
   const [products, setProducts] = useState<ProductWithStore[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -1126,7 +1140,7 @@ function MarketplaceStrip() {
     }
     let on = true;
     marketplaceService
-      .listProducts({ limit: 8, sort: "newest" })
+      .listProducts({ limit: 10, sort: "newest" })
       .then((res) => on && setProducts(res.items))
       .catch(() => {})
       .finally(() => on && setLoaded(true));
@@ -1138,12 +1152,16 @@ function MarketplaceStrip() {
   if (!PRODUCT_MARKETPLACE || (loaded && products.length === 0)) return null;
 
   return (
-    <View className="pt-6">
+    <View className="pt-7">
+      {/* Header */}
       <View className="px-5 flex-row items-center justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-[16px] font-sans-bold text-ink tracking-tight">
-            Shop the marketplace
-          </Text>
+          <View className="flex-row items-center gap-1.5">
+            <Ionicons name="bag-handle" size={16} color={PRIMARY} />
+            <Text className="text-[17px] font-sans-bold text-ink tracking-tight">
+              Shop the marketplace
+            </Text>
+          </View>
           <Text className="text-[12.5px] text-ink-3 mt-0.5">
             Furniture, materials and décor for your home
           </Text>
@@ -1161,10 +1179,46 @@ function MarketplaceStrip() {
         </Pressable>
       </View>
 
+      {/* Shop by category */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-3 px-5 pt-3.5"
+        contentContainerClassName="gap-2.5 px-5 pt-4"
+      >
+        {SHOP_CATEGORIES.map((c) => (
+          <Pressable
+            key={c.label}
+            onPress={() => {
+              tapLight();
+              router.push({
+                pathname: "/marketplace",
+                params: { category: c.label },
+              } as Href);
+            }}
+            className="items-center"
+            style={{ width: 72 }}
+          >
+            <View
+              className="rounded-2xl items-center justify-center"
+              style={{ width: 60, height: 60, backgroundColor: c.tint }}
+            >
+              <Ionicons name={c.icon} size={24} color="#1a2120" />
+            </View>
+            <Text
+              numberOfLines={2}
+              className="text-ink-2 text-[11px] font-sans-medium text-center mt-1.5 leading-[14px]"
+            >
+              {c.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* Fresh products */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-3 px-5 pt-5"
       >
         {products.map((p) => (
           <ProductCard key={p.id} product={p} width={160} />
