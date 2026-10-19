@@ -16,7 +16,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://propertyloop-backend.up.railway.app/api"
+        "EXPO_PUBLIC_API_URL": "https://propertyloopbackend-production.up.railway.app/api"
       }
     },
     "production": {
@@ -26,7 +26,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://propertyloop-backend.up.railway.app/api"
+        "EXPO_PUBLIC_API_URL": "https://propertyloopbackend-production.up.railway.app/api"
       }
     }
   },
