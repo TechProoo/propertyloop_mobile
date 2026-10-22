@@ -1152,78 +1152,94 @@ function MarketplaceSection() {
   if (!PRODUCT_MARKETPLACE || (loaded && products.length === 0)) return null;
 
   return (
-    <View className="pt-7">
-      {/* Header */}
-      <View className="px-5 flex-row items-center justify-between">
-        <View className="flex-1 pr-3">
-          <View className="flex-row items-center gap-1.5">
-            <Ionicons name="bag-handle" size={16} color={PRIMARY} />
-            <Text className="text-[17px] font-sans-bold text-ink tracking-tight">
-              Shop the marketplace
+    <View className="pt-8">
+      <View className="mx-5 overflow-hidden rounded-[28px] bg-[#0f2e1b]">
+        <LinearGradient
+          colors={["#173f29", "#0f2e1b"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+        <View className="flex-row items-center justify-between gap-3 px-5 pt-5">
+          <View className="flex-1">
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="sparkles" size={13} color="#a3e635" />
+              <Text className="text-[10px] font-sans-bold uppercase tracking-[1.7px] text-[#c6e79d]">
+                The home edit
+              </Text>
+            </View>
+            <Text className="mt-2 font-serif text-[23px] leading-[28px] text-white">
+              Find your place.{" "}
+              <Text className="font-serif-italic text-[#c3e890]">Make it yours.</Text>
+            </Text>
+            <Text className="mt-1.5 max-w-[280px] text-[12px] leading-[18px] text-white/65">
+              Thoughtful pieces for every room, from trusted local stores.
             </Text>
           </View>
-          <Text className="text-[12.5px] text-ink-3 mt-0.5">
-            Furniture, materials and décor for your home
-          </Text>
-        </View>
-        <Pressable
-          onPress={() => {
-            tapLight();
-            router.push("/marketplace" as Href);
-          }}
-          hitSlop={8}
-          className="flex-row items-center gap-0.5"
-        >
-          <Text className="text-[13px] font-sans-bold text-primary">See all</Text>
-          <Ionicons name="chevron-forward" size={14} color={PRIMARY} />
-        </Pressable>
-      </View>
-
-      {/* Shop by category */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-2.5 px-5 pt-4"
-      >
-        {SHOP_CATEGORIES.map((c) => (
           <Pressable
-            key={c.label}
             onPress={() => {
               tapLight();
-              router.push({
-                pathname: "/marketplace",
-                params: { category: c.label },
-              } as Href);
+              router.push("/marketplace" as Href);
             }}
-            className="items-center"
-            style={{ width: 72 }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Explore the marketplace"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white/10"
           >
-            <View
-              className="rounded-2xl items-center justify-center"
-              style={{ width: 60, height: 60, backgroundColor: c.tint }}
-            >
-              <Ionicons name={c.icon} size={24} color="#1a2120" />
-            </View>
-            <Text
-              numberOfLines={2}
-              className="text-ink-2 text-[11px] font-sans-medium text-center mt-1.5 leading-[14px]"
-            >
-              {c.label}
-            </Text>
+            <Ionicons name="arrow-forward" size={18} color="#ffffff" />
           </Pressable>
-        ))}
-      </ScrollView>
+        </View>
 
-      {/* Fresh products */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-3 px-5 pt-5"
-      >
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} width={160} />
-        ))}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-2.5 px-5 pt-5"
+        >
+          {SHOP_CATEGORIES.map((c) => (
+            <Pressable
+              key={c.label}
+              onPress={() => {
+                tapLight();
+                router.push({
+                  pathname: "/marketplace",
+                  params: { category: c.label },
+                } as Href);
+              }}
+              className="items-center"
+              style={{ width: 72 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Shop ${c.label}`}
+            >
+              <View
+                className="items-center justify-center rounded-[20px] border border-white/10"
+                style={{ width: 58, height: 58, backgroundColor: "rgba(255,255,255,0.10)" }}
+              >
+                <Ionicons
+                  name={c.icon}
+                  size={23}
+                  color={c.tint === "#f5ead4" ? "#e5c27b" : "#d9e9d5"}
+                />
+              </View>
+              <Text
+                numberOfLines={2}
+                className="mt-1.5 text-center text-[10px] font-sans-medium leading-[13px] text-white/75"
+              >
+                {c.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="gap-3 px-5 pb-5 pt-5"
+        >
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} width={164} />
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }
