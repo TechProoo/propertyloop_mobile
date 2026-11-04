@@ -39,7 +39,6 @@ import { ProductCard } from "@/components/marketplace/ProductCard";
 import marketplaceService, {
   type ProductWithStore,
 } from "@/api/services/marketplace";
-import { PRODUCT_MARKETPLACE } from "@/config/features";
 
 // The minimal shape the horizontal rail cards render — satisfied by both a full
 // Listing and a stored RecentListing.
