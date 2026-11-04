@@ -1,5 +1,5 @@
 const { isDeepStrictEqual } = require("node:util");
-const { PRODUCTION_API_URL, RETIRED_API_URL } = require("../api/endpoint");
+const { PRODUCTION_API_URL, PREVIOUS_API_URL } = require("../api/endpoint");
 
 // EAS hashes eas.json into the runtime even when only the API URL changed.
 // Such a change does not change the native binary. Other configuration changes
@@ -11,7 +11,7 @@ function onlyApiUrlsDiffer(currentText, historicalText) {
     for (const profile of Object.values(config.build ?? {})) {
       const value = profile.env?.EXPO_PUBLIC_API_URL;
       if (value === undefined) continue;
-      if (![PRODUCTION_API_URL, RETIRED_API_URL].includes(value)) return false;
+      if (![PRODUCTION_API_URL, PREVIOUS_API_URL].includes(value)) return false;
       delete profile.env.EXPO_PUBLIC_API_URL;
     }
   }

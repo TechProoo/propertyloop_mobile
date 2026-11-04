@@ -1,11 +1,13 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { PRODUCTION_API_URL, RETIRED_API_URL, resolveApiBaseUrl } = require("../api/endpoint");
+const { PRODUCTION_API_URL, PREVIOUS_API_URL, resolveApiBaseUrl } = require("../api/endpoint");
 const { validateReleaseUrl, probeAuth } = require("./check-api.cjs");
 
-test("a retired environment override cannot send signup or refresh to the old server", () => {
-  assert.equal(resolveApiBaseUrl(RETIRED_API_URL), PRODUCTION_API_URL);
-  assert.equal(resolveApiBaseUrl(` ${RETIRED_API_URL}/ `), PRODUCTION_API_URL);
+test("a previous environment override uses the restored signup and refresh server", () => {
+  assert.equal(PRODUCTION_API_URL, "https://propertyloopbackend-production.up.railway.app/api");
+  assert.equal(resolveApiBaseUrl(PRODUCTION_API_URL), PRODUCTION_API_URL);
+  assert.equal(resolveApiBaseUrl(PREVIOUS_API_URL), PRODUCTION_API_URL);
+  assert.equal(resolveApiBaseUrl(` ${PREVIOUS_API_URL}/ `), PRODUCTION_API_URL);
   assert.equal(resolveApiBaseUrl(undefined), PRODUCTION_API_URL);
   assert.equal(resolveApiBaseUrl("  "), PRODUCTION_API_URL);
 });
@@ -14,8 +16,8 @@ test("development endpoints are preserved", () => {
   assert.equal(resolveApiBaseUrl("http://localhost:3000/api/"), "http://localhost:3000/api");
 });
 
-test("release validation rejects retired, missing, and unverified addresses", () => {
-  for (const value of [undefined, "", RETIRED_API_URL, "http://localhost:3000/api", "https://unverified.example/api"]) {
+test("release validation rejects previous, missing, and unverified addresses", () => {
+  for (const value of [undefined, "", PREVIOUS_API_URL, "http://localhost:3000/api", "https://unverified.example/api"]) {
     assert.throws(() => validateReleaseUrl(value, "test"));
   }
   assert.equal(validateReleaseUrl(PRODUCTION_API_URL, "test"), PRODUCTION_API_URL);

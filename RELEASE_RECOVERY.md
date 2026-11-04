@@ -1,65 +1,27 @@
-# Signup recovery and release procedure
+# API address and release checks
 
-## Confirmed on 4 November 2026
+## Production address
 
-- `https://propertyloopbackend-production.up.railway.app/api` returns Railway's
-  HTTP 404 `Application not found` response.
-- `https://propertyloop-backend.up.railway.app/api/auth/me` returns the expected
-  HTTP 401 JSON response when called without a session.
-- The latest finished production iOS artifact in EAS is version 1.0.4, build 13,
-  build ID `6e9ac021-35e6-4352-9393-604d7f03c850`.
-- Its embedded `main.jsbundle` contains the retired hostname and does not contain
-  the current hostname. It was built before the EAS profiles were corrected.
-  A compatible OTA can repair the downloaded JavaScript, but the embedded bundle
-  remains broken on a fresh install until that update downloads and runs.
+The Railway hostname was restored on 4 November 2026. All active PropertyLoop
+clients and build profiles use:
 
-The current source resolves the retired environment value to the live endpoint
-for REST, refresh, and chat. This source change does not alter already installed
-bundles until it is delivered in a compatible OTA or a new store binary.
-
-## Restore existing installations
-
-The selected recovery is to keep the original hostname available, while also
-preserving the current hostname for clients already using it. A deployment-ready
-forwarding service is in
-[the backend compatibility proxy](https://github.com/TechProoo/propertyloop_backend/tree/main/compat-proxy).
-Railway permits one generated hostname per service, so do not rename the live
-API's current hostname away. Give the separate forwarding service the old name.
-
-In Railway, inspect the original service/environment and its public networking
-settings. If the old generated hostname can be restored, attach it to the live
-API service and verify both addresses. Preserve the `/api` paths and forward
-requests directly, including POST bodies, authorization, and WebSocket upgrades.
-A normal website redirect is insufficient as a compatibility guarantee.
-
-Do not delete or rename the current working hostname during this repair. If
-Railway cannot restore the original generated hostname, ask Railway support
-whether that hostname can be recovered. We do not control its DNS zone.
-
-Without recovery of that address, clients can only be repaired by a compatible
-Expo update or a store update. This repository's OTA script checks the latest
-finished production build per platform; it does not cover every older runtime.
-For each older runtime, use its matching native dependency/configuration tree,
-apply only the endpoint fix, verify its fingerprint, and publish to its mapped
-channel. Do not override a runtime hash to make incompatible code appear valid.
-
-## Store builds
-
-Once the original hostname is restored, build 13's embedded address can reach
-the backend again. A replacement binary is not required solely for this address
-issue if both hostnames are confirmed working. Keep the original URL supported
-as requested; coordinate any future release-profile change with the API check.
-
-After restoration, verify both endpoints:
-
-```sh
-node scripts/check-api.cjs --all-hosts
+```text
+https://propertyloopbackend-production.up.railway.app/api
 ```
 
-If restoration is unavailable and a new binary is needed, use the following
-procedure.
+The restored `/api/auth/me` endpoint was verified to return the expected HTTP
+401 JSON response without credentials. The mobile endpoint resolver also maps
+the hostname used during the temporary migration back to this production URL,
+so stale build environment overrides do not send requests to the wrong server.
+REST requests, token refresh, and chat share this resolver.
 
-Before each build, in this directory:
+Keep this hostname available for existing installations. iOS 1.0.4 build 13
+already embeds it, so restoring the backend repairs that embedded address
+without replacing the binary solely for this issue.
+
+## Before a build or Expo update
+
+Run these commands in the mobile directory:
 
 ```sh
 node --test scripts/check-api.test.cjs scripts/ota-compat.test.cjs
@@ -67,50 +29,46 @@ node scripts/check-api.cjs
 npx tsc --noEmit
 ```
 
-Then build using the production profile:
+The API check validates the production and preview build profiles, the bundle
+environment, and the live authentication route. A root-page HTTP 200 alone
+does not prove that authentication is routed correctly. The GitHub workflow
+runs these checks on pushes, pull requests, manual runs, and every six hours.
+
+For new store binaries:
 
 ```sh
 eas build --profile production --platform ios
 eas build --profile production --platform android
 ```
 
-The OTA recovery script can temporarily restore a historical `eas.json` when
-only the known API URL values differ. It requires a full native fingerprint
-match afterwards, keeps the live URL in the exported environment, and restores
-the configuration files afterwards. Other EAS changes are not eligible.
+The profiles auto-increment build numbers. Confirm that each new build number
+exceeds the highest uploaded to its store. Test signup, email verification,
+login, refresh, uploads, and chat in TestFlight or Play internal testing before
+promoting a release. A routing check is not a full account-creation test.
 
-The current profiles use auto-increment. Confirm the resulting iOS build number
-is above 13 and the Android version code exceeds the highest already uploaded
-to Play Console. Select the corrected iOS binary in App Store Connect; the
-already uploaded build 13 cannot be modified in place. If review has begun,
-follow App Store Connect's process to replace the selected build.
+## Existing installed Expo updates
 
-Test signup, email verification, login, refresh after reopening, and chat on
-TestFlight and Play internal testing before promoting the releases. A live
-authentication probe verifies routing, not the full account creation journey.
+Changing source or build environment values does not change JavaScript that
+has already been installed. Any deployed Expo update containing the temporary
+hostname needs a compatible address correction, or that hostname must remain
+available through a forwarding service.
 
-`node scripts/ota.js --dry-run "Endpoint recovery"` now runs the API check before
-its runtime checks. Publish only from a reviewed tree: an OTA exports uncommitted
-JavaScript too. Never assume an update for the newest build reaches older ones.
+Use the latest deployed source for each runtime so the repair preserves later
+app changes. Do not rebuild an old native build's original JavaScript over a
+newer deployed update. Require the complete native fingerprint to match before
+publishing; do not force a runtime hash.
 
-## Keep the address independent of the hosting service
+```sh
+node scripts/ota.js --dry-run "Restore the production API address"
+node scripts/ota.js "Restore the production API address"
+```
 
-Configure `api.propertyloop.ng` as a custom domain on the live Railway service,
-add Railway's requested DNS records at the domain provider, and wait for valid
-HTTPS. Check `/api/auth/me`, signup, uploads, and `/chat` through it before
-changing `PRODUCTION_API_URL` in `api/endpoint.js`, the EAS profiles, and the
-production Expo environment together. That subdomain was not resolving during
-this investigation and must not be shipped yet.
+The script targets the latest finished production build on each platform. It
+does not claim coverage for every older runtime. It refuses a publish from a
+dirty checkout and restores any temporary metadata edits after runtime checks.
+An API-URL-only historical EAS difference can be restored for fingerprint
+comparison without changing the live URL used by the exported JavaScript.
 
-Keep every previously shipped backend hostname serving compatible API traffic
-while supported installations depend on it. Host migrations should change the
-custom domain's routing, not the address installed on users' phones.
-
-The GitHub workflow checks release configuration and the live authentication
-route on pushes, pull requests, manual runs, and every six hours. Make its check
-required in branch protection if releases must be blocked when it fails. Direct
-`eas build` commands still require the preflight above.
-
-Add a remote minimum-version policy after the corrected releases are available
-in both stores. It complements this routing repair; it cannot reach a client
-whose backend hostname is already broken.
+An optional forwarding service for clients still using the temporary hostname
+is documented in the backend repository's `compat-proxy` directory. It is not
+required for clients already using the restored production address.

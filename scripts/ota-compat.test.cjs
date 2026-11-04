@@ -1,18 +1,18 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { onlyApiUrlsDiffer, alignLineEndings } = require("./ota-compat.cjs");
-const { PRODUCTION_API_URL, RETIRED_API_URL } = require("../api/endpoint");
+const { PRODUCTION_API_URL, PREVIOUS_API_URL } = require("../api/endpoint");
 const config = (url, channel = "production", extraEnv = {}) => JSON.stringify({
   build: { production: { channel, env: { EXPO_PUBLIC_API_URL: url, ...extraEnv } } },
 });
 
 test("a historical EAS API URL can be restored for fingerprint comparison", () => {
-  assert.equal(onlyApiUrlsDiffer(config(PRODUCTION_API_URL), config(RETIRED_API_URL)), true);
+  assert.equal(onlyApiUrlsDiffer(config(PRODUCTION_API_URL), config(PREVIOUS_API_URL)), true);
 });
 
 test("native configuration, channels, and unrelated environment changes cannot be hidden", () => {
-  assert.equal(onlyApiUrlsDiffer(config(PRODUCTION_API_URL), config(RETIRED_API_URL, "preview")), false);
-  assert.equal(onlyApiUrlsDiffer(config(PRODUCTION_API_URL), config(RETIRED_API_URL, "production", { NATIVE_VARIANT: "other" })), false);
+  assert.equal(onlyApiUrlsDiffer(config(PRODUCTION_API_URL), config(PREVIOUS_API_URL, "preview")), false);
+  assert.equal(onlyApiUrlsDiffer(config(PRODUCTION_API_URL), config(PREVIOUS_API_URL, "production", { NATIVE_VARIANT: "other" })), false);
   assert.equal(onlyApiUrlsDiffer(config(PRODUCTION_API_URL), config("https://unknown.example/api")), false);
 });
 

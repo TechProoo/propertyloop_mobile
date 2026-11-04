@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 const fs = require("node:fs");
 const path = require("node:path");
-const { PRODUCTION_API_URL, RETIRED_API_URL } = require("../api/endpoint");
+const { PRODUCTION_API_URL, PREVIOUS_API_URL } = require("../api/endpoint");
 
 function validateReleaseUrl(value, label) {
   if (typeof value !== "string" || !value.trim()) {
     throw new Error(`${label}: EXPO_PUBLIC_API_URL is missing`);
   }
   const url = value.trim().replace(/\/+$/, "");
-  if (url === RETIRED_API_URL) {
-    throw new Error(`${label}: the retired API address must not ship again`);
+  if (url === PREVIOUS_API_URL) {
+    throw new Error(`${label}: use the restored production API address`);
   }
   // Change this deliberately after a replacement hostname is live and tested.
   if (url !== PRODUCTION_API_URL) {
@@ -42,7 +42,7 @@ async function main() {
   require("@expo/env").loadProjectEnv(root, { mode: "production", silent: true });
   validateReleaseUrl(process.env.EXPO_PUBLIC_API_URL ?? PRODUCTION_API_URL, "Bundle environment");
   await probeAuth(PRODUCTION_API_URL);
-  if (process.argv.includes("--all-hosts")) await probeAuth(RETIRED_API_URL);
+  if (process.argv.includes("--all-hosts")) await probeAuth(PREVIOUS_API_URL);
   console.log("API release check passed: build profiles, bundle environment, and live authentication route.");
 }
 
