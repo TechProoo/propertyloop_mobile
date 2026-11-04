@@ -5,7 +5,6 @@ import { tokenStore } from "./tokenStore";
 // lives on the `/chat` namespace and authenticates with the access token
 // (handshake query `token`, see ChatGateway.extractToken).
 const baseURL =
-  process.env.EXPO_PUBLIC_API_URL ??
   "https://propertyloop-backend.up.railway.app/api";
 const origin = baseURL.replace(/\/api\/?$/, "");
 

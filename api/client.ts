@@ -4,7 +4,6 @@ import { tokenStore } from "./tokenStore";
 // EXPO_PUBLIC_* env vars are baked into the JS bundle at build time and
 // readable on the device. Set EXPO_PUBLIC_API_URL in .env at project root.
 const baseURL =
-  process.env.EXPO_PUBLIC_API_URL ??
   "https://propertyloop-backend.up.railway.app/api";
 
 const api = axios.create({
