@@ -1,12 +1,11 @@
 import { io, type Socket } from "socket.io-client";
 import { tokenStore } from "./tokenStore";
+import { resolveApiBaseUrl } from "./endpoint";
 
 // Same origin as the REST API, minus the trailing /api path. The chat gateway
 // lives on the `/chat` namespace and authenticates with the access token
 // (handshake query `token`, see ChatGateway.extractToken).
-const baseURL =
-  process.env.EXPO_PUBLIC_API_URL ??
-  "https://propertyloop-backend.up.railway.app/api";
+const baseURL = resolveApiBaseUrl(process.env.EXPO_PUBLIC_API_URL);
 const origin = baseURL.replace(/\/api\/?$/, "");
 
 let socket: Socket | null = null;
