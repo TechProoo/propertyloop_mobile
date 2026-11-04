@@ -18,4 +18,8 @@ function onlyApiUrlsDiffer(currentText, historicalText) {
   return isDeepStrictEqual(current, historical);
 }
 
-module.exports = { onlyApiUrlsDiffer };
+function alignLineEndings(text, reference) {
+  return text.replace(/\r?\n/g, reference.includes("\r\n") ? "\r\n" : "\n");
+}
+
+module.exports = { onlyApiUrlsDiffer, alignLineEndings };

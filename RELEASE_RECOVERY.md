@@ -19,6 +19,13 @@ bundles until it is delivered in a compatible OTA or a new store binary.
 
 ## Restore existing installations
 
+The selected recovery is to keep the original hostname available, while also
+preserving the current hostname for clients already using it. A deployment-ready
+forwarding service is in
+[the backend compatibility proxy](https://github.com/TechProoo/propertyloop_backend/tree/main/compat-proxy).
+Railway permits one generated hostname per service, so do not rename the live
+API's current hostname away. Give the separate forwarding service the old name.
+
 In Railway, inspect the original service/environment and its public networking
 settings. If the old generated hostname can be restored, attach it to the live
 API service and verify both addresses. Preserve the `/api` paths and forward
@@ -36,7 +43,21 @@ For each older runtime, use its matching native dependency/configuration tree,
 apply only the endpoint fix, verify its fingerprint, and publish to its mapped
 channel. Do not override a runtime hash to make incompatible code appear valid.
 
-## Replace the submitted binary and build Android
+## Store builds
+
+Once the original hostname is restored, build 13's embedded address can reach
+the backend again. A replacement binary is not required solely for this address
+issue if both hostnames are confirmed working. Keep the original URL supported
+as requested; coordinate any future release-profile change with the API check.
+
+After restoration, verify both endpoints:
+
+```sh
+node scripts/check-api.cjs --all-hosts
+```
+
+If restoration is unavailable and a new binary is needed, use the following
+procedure.
 
 Before each build, in this directory:
 

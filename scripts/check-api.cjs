@@ -42,6 +42,7 @@ async function main() {
   require("@expo/env").loadProjectEnv(root, { mode: "production", silent: true });
   validateReleaseUrl(process.env.EXPO_PUBLIC_API_URL ?? PRODUCTION_API_URL, "Bundle environment");
   await probeAuth(PRODUCTION_API_URL);
+  if (process.argv.includes("--all-hosts")) await probeAuth(RETIRED_API_URL);
   console.log("API release check passed: build profiles, bundle environment, and live authentication route.");
 }
 

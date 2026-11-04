@@ -46,7 +46,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
-const { onlyApiUrlsDiffer } = require("./ota-compat.cjs");
+const { onlyApiUrlsDiffer, alignLineEndings } = require("./ota-compat.cjs");
 const { PRODUCTION_API_URL } = require("../api/endpoint");
 
 // Resolved from the manifest rather than __dirname so the script works from
@@ -238,7 +238,7 @@ function shipPlatform(platform, message, dryRun) {
     if (/^[a-f0-9]{40}$/.test(build.gitCommitHash ?? "")) {
       const previous = run("git", ["show", `${build.gitCommitHash}:eas.json`], { capture: true });
       if (previous.status === 0 && onlyApiUrlsDiffer(originalEas, previous.stdout)) {
-        fs.writeFileSync(easJsonPath, previous.stdout);
+        fs.writeFileSync(easJsonPath, alignLineEndings(previous.stdout, originalEas));
         if (fingerprint(platform) === build.runtimeVersion) {
           console.log("  native fingerprint matches with the build's API URL metadata.");
           if (!dryRun) publish(platform, message);
@@ -307,6 +307,13 @@ function main() {
   console.log(
     `${dryRun ? "Checking" : "Publishing"} "${message}" to branch ${BRANCH}`,
   );
+
+  if (!dryRun) {
+    const status = run("git", ["status", "--porcelain"], { capture: true });
+    if (status.status !== 0 || status.stdout.trim()) {
+      throw new Error("Commit the intended app changes before publishing an OTA update.");
+    }
+  }
 
   // Refuse a publish if an environment override points signup at a dead host.
   const apiCheck = run(process.execPath, [path.join(root, "scripts/check-api.cjs")]);
