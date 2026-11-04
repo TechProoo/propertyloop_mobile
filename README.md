@@ -37,6 +37,9 @@ This command will move the starter code to the **app-example** directory and cre
 
 ## Shipping updates over the air
 
+For backend address recovery, store builds, and the live API preflight, follow
+[the release recovery procedure](./RELEASE_RECOVERY.md).
+
 ```bash
 node scripts/ota.js --dry-run "What changed"   # verify, publish nothing
 node scripts/ota.js "What changed"             # publish to both platforms

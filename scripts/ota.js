@@ -46,11 +46,14 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { onlyApiUrlsDiffer } = require("./ota-compat.cjs");
+const { PRODUCTION_API_URL } = require("../api/endpoint");
 
 // Resolved from the manifest rather than __dirname so the script works from
 // any working directory.
 const root = path.dirname(require.resolve("../package.json"));
 const appJsonPath = path.join(root, "app.json");
+const easJsonPath = path.join(root, "eas.json");
 
 /** The branch the production channel is mapped to. Not "preview". */
 const BRANCH = "production";
@@ -227,7 +230,22 @@ function shipPlatform(platform, message, dryRun) {
 
   console.log("  mismatch — installed builds would ignore this update.");
   const original = readAppJson();
+  const originalEas = fs.readFileSync(easJsonPath, "utf8");
   try {
+    // The backend URL correction changed the EAS file hash after build 13.
+    // Restore only an API-URL-only historical difference, then require the
+    // complete fingerprint to match. The exported JS still uses the live URL.
+    if (/^[a-f0-9]{40}$/.test(build.gitCommitHash ?? "")) {
+      const previous = run("git", ["show", `${build.gitCommitHash}:eas.json`], { capture: true });
+      if (previous.status === 0 && onlyApiUrlsDiffer(originalEas, previous.stdout)) {
+        fs.writeFileSync(easJsonPath, previous.stdout);
+        if (fingerprint(platform) === build.runtimeVersion) {
+          console.log("  native fingerprint matches with the build's API URL metadata.");
+          if (!dryRun) publish(platform, message);
+          return true;
+        }
+      }
+    }
     const candidate = findMatchingVersionCode(platform, build.runtimeVersion, original);
     if (candidate === null) {
       console.log(
@@ -246,8 +264,12 @@ function shipPlatform(platform, message, dryRun) {
   } finally {
     // Restore whatever happened above, including on a failed publish.
     writeAppJson(original);
+    fs.writeFileSync(easJsonPath, originalEas);
     if (readAppJson() !== original) {
       throw new Error("app.json could not be restored — check it before committing");
+    }
+    if (fs.readFileSync(easJsonPath, "utf8") !== originalEas) {
+      throw new Error("eas.json could not be restored — check it before committing");
     }
   }
 }
@@ -286,11 +308,16 @@ function main() {
     `${dryRun ? "Checking" : "Publishing"} "${message}" to branch ${BRANCH}`,
   );
 
+  // Refuse a publish if an environment override points signup at a dead host.
+  const apiCheck = run(process.execPath, [path.join(root, "scripts/check-api.cjs")]);
+  if (apiCheck.status !== 0) throw new Error("API release check failed");
+  process.env.EXPO_PUBLIC_API_URL = PRODUCTION_API_URL;
+
   const shipped = platforms.filter((p) => shipPlatform(p, message, dryRun));
   const skipped = platforms.filter((p) => !shipped.includes(p));
 
   console.log(
-    `\n${dryRun ? "Would reach" : "Reached"}: ${shipped.join(", ") || "nothing"}` +
+    `\n${dryRun ? "Compatible with latest production build" : "Published for latest production build"}: ${shipped.join(", ") || "nothing"}` +
       (skipped.length ? `\nNeeds a new build: ${skipped.join(", ")}` : ""),
   );
   if (skipped.length) process.exitCode = 1;
