@@ -189,6 +189,10 @@ export default function HomeScreen() {
         <HomeHero mode={mode} onSelectMode={setMode} />
         <QuickActions />
 
+        {/* Put the shopping experience in the first home-feed section so it is
+            visible before the long property listing grid. */}
+        <MarketplaceSection />
+
         {/* Paid brand rail — every live HOME_BANNER campaign, scrollable.
             Was a single banner that picked one at random and dropped the
             rest; renders nothing (header included) when none are live. */}
@@ -244,9 +248,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Shop the marketplace — furniture, materials and décor. */}
-        <MarketplaceSection />
-
         {/* Curated rails — only render when there's something to show. */}
         {recent.length > 0 && (
           <>
@@ -296,15 +297,6 @@ const HERO_PILLS: {
   { label: "Rent", icon: "key-outline", mode: "Rent" },
   { label: "Shortlet", icon: "bed-outline", mode: "Shortlet" },
   { label: "Find agent", icon: "person-outline", href: "/top-agents" as Href },
-  ...(PRODUCT_MARKETPLACE
-    ? [
-        {
-          label: "Marketplace",
-          icon: "cart-outline" as keyof typeof Ionicons.glyphMap,
-          href: "/marketplace" as Href,
-        },
-      ]
-    : []),
 ];
 
 function HomeHero({
@@ -470,6 +462,33 @@ function HomeHero({
           </Pressable>
         </Pressable>
       </View>
+
+      {PRODUCT_MARKETPLACE && (
+        <Pressable
+          onPress={() => {
+            tapLight();
+            router.push("/marketplace" as Href);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Shop furniture, decor and home essentials"
+          className="mx-5 mt-3 flex-row items-center gap-3 rounded-2xl bg-[#f6f4ee] px-3.5 py-3"
+        >
+          <View className="h-10 w-10 items-center justify-center rounded-[14px] bg-[#e1ebd9]">
+            <Ionicons name="storefront-outline" size={21} color="#1f6f43" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[12px] font-sans-bold text-[#1c3222]">
+              Make your new place yours
+            </Text>
+            <Text className="mt-0.5 text-[10.5px] text-[#68756a]">
+              Furniture, lighting, decor & more
+            </Text>
+          </View>
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-[#1f6f43]">
+            <Ionicons name="arrow-forward" size={15} color="#ffffff" />
+          </View>
+        </Pressable>
+      )}
 
       {/* Category pills */}
       <ScrollView
@@ -1114,7 +1133,6 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 // ─────────────────────────────────────────────────────────────────
 // MarketplaceSection — the shopping half of the home: shop-by-category
 // tiles plus a rail of fresh products, linking into the full catalogue.
-// Renders nothing until there's stock, so the home never shows an empty shop.
 // ─────────────────────────────────────────────────────────────────
 const SHOP_CATEGORIES: {
   label: string;
@@ -1149,97 +1167,181 @@ function MarketplaceSection() {
     };
   }, []);
 
-  if (!PRODUCT_MARKETPLACE || (loaded && products.length === 0)) return null;
+  if (!PRODUCT_MARKETPLACE) return null;
+
+  const featured = products[0];
 
   return (
-    <View className="pt-8">
-      <View className="mx-5 overflow-hidden rounded-[28px] bg-[#0f2e1b]">
-        <LinearGradient
-          colors={["#173f29", "#0f2e1b"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
-        />
-        <View className="flex-row items-center justify-between gap-3 px-5 pt-5">
-          <View className="flex-1">
-            <View className="flex-row items-center gap-1.5">
-              <Ionicons name="sparkles" size={13} color="#a3e635" />
-              <Text className="text-[10px] font-sans-bold uppercase tracking-[1.7px] text-[#c6e79d]">
-                The home edit
-              </Text>
-            </View>
-            <Text className="mt-2 font-serif text-[23px] leading-[28px] text-white">
-              Find your place.{" "}
-              <Text className="font-serif-italic text-[#c3e890]">Make it yours.</Text>
-            </Text>
-            <Text className="mt-1.5 max-w-[280px] text-[12px] leading-[18px] text-white/65">
-              Thoughtful pieces for every room, from trusted local stores.
-            </Text>
+    <View className="mt-7 bg-[#f6f4ee] pb-5 pt-6">
+      <View className="px-5">
+        <View className="flex-row items-center gap-2">
+          <View className="h-7 w-7 items-center justify-center rounded-full bg-[#e2eddc]">
+            <Ionicons name="storefront-outline" size={15} color="#1f6f43" />
           </View>
+          <Text className="text-[10px] font-sans-bold uppercase tracking-[1.6px] text-[#57705c]">
+            PropertyLoop Marketplace
+          </Text>
+        </View>
+        <View className="mt-2.5 flex-row items-end justify-between gap-3">
+          <Text className="flex-1 font-serif text-[27px] leading-[31px] text-[#17251b]">
+            Make yourself{"\n"}
+            <Text className="font-serif-italic text-[#38764b]">at home.</Text>
+          </Text>
           <Pressable
             onPress={() => {
               tapLight();
               router.push("/marketplace" as Href);
             }}
-            hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Explore the marketplace"
-            className="h-10 w-10 items-center justify-center rounded-full bg-white/10"
+            accessibilityLabel="Shop the marketplace"
+            className="mb-1 flex-row items-center gap-1.5 rounded-full bg-[#1f6f43] px-3.5 py-2.5"
           >
-            <Ionicons name="arrow-forward" size={18} color="#ffffff" />
+            <Text className="text-[11px] font-sans-bold text-white">Shop all</Text>
+            <Ionicons name="arrow-forward" size={14} color="#ffffff" />
           </Pressable>
         </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2.5 px-5 pt-5"
-        >
-          {SHOP_CATEGORIES.map((c) => (
-            <Pressable
-              key={c.label}
-              onPress={() => {
-                tapLight();
-                router.push({
-                  pathname: "/marketplace",
-                  params: { category: c.label },
-                } as Href);
-              }}
-              className="items-center"
-              style={{ width: 72 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Shop ${c.label}`}
-            >
-              <View
-                className="items-center justify-center rounded-[20px] border border-white/10"
-                style={{ width: 58, height: 58, backgroundColor: "rgba(255,255,255,0.10)" }}
-              >
-                <Ionicons
-                  name={c.icon}
-                  size={23}
-                  color={c.tint === "#f5ead4" ? "#e5c27b" : "#d9e9d5"}
-                />
-              </View>
-              <Text
-                numberOfLines={2}
-                className="mt-1.5 text-center text-[10px] font-sans-medium leading-[13px] text-white/75"
-              >
-                {c.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-3 px-5 pb-5 pt-5"
-        >
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} width={164} />
-          ))}
-        </ScrollView>
+        <Text className="mt-1.5 text-[12px] leading-[18px] text-[#69736a]">
+          Furniture, finishes and little details for every room.
+        </Text>
       </View>
+
+      <Pressable
+        onPress={() => {
+          tapLight();
+          router.push("/marketplace" as Href);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={
+          featured ? `Shop ${featured.name}` : "Explore home and living products"
+        }
+        className="mx-5 mt-4 h-[184px] overflow-hidden rounded-[26px] bg-[#163a24]"
+      >
+        {featured ? (
+          <Image
+            source={{ uri: featured.image }}
+            style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "59%" }}
+            contentFit="cover"
+            transition={250}
+          />
+        ) : (
+          <View className="absolute -right-3 -top-4 h-[208px] w-[208px] items-center justify-center rounded-full border border-white/10 bg-[#244c32]">
+            <View className="absolute right-7 top-9 h-[108px] w-[108px] items-center justify-center rounded-[28px] bg-[#e3e8d6] shadow-lg">
+              <Ionicons name="bed-outline" size={47} color="#315c3e" />
+            </View>
+            <View className="absolute bottom-7 left-1 h-[68px] w-[68px] items-center justify-center rounded-[21px] border border-white/15 bg-[#c3e890]">
+              <Ionicons name="bulb-outline" size={30} color="#315c3e" />
+            </View>
+            <View className="absolute bottom-9 right-3 h-11 w-11 items-center justify-center rounded-2xl bg-[#e8c980]">
+              <Ionicons name="leaf-outline" size={21} color="#315c3e" />
+            </View>
+          </View>
+        )}
+        <LinearGradient
+          colors={["#163a24", "#163a24", "rgba(22,58,36,0.08)"]}
+          locations={[0, 0.48, 1]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}
+        />
+        <View className="h-full w-[60%] justify-center px-4 py-4">
+          <View className="self-start rounded-full bg-white/15 px-2.5 py-1">
+            <Text className="text-[9px] font-sans-bold uppercase tracking-[1.2px] text-[#d6e9bd]">
+              The home edit
+            </Text>
+          </View>
+          <Text className="mt-2.5 font-serif text-[21px] leading-[25px] text-white">
+            Good spaces{"\n"}start with details.
+          </Text>
+          <View className="mt-3 flex-row items-center gap-1.5">
+            <Text className="text-[11px] font-sans-semibold text-[#c3e890]">
+              {featured ? "Shop featured find" : "Explore the collection"}
+            </Text>
+            <Ionicons name="arrow-forward" size={13} color="#c3e890" />
+          </View>
+        </View>
+      </Pressable>
+
+      <View className="mt-5 flex-row items-center justify-between px-5">
+        <Text className="font-sans-bold text-[14px] text-[#202b23]">Shop by category</Text>
+        <Pressable
+          onPress={() => router.push("/marketplace" as Href)}
+          accessibilityRole="button"
+          className="flex-row items-center gap-1"
+        >
+          <Text className="text-[11px] font-sans-semibold text-[#38764b]">View all</Text>
+          <Ionicons name="chevron-forward" size={13} color="#38764b" />
+        </Pressable>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-2.5 px-5 pt-3"
+      >
+        {SHOP_CATEGORIES.map((c) => (
+          <Pressable
+            key={c.label}
+            onPress={() => {
+              tapLight();
+              router.push({ pathname: "/marketplace", params: { category: c.label } } as Href);
+            }}
+            className="w-[86px] items-center rounded-[20px] border border-[#e9e6dc] bg-white px-2 pb-2.5 pt-2"
+            accessibilityRole="button"
+            accessibilityLabel={`Shop ${c.label}`}
+          >
+            <View
+              className="h-[48px] w-[48px] items-center justify-center rounded-[16px]"
+              style={{ backgroundColor: c.tint }}
+            >
+              <Ionicons name={c.icon} size={22} color="#315c3e" />
+            </View>
+            <Text
+              numberOfLines={2}
+              className="mt-2 h-[28px] text-center text-[10px] font-sans-semibold leading-[13px] text-[#475249]"
+            >
+              {c.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {products.length > 0 && (
+        <>
+          <View className="mt-5 flex-row items-center justify-between px-5">
+            <Text className="font-sans-bold text-[14px] text-[#202b23]">Fresh finds</Text>
+            <Pressable
+              onPress={() => router.push("/marketplace" as Href)}
+              className="flex-row items-center gap-1"
+              accessibilityRole="button"
+            >
+              <Text className="text-[11px] font-sans-semibold text-[#38764b]">Shop all</Text>
+              <Ionicons name="chevron-forward" size={13} color="#38764b" />
+            </Pressable>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-3 px-5 pt-3"
+          >
+            {products.slice(0, 6).map((p) => (
+              <ProductCard key={p.id} product={p} width={164} />
+            ))}
+          </ScrollView>
+        </>
+      )}
+      {loaded && products.length === 0 && (
+        <Pressable
+          onPress={() => router.push("/marketplace" as Href)}
+          className="mx-5 mt-4 flex-row items-center justify-between rounded-2xl border border-[#e6e2d7] bg-white px-4 py-3"
+          accessibilityRole="button"
+          accessibilityLabel="Browse all marketplace categories"
+        >
+          <Text className="flex-1 text-[12px] leading-[18px] text-[#69736a]">
+            Find trusted local stores and products for your home.
+          </Text>
+          <Ionicons name="arrow-forward" size={16} color="#38764b" />
+        </Pressable>
+      )}
     </View>
   );
 }
