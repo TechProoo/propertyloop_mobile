@@ -1,0 +1,11 @@
+# Exclude local environment configuration from source archives and datasets.
+.env export-ignore
+.env.* export-ignore
+**/.env export-ignore
+**/.env.* export-ignore
+credentials.json export-ignore
+*.jks export-ignore
+*.p12 export-ignore
+*.p8 export-ignore
+*.pem export-ignore
+*.key export-ignore
