@@ -128,6 +128,7 @@ export default function RootLayout() {
         <Stack.Screen name="offer-action" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="logbook-info" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="search-results" options={{ headerShown: false }} />
+        <Stack.Screen name="saved-searches" options={{ headerShown: false }} />
         <Stack.Screen name="escrow-info" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="advertise-info" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="facility-management" options={{ headerShown: false, presentation: 'modal' }} />

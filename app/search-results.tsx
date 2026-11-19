@@ -23,6 +23,7 @@ import type { Listing, ListingType } from "@/api/types";
 import { AdSlot } from "@/components/AdSlot";
 import { LocationSheet } from "@/components/LocationSheet";
 import { tapLight, tapSelection } from "@/lib/haptics";
+import { SaveSearchButton } from "@/components/SaveSearchButton";
 
 const PRIMARY = "#1f6f43";
 const PRIMARY_INK = "#134a2d";
@@ -80,7 +81,7 @@ function headline(total: number, type?: ListingType) {
  * it had taken. Here there's nothing between the filters and their results.
  */
 export default function SearchResultsScreen() {
-  const params = useLocalSearchParams<{ q?: string; focus?: string }>();
+  const params = useLocalSearchParams<{ q?: string; focus?: string; savedSearchId?: string; sort?: Sort }>();
   const [query, setQuery] = useState(params.q ?? "");
   // What's actually queried: follows typing after a pause (as Explore does) and
   // jumps straight away on the keyboard's search key.
@@ -88,6 +89,13 @@ export default function SearchResultsScreen() {
   const [sort, setSort] = useState<Sort>("newest");
   const [sortOpen, setSortOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
+
+  useEffect(() => {
+    if (!params.savedSearchId) return;
+    setQuery(params.q ?? '');
+    setSearch((params.q ?? '').trim());
+    setSort(SORTS.some(option => option.value === params.sort) ? params.sort! : 'newest');
+  }, [params.savedSearchId, params.q, params.sort]);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(query.trim()), 400);
@@ -159,6 +167,7 @@ export default function SearchResultsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
+      <SaveSearchButton filters={{ ...filters, location: location || undefined, search: query.trim() || undefined, sort }} />
 
       {/* Tap-away layer for the sort menu: above the list, below the menu. */}
       {sortOpen && (

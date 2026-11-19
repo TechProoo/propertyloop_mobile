@@ -104,6 +104,10 @@ export default function SavedScreen() {
         </View>
         </Appear>
 
+        <Pressable onPress={() => router.push('/saved-searches' as Href)} accessibilityRole="button" className="mx-5 mb-3 mt-5 flex-row items-center justify-between rounded-2xl border border-line bg-white px-4 py-4">
+          <View className="flex-row items-center gap-3"><Ionicons name="bookmark-outline" size={19} color={PRIMARY} /><Text className="text-[14px] font-sans-bold text-ink">Saved searches</Text></View>
+          <Ionicons name="chevron-forward" size={16} color={PRIMARY} />
+        </Pressable>
         {status !== "authed" ? (
           <EmptyBlock
             icon="heart-outline"
